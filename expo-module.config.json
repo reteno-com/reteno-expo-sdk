@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoRetenoSdkModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.retenosdk.ExpoRetenoSdkModule"]
+  }
+}
