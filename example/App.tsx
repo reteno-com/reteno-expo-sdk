@@ -1,49 +1,23 @@
-import { useEvent } from 'expo';
-import ExpoRetenoSdk, { ExpoRetenoSdkView } from 'expo-reteno-sdk';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import Reteno from "expo-reteno-sdk";
+import React, { useEffect } from "react";
+import { SafeAreaView, ScrollView, Text, View } from "react-native";
 
 export default function App() {
-  const onChangePayload = useEvent(ExpoRetenoSdk, 'onChange');
+  const handleStart = () => {
+    Reteno.start("123");
+    Reteno.requestPermissions();
+  };
+
+  useEffect(() => {
+    handleStart();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
         <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{ExpoRetenoSdk.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{ExpoRetenoSdk.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await ExpoRetenoSdk.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <ExpoRetenoSdkView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Group(props: { name: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
-    </View>
   );
 }
 
@@ -58,13 +32,13 @@ const styles = {
   },
   group: {
     margin: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
   },
   container: {
     flex: 1,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
   view: {
     flex: 1,

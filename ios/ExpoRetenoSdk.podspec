@@ -25,5 +25,7 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
   }
 
+  s.dependency 'Reteno', '2.5.14'
+
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
 end

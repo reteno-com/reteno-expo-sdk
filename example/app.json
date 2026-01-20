@@ -27,6 +27,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "../app.plugin.js",
+        {
+          "ios": {
+            "appGroups": ["group-1", "group-2"]
+          }
+        }
+      ]
+    ]
   }
 }

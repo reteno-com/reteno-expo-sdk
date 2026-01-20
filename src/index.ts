@@ -1,5 +1,17 @@
-// Reexport the native module. On web, it will be resolved to ExpoRetenoSdkModule.web.ts
-// and on native platforms to ExpoRetenoSdkModule.ts
-export { default } from './ExpoRetenoSdkModule';
-export { default as ExpoRetenoSdkView } from './ExpoRetenoSdkView';
-export * from  './ExpoRetenoSdk.types';
+import ExpoRetenoSdkModule from "./ExpoRetenoSdkModule";
+
+class ExpoReteno {
+  constructor() {}
+
+  start(key: string) {
+    ExpoRetenoSdkModule.start(key);
+  }
+
+  requestPermissions() {
+    ExpoRetenoSdkModule.requestPermission();
+  }
+}
+
+const Reteno = new ExpoReteno();
+
+export default Reteno;

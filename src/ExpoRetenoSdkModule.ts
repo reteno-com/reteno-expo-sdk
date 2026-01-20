@@ -1,12 +1,12 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 
-import { ExpoRetenoSdkModuleEvents } from './ExpoRetenoSdk.types';
-
-declare class ExpoRetenoSdkModule extends NativeModule<ExpoRetenoSdkModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+declare class ExpoRetenoSdkModule extends NativeModule {
+  start(key: string): string;
+  requestPermissions(): Promise<void>;
+  processRemoteNotificationsToken(token: string): void;
+  processRemoteNotificationsTokenByFCM(token: string): void;
+  processRemoteNotificationsTokenByDeviceId(token: string): void;
 }
 
 // This call loads the native module object from the JSI.
-export default requireNativeModule<ExpoRetenoSdkModule>('ExpoRetenoSdk');
+export default requireNativeModule<ExpoRetenoSdkModule>("ExpoRetenoSdk");
