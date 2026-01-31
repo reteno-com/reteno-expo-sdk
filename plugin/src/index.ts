@@ -1,5 +1,6 @@
-import { ConfigPlugin} from "expo/config-plugins";
+import { ConfigPlugin } from "expo/config-plugins";
 import { withRetenoIOS, RetenoIOS } from "./withRetenoIOS";
+import { withRetenoAndroid } from "./withRetenoAndroid";
 
 type RetenoProps = {
   ios: RetenoIOS;
@@ -13,9 +14,10 @@ const withRetenoInstall: ConfigPlugin<RetenoProps> = (config, props) => {
   }
 
   // TODO: Add possibility to install SDK only for one platform
-  const cfg = withRetenoIOS(config, props.ios);
+  config = withRetenoAndroid(config, props.ios);
+  config = withRetenoIOS(config, props.ios);
 
-  return cfg;
+  return config;
 };
 
 export default withRetenoInstall;

@@ -33,7 +33,11 @@
         "../app.plugin.js",
         {
           "ios": {
-            "appGroups": ["group-1", "group-2"]
+            "mode": "development",
+            "appGroups": [
+              "group.expo.modules.retenosdk.example", 
+              "group.expo.modules.retenosdk.example.reteno-local-storage"
+            ]
           }
         }
       ]

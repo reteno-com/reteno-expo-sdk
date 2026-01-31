@@ -7,14 +7,16 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "purge": "rm -Rf node_modules package-lock.json ios android",
-    "restart:ios": "npm run purge && npm install && npx expo prebuild -p ios --clean && npx pod-install && npm run ios"
+    "purge": "rm -Rf node_modules package-lock.json ios android && clear && echo '🗑️ Project purged successfully'",
+    "restart:ios": "npm run purge && npm install && npx expo prebuild -p ios --clean && npx pod-install && npm run ios",
+    "restart:android": "npm run purge && npm install && npx expo prebuild -p android --clean && npx pod-install && npm run android"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
     "expo": "~54.0.31",
+    "expo-reteno-sdk": "file:..",
     "react": "19.1.0",
-    "react-native": "0.81.5",
-    "expo-reteno-sdk": "file:.."
+    "react-native": "0.81.5"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",

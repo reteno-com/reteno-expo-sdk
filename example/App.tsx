@@ -1,21 +1,21 @@
 import Reteno from "expo-reteno-sdk";
 import React, { useEffect } from "react";
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 export default function App() {
-  const handleStart = () => {
-    Reteno.start("123");
-    Reteno.requestPermissions();
-  };
+  // const handleStart = () => {
+  //   Reteno.start("123");
+  // };
 
-  useEffect(() => {
-    handleStart();
-  }, []);
+  // useEffect(() => {
+  //   handleStart();
+  // }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
         <Text style={styles.header}>Module API Example</Text>
+        <Button title="press me" onPress={() => Reteno.start("123")} />
       </ScrollView>
     </SafeAreaView>
   );

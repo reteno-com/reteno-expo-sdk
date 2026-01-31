@@ -4,11 +4,8 @@ class ExpoReteno {
   constructor() {}
 
   start(key: string) {
+    console.log("key", key);
     ExpoRetenoSdkModule.start(key);
-  }
-
-  requestPermissions() {
-    ExpoRetenoSdkModule.requestPermission();
   }
 }
 
