@@ -1,29 +1,53 @@
 import {
   ConfigPlugin,
   withAppBuildGradle,
+  withDangerousMod,
   withGradleProperties,
+  withProjectBuildGradle,
 } from "expo/config-plugins";
 import {
   addCompileOptions,
-  addGradleDependencies,
+  addModuleGradleDependencies,
   addGradleProperties,
+  addProjectGradleDependencies,
+  copyGoogleServiceFile,
 } from "./support/android.functions";
 
-type RetenoAndroidProps = {};
+export type RetenoAndroidProps = {
+  googleService: string;
+};
 
-// const withAppGradleDependencies: ConfigPlugin = (config) => {
-//   return withAppBuildGradle(config, (cfg: any) => {
-//     if (cfg.modResults.language === "groovy") {
-//       cfg.modResults.contents = addGradleDependencies(cfg.modResults.contents);
-//     } else {
-//       console.warn(
-//         "[android.googleServicesFile] Cannot automatically configure app build.gradle if it's not groovy",
-//       );
-//     }
-//
-//     return cfg;
-//   });
-// };
+const withProjectGradleDependencies: ConfigPlugin = (config) => {
+  return withProjectBuildGradle(config, (cfg: any) => {
+    if (cfg.modResults.language === "groovy") {
+      cfg.modResults.contents = addProjectGradleDependencies(
+        cfg.modResults.contents,
+      );
+    } else {
+      console.warn(
+        "[android.googleServicesFile] Cannot automatically configure project build.gradle if it's not groovy",
+      );
+    }
+
+    return cfg;
+  });
+};
+
+const withModuleGradleDependencies: ConfigPlugin = (config) => {
+  return withAppBuildGradle(config, (cfg: any) => {
+    if (cfg.modResults.language === "groovy") {
+      cfg.modResults.contents = addModuleGradleDependencies(
+        cfg.modResults.contents,
+      );
+    } else {
+      console.warn(
+        "[android.googleServicesFile] Cannot automatically configure app build.gradle if it's not groovy",
+      );
+    }
+
+    return cfg;
+  });
+};
 
 const withAppGradleProperties: ConfigPlugin = (config) => {
   return withGradleProperties(config, (cfg: any) => {
@@ -43,11 +67,27 @@ const withAppCompileOptions: ConfigPlugin = (config) => {
   });
 };
 
+const withCopyGoogleServiceFile: ConfigPlugin<RetenoAndroidProps> = (
+  config,
+  props,
+) => {
+  return withDangerousMod(config, [
+    "android",
+    async (config) => {
+      await copyGoogleServiceFile(config, props.googleService);
+
+      return config;
+    },
+  ]);
+};
+
 export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
-  props = {},
+  props,
 ) => {
-  // config = withAppGradleDependencies(config);
+  config = withCopyGoogleServiceFile(config, props);
+  config = withProjectGradleDependencies(config);
+  config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
   config = withAppCompileOptions(config);
 

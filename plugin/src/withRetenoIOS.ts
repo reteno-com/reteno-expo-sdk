@@ -3,6 +3,7 @@ import {
   withInfoPlist,
   withEntitlementsPlist,
 } from "expo/config-plugins";
+
 // import * as path from "path";
 // import getEasManagedCredentialsConfigExtra, {
 //   updatePodfile,
@@ -209,7 +210,7 @@ const withAppGroups = (config: any, groups: string[]) => {
 //     },
 //   ]);
 // };
-//
+
 // const withXcodeProjectUpdate = (config: any, props: RetenoIOS) => {
 //   return withXcodeProject(config, (newConfig: any) => {
 //     const { target, files, source } = IOS_NSE_CONFIG;
@@ -334,7 +335,7 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOS> = (config, props) => {
   config = withRemoteNotificationsPermissions(config);
   config = withAppGroups(config, props.appGroups);
 
-  // FIXME: Does not work because embeded target problem
+  // FIXME: Does not work because of embeded target problem
   // config = withPodfileUpdate(config);
   // config = withEmbedNSE(config);
   // config = withNotificationServiceExtension(config, props);

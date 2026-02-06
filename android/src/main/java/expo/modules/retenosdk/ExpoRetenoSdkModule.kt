@@ -1,8 +1,11 @@
 package expo.modules.retenosdk
 
+import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+
 import java.net.URL
+import java.lang.ref.WeakReference
 
 import android.os.Build
 import android.app.Application
@@ -15,18 +18,42 @@ import android.net.Uri
 import android.Manifest
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 import com.reteno.core.Reteno
+import com.reteno.core.RetenoApplication
 import com.reteno.core.RetenoConfig
 import com.reteno.push.RetenoNotifications
 
-class ExpoRetenoSdkModule : Module() {
+import com.google.firebase.FirebaseApp
 
+class ExpoRetenoSdkModule : Module() {
   val permission = Manifest.permission.POST_NOTIFICATIONS
   val PERMISSION_REQUEST_CODE = 1001
+
+  init {
+    currentInstance = WeakReference(this)
+  }
+
+  // This `companion object` is for static access from BroadcastReceiver
+  companion object {
+    private var currentInstance: WeakReference<ExpoRetenoSdkModule>? = null
+
+    fun onReceiveNotification(payload: Map<String, Any?>) {
+      val module = currentInstance?.get()
+
+      if (module != null) {
+        module.handleIncomingNotification(payload)
+      } else {
+        // If the app is killed or module isn't loaded, you might want to 
+        // handle this differently (e.g. show a local notification manually)
+        Log.w("ExpoRetenoSdk", "Module instance not found, dropping notification event")
+      }
+    }
+  }
 
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -37,8 +64,10 @@ class ExpoRetenoSdkModule : Module() {
     // The module will be accessible from `requireNativeModule('ExpoRetenoSdk')` in JavaScript.
     Name("ExpoRetenoSdk")
 
+    Events("onRetenoPushReceived")
+
     // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("start") { key: String ->
+    Function("initialize") { key: String ->
       val ctx = appContext.reactContext ?: return@Function
       val activity = appContext.currentActivity ?: return@Function
 
@@ -49,8 +78,14 @@ class ExpoRetenoSdkModule : Module() {
       activity.runOnUiThread {
         try {
 
+        // NOTE: initialize Firebase
+        FirebaseApp.initializeApp(ctx)
+
         Reteno.initWithConfig(
-          RetenoConfig.Builder().accessKey(key).build()
+          RetenoConfig.Builder()
+            .accessKey(key)
+            .setDebug(true)
+            .build()
         )      
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -69,8 +104,35 @@ class ExpoRetenoSdkModule : Module() {
           t.printStackTrace()
         }
       }
-
     }
+
+    Function("setUserAttributes") { userId: String->
+      Reteno.instance.setUserAttributes(userId)
+
+      // NOTE: From Reteno React Native SDK:
+      // -----------------------------------
+      // -----------------------------------
+      // String externalUserId = payload.getString("externalUserId");
+      // User user = RetenoUserAttributes.buildUserFromPayload(payload);
+      // if (externalUserId == null) {
+      //   promise.reject("Parsing error", "externalUserId cannot be null");
+      //   return;
+      // }
+      // try {
+      //   ((RetenoApplication) this.context.getCurrentActivity().getApplication())
+      //     .getRetenoInstance()
+      //     .setUserAttributes(externalUserId, user);
+      // } catch (Exception e) {
+      //   promise.reject("Reteno Android SDK Error", e);
+      //   return;
+      // }
+      // WritableMap res = new WritableNativeMap();
+      // res.putBoolean("success", true);
+      // promise.resolve(res);
+      // -----------------------------------
+      // -----------------------------------
+    }
+
 
     // Listen for the result natively
     OnActivityResult { _, payload ->
@@ -95,11 +157,26 @@ class ExpoRetenoSdkModule : Module() {
 
   private fun updatePushPermissionStatus() {
     try {
-
-    Reteno.instance.updatePushPermissionStatus()
+      Reteno.instance.updatePushPermissionStatus()
     } catch (t: Throwable) {
       t.printStackTrace()
     }
   }
 
+  private fun setUserAttributes(userId: String) {
+    try {
+      Reteno.instance.setUserAttributes(userId)
+    } catch (t: Throwable) {
+      t.printStackTrace()
+    }
+  }
+
+  private fun handleIncomingNotification(payload: Map<String, Any?>) {
+    // Send the event to JS
+    sendEvent("onPushNotificationReceived", mapOf(
+      "type" to "reteno-push-received",
+      "data" to payload,
+      "timestamp" to System.currentTimeMillis()
+    ))
+  }
 }

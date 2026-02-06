@@ -32,6 +32,9 @@
       [
         "../app.plugin.js",
         {
+          "android": {
+            "googleService": "./google-services.json"
+          },
           "ios": {
             "mode": "development",
             "appGroups": [

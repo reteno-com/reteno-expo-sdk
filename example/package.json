@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "purge": "rm -Rf node_modules package-lock.json ios android && clear && echo '🗑️ Project purged successfully'",
     "restart:ios": "npm run purge && npm install && npx expo prebuild -p ios --clean && npx pod-install && npm run ios",
-    "restart:android": "npm run purge && npm install && npx expo prebuild -p android --clean && npx pod-install && npm run android"
+    "restart:android": "yarn purge && yarn install && npx expo prebuild -p android --clean && npx pod-install && yarn android"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",

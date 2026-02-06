@@ -21,12 +21,19 @@ end`;
 
 export const androidConfig = {
   sdk: {
-    dependenciesAnchor: 'implementation("com.facebook.react:react-android")',
-    dependencies: [
-      // "implementation 'com.reteno:fcm:2.8.9'",
-      // "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
-      // "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
-    ],
+    project: {
+      anchor: "dependencies {",
+      deps: ["classpath 'com.google.gms:google-services:4.3.2'"],
+    },
+    module: {
+      anchor: 'implementation("com.facebook.react:react-android")',
+      deps: [
+        // "implementation 'com.google.firebase:firebase-core:9.6.1'",
+        "implementation 'com.reteno:fcm:2.8.9'",
+        "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
+        "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
+      ],
+    },
     properties: {
       "android.useAndroidX": true,
       "android.enableJetifier": true,

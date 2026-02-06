@@ -1,23 +1,3 @@
-import { ConfigPlugin } from "expo/config-plugins";
-import { withRetenoIOS, RetenoIOS } from "./withRetenoIOS";
-import { withRetenoAndroid } from "./withRetenoAndroid";
+import withReteno from "./withReteno";
 
-type RetenoProps = {
-  ios: RetenoIOS;
-};
-
-const withRetenoInstall: ConfigPlugin<RetenoProps> = (config, props) => {
-  if (!props) {
-    throw new Error(
-      "⛔️ You are trying to setup RetenoSDK without any props which are required for valid plugin configuration. Please, see docs: <doc_link>",
-    );
-  }
-
-  // TODO: Add possibility to install SDK only for one platform
-  config = withRetenoAndroid(config, props.ios);
-  config = withRetenoIOS(config, props.ios);
-
-  return config;
-};
-
-export default withRetenoInstall;
+export default withReteno;

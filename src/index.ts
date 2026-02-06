@@ -3,9 +3,12 @@ import ExpoRetenoSdkModule from "./ExpoRetenoSdkModule";
 class ExpoReteno {
   constructor() {}
 
-  start(key: string) {
-    console.log("key", key);
-    ExpoRetenoSdkModule.start(key);
+  initialize(key: string) {
+    ExpoRetenoSdkModule.initialize(key);
+  }
+
+  setUserAttributes(userId: string) {
+    ExpoRetenoSdkModule.setUserAttributes(userId);
   }
 }
 
