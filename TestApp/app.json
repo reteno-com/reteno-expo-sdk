@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "expo-reteno-sdk-example",
-    "slug": "expo-reteno-sdk-example",
+    "name": "TestApp",
+    "slug": "TestApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,8 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "expo.modules.retenosdk.example"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -28,9 +27,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "autolinking": {
+      "nativeModulesDir": ".."
+    },
     "plugins": [
       [
-        "../app.plugin.js",
+        "../expo-reteno-sdk/app.plugin.js",
         {
           "android": {
             "googleService": "./google-services.json"
@@ -38,7 +40,7 @@
           "ios": {
             "mode": "development",
             "appGroups": [
-              "group.expo.modules.retenosdk.example", 
+              "group.expo.modules.retenosdk.example",
               "group.expo.modules.retenosdk.example.reteno-local-storage"
             ]
           }

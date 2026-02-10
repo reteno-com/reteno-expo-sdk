@@ -67,7 +67,7 @@ class ExpoRetenoSdkModule : Module() {
     Events("onRetenoPushReceived")
 
     // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("initialize") { key: String ->
+    Function("initialize") { key: String, withDebugMode: Boolean ->
       val ctx = appContext.reactContext ?: return@Function
       val activity = appContext.currentActivity ?: return@Function
 
@@ -84,7 +84,11 @@ class ExpoRetenoSdkModule : Module() {
         Reteno.initWithConfig(
           RetenoConfig.Builder()
             .accessKey(key)
-            .setDebug(true)
+            .setDebug(withDebugMode)
+            .defaultNotificationChannelConfig { 
+              it.setName("Push notifications")
+              it.setDescription("Default push notifications")
+            }
             .build()
         )      
 

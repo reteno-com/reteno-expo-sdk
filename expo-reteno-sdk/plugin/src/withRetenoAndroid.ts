@@ -74,7 +74,11 @@ const withCopyGoogleServiceFile: ConfigPlugin<RetenoAndroidProps> = (
   return withDangerousMod(config, [
     "android",
     async (config) => {
-      await copyGoogleServiceFile(config, props.googleService);
+      await copyGoogleServiceFile(
+        config,
+        props.googleService,
+        "/app/google-services.json",
+      );
 
       return config;
     },

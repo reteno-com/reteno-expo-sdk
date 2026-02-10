@@ -133,13 +133,17 @@ export function addCompileOptions(content: string) {
   );
 }
 
-export async function copyGoogleServiceFile(config: any, gsPath: string) {
+export async function copyGoogleServiceFile(
+  config: any,
+  gsPath: string,
+  destination: string,
+) {
   const rootDir = config.modRequest.projectRoot;
 
   const from = path.join(rootDir, gsPath);
-  const to = config.modRequest.platformProjectRoot;
+  const to = config.modRequest.platformProjectRoot + destination;
 
-  await FileService.copy(from, to + "/app/google-services.json");
+  await FileService.copy(from, to);
 
   return true;
 }
