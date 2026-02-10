@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/types.ts","./src/withreteno.ts","./src/withretenoandroid.ts","./src/withretenoios.ts","./src/support/fileservice.ts","./src/support/android.functions.ts","./src/support/constants.ts","./src/support/functions.ts","./src/support/ios.functions.ts"],"version":"5.9.3"}
