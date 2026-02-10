@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "expo-reteno-sdk": ["../expo-reteno-sdk/src/index"]
+    }
+  }
+}
