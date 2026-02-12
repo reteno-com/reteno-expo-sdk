@@ -13,7 +13,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "expo.modules.retenosdk.example",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +24,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "expo.modules.retenosdk.example"
+      "package": "expo.modules.retenosdk.example",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,9 +38,13 @@
         "../expo-reteno-sdk/app.plugin.js",
         {
           "android": {
-            "googleService": "./google-services.json"
+            "googleServices": "./google-services.json"
           },
           "ios": {
+            "sdkAccessToken": "8982c7f7-24d7-4afb-ac1c-e2377555e359",
+            "debug": true,
+            "notificationService": "firebase",
+            "devTeam": "XTTV5LZZ73",
             "mode": "development",
             "appGroups": [
               "group.expo.modules.retenosdk.example",

@@ -51,6 +51,7 @@ export class FileService {
     }
   }
 
+  // TODO: rename to `pathExists`
   static dirExists(path: string): boolean {
     return fs.existsSync(path);
   }

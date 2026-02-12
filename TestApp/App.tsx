@@ -1,11 +1,22 @@
 import { StatusBar } from "expo-status-bar";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
+import messaging from "@react-native-firebase/messaging";
 
-const TOKEN = "YOUR_TOKEN";
-const USER_TOKEN = "YOUR_USER_TOKEN";
+const TOKEN = Platform.select({
+  ios: "",
+  android: "8982c7f7-24d7-4afb-ac1c-e2377555e359",
+});
+const USER_TOKEN = "e3c23974-49ef-4a2c-88a4-2f4500237840";
 
 type ButtonProps = {
   text: string;
@@ -31,20 +42,41 @@ const Button: FC<ButtonProps> = (props) => {
 };
 
 export default function App() {
-  const [state, setState] = useState({
-    token: "",
-    userId: "",
-  });
+  const [state, setState] = useState({});
 
   const onRetenoPushReceived = useCallback((event: any) => {
-    Alert.alert("onRetenoPushReceived", event ? JSON.stringify(event) : event);
+    Alert.alert(
+      "onPushNotificationReceived",
+      event ? JSON.stringify(event) : event,
+    );
   }, []);
 
   const handleStart = () => {
-    Reteno.initialize(TOKEN, true);
+    Reteno.registerForRemoteNotifications();
+  };
 
+  const handleSetAttribute = () => {
     Reteno.setUserAttributes(USER_TOKEN);
-    setState({ token: TOKEN, userId: USER_TOKEN });
+
+    if (Platform.OS === "ios") {
+      async function getTokenOnIos() {
+        const token = await messaging().getToken();
+
+        // Reteno.setDeviceToken(token);
+
+        setState((prev) => ({
+          ...prev,
+          deviceToken: token,
+          userToken: USER_TOKEN,
+        }));
+
+        console.log(">>>", token);
+      }
+
+      getTokenOnIos();
+    } else {
+      setState((prev) => ({ ...prev, userToken: USER_TOKEN }));
+    }
   };
 
   useEffect(() => {
@@ -60,16 +92,18 @@ export default function App() {
       <StatusBar style="auto" />
       <View style={{ alignItems: "center", gap: 8 }}>
         <Text>Reteno installation SDK</Text>
-        <Button text="Start SDK" onPress={handleStart} />
+        <Button text="Request push permissions" onPress={handleStart} />
 
-        {state.token === "" ? (
+        <Button text="Set UserID" onPress={handleSetAttribute} />
+        {!Object.keys(state).length ? (
           <Text>Press `Start SDK` button to initialize Reteno SDK</Text>
         ) : (
-          <View>
+          <View style={{ gap: 8 }}>
             {Object.keys(state).map((s: string, key: number) => (
-              <Text key={`State_${key}`}>
-                {s}: {state[s]}
-              </Text>
+              <View key={`State_${key}`}>
+                <Text style={{ fontWeight: "900" }}>{s}:</Text>
+                <Text>{state[s]}</Text>
+              </View>
             ))}
           </View>
         )}
@@ -84,5 +118,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 16,
   },
 });

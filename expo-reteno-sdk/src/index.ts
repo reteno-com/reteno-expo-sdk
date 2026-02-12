@@ -5,8 +5,9 @@ import {
 } from "expo-modules-core";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
-  initialize(key: string, withDebugMode?: boolean): string;
+  registerForRemoteNotifications(): string;
   setUserAttributes(userId: string): void;
+  setDeviceToken(messagingToken: string): void;
 }
 
 type RetenoSubscription = {
@@ -25,11 +26,14 @@ const ModuleInstance =
 const emitter = new EventEmitter<RetenoSubscriptionEvents>(ModuleInstance);
 
 export const Reteno = {
-  initialize(accessToken: string, withDebugMode = false) {
-    return ModuleInstance.initialize(accessToken, withDebugMode);
+  registerForRemoteNotifications() {
+    return ModuleInstance.registerForRemoteNotifications();
   },
   setUserAttributes(userId: string) {
     return ModuleInstance.setUserAttributes(userId);
+  },
+  setDeviceToken(token: string) {
+    return ModuleInstance.setDeviceToken(token);
   },
   addPushNotificationListener(
     listener: (event: any) => void,

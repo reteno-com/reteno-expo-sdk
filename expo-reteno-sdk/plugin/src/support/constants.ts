@@ -16,7 +16,7 @@ export const iosConfig = {
 export const IOS_NSE_PODFILE_SNIPPET = `
 target '${iosConfig.nse.target}' do
 \tuse_frameworks!
-\tpod 'Reteno', '2.5.14'
+\tpod 'Reteno', '2.9.0'
 end`;
 
 export const androidConfig = {
@@ -36,7 +36,7 @@ export const androidConfig = {
     },
     properties: {
       "android.useAndroidX": true,
-      "android.enableJetifier": true,
+      // "android.enableJetifier": true,
     },
     gradleSourceAndTarget: [
       "sourceCompatibility JavaVersion.VERSION_1_8",

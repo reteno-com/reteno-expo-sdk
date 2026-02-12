@@ -1,245 +1,7 @@
+import { MergeResults, RetenoIOSAutogenComments } from "../types";
 import { iosConfig } from "./constants";
-
-// // NOTE: iOS-only
-// export async function updatePodfile(path: string) {
-//   const podfile = await FileService.read(`${path}/Podfile`);
-//   const didMatch = podfile.match();
-//
-//   if (didMatch) {
-//     console.warn(
-//       "⚠️ NotificationServiceExtension: target already added to Podfile. Skipping...",
-//     );
-//   } else {
-//     let content = podfile.replace(
-//       "use_expo_modules!",
-//       'use_expo_modules!\n\tuse_frameworks!\n\tpod "Reteno"',
-//     );
-//
-//     content += IOS_NSE_PODFILE_SNIPPET;
-//
-//     fs.writeFile(`${path}/Podfile`, content, (err) => {
-//       if (err) {
-//         console.error(
-//           "⛔️ NotificationServiceExtension: Error writing to Podfile",
-//         );
-//       }
-//     });
-//   }
-// }
-//
-// // NOTE: iOS-only
-// export async function createServiceExtensionFiles(
-//   files: string[],
-//   path: string,
-//   sourceDir: string,
-// ) {
-//   for (let i = 0; i < files.length; i++) {
-//     const extFile = files[i];
-//     const targetFile = `${path}/${extFile}`;
-//
-//     await FileService.copy(`${sourceDir}${extFile}`, targetFile);
-//   }
-// }
-//
-// // NOTE: iOS-only
-// export async function updateServiceExtensionEntitlements(
-//   path: string,
-//   groupIdentifier: string,
-// ): Promise<void> {
-//   const entitlementsFilePath = `${path}/${iosConfig.entitlements}`;
-//   let entitlementsFile = await FileService.read(entitlementsFilePath);
-//
-//   entitlementsFile = entitlementsFile.replace(
-//     /{{GROUP_IDENTIFIER}}/gm,
-//     groupIdentifier,
-//   );
-//
-//   await FileService.write(entitlementsFilePath, entitlementsFile);
-// }
-//
-// // export function getPBXSection(project: any, key: string, debug = false) {
-// //   const objects = Object.assign({}, project.hash.project.objects);
-// //
-// //   if (debug) {
-// //     // console.log("[key]", key, Object.keys(objects));
-// //
-// //     if (objects[key]) {
-// //       // console.log("match:", key, Object.assign({}, objects[key]));
-// //       return Object.assign({}, objects[key]);
-// //     } else return {};
-// //   }
-// //
-// //   if (objects[key]) {
-// //     // console.log("match:", key, Object.assign({}, objects[key]));
-// //     return Object.assign({}, objects[key]);
-// //   }
-// //
-// //   // return objects[key] ? Object.assign({}, objects[key]) : {};
-// //   return {};
-// // }
-//
-// /**
-//  * iOS-only
-//  */
-// // export function getApplicationTarget(project: any) {
-// //   const targets = project.pbxNativeTargetSection();
-// //
-// //   const entry = Object.entries(targets).find(([, target]: any) => {
-// //     const t = Object.assign({}, target);
-// //     return t.productType === '"com.apple.product-type.application"';
-// //   }) as any[];
-// //
-// //   if (!entry) {
-// //     throw new Error(`Application Target not found`);
-// //   }
-// //
-// //   return { id: entry[0], target: entry[1] };
-// // }
-//
-// /**
-//  * iOS-only
-//  */
-// // export function findTargetByKey(project: any, key: string) {
-// //   const targets = project.pbxNativeTargetSection();
-// //
-// //   const entry = Object.entries(targets).find(([, target]: any) => {
-// //     return target.name === key;
-// //   }) as any[];
-// //
-// //   if (!entry) {
-// //     throw new Error(`Target "${key}" not found`);
-// //   }
-// //
-// //   return { id: entry[0], target: entry[1] };
-// // }
-//
-// /**
-//  * iOS-only
-//  */
-// // export function getBuildConfigsForTarget(project: any, target: any) {
-// //   const configLists = getPBXSection(project, "XCConfigurationList", true);
-// //   const buildConfigs = getPBXSection(project, "XCBuildConfiguration");
-// //
-// //   // console.log("[configLists]", configLists, target);
-// //
-// //   const list = configLists[target.buildConfigurationList];
-// //   if (!list) {
-// //     throw new Error("Build configuration list not found");
-// //   }
-// //
-// //   return list.buildConfigurations
-// //     .map((cfg: any) => buildConfigs[cfg.value])
-// //     .filter(Boolean);
-// // }
-//
-// /**
-//  * iOS-only
-//  */
-// // export function ensureEmbedAppExtensionsPhase(
-// //   project: any,
-// //   appTargetId: string,
-// // ) {
-// //   const copyFiles = getPBXSection(project, "PBXCopyFilesBuildPhase");
-// //
-// //   const existing = Object.values(copyFiles).find(
-// //     (phase: any) =>
-// //       phase.name === "Embed App Extensions" && phase.dstSubfolderSpec === "13", // plugins
-// //   );
-// //
-// //   if (existing) {
-// //     return existing;
-// //   }
-// //
-// //   const uuid = project.generateUuid();
-// //
-// //   copyFiles[uuid] = {
-// //     isa: "PBXCopyFilesBuildPhase",
-// //     buildActionMask: "2147483647",
-// //     dstPath: "",
-// //     dstSubfolderSpec: 13,
-// //     files: [],
-// //     name: "Embed App Extensions",
-// //     runOnlyForDeploymentPostprocessing: 0,
-// //   };
-// //
-// //   // Attach phase to app target
-// //   const nativeTargets = getPBXSection(project, "PBXNativeTarget");
-// //   nativeTargets[appTargetId].buildPhases.push({
-// //     value: uuid,
-// //     comment: "Embed App Extensions",
-// //   });
-// //
-// //   return uuid;
-// // }
-//
-// // function updateEmbedExtensionsPhase(project: any, appTargetUuid: string) {
-// //   const target = project.pbxNativeTargetSection()[appTargetUuid];
-// //   const buildPhases = target.buildPhases || [];
-// //
-// //   for (const phase of buildPhases) {
-// //     const phaseObj =
-// //       project.hash.project.objects.PBXCopyFilesBuildPhase[phase.value];
-// //     if (
-// //       phaseObj &&
-// //       phaseObj.dstSubfolderSpec === 13 &&
-// //       phaseObj.name === '"Embed App Extensions"'
-// //     ) {
-// //       console.log("foo", phase);
-// //       return phase.value;
-// //     }
-// //   }
-// //
-// //   const ePhase = project.addBuildPhase(
-// //     [],
-// //     "PBXCopyFilesBuildPhase",
-// //     "Embed App Extensions",
-// //     appTargetUuid,
-// //     "app_extension",
-// //   );
-// //
-// //   return ePhase;
-// // }
-// //
-// // export function embedExtension(
-// //   project: any,
-// //   appTargetId: string,
-// //   nseProductRef: string,
-// // ) {
-// //   // const buildFiles = getPBXSection(project, "PBXBuildFile");
-// //   //
-// //   const phase = updateEmbedExtensionsPhase(project, appTargetId);
-// //
-// //   if (!nseProductRef) {
-// //     throw new Error("Extension target has no productReference");
-// //   }
-// //
-// //   // project.addBuildFile(nseProductRef, embedId, { weak: false });
-// //   project.addToPbxCopyFilesGroup(nseProductRef, phase);
-// //
-// //   // project.hash.project.objects.PBXBuildFile[buildId] = {
-// //   //   isa: "PBXBuildFile",
-// //   //   fileRef: nseTarget.productReference,
-// //   //   settings: {
-// //   //     ATTRIBUTES: ["RemoveHeadersOnCopy"],
-// //   //   },
-// //   // };
-// //   //
-// //   // project.hash.project.objects.PBXCopyFilesBuildPhase[embedId].files.push({
-// //   //   value: buildId,
-// //   //   comment: "NotificationServiceExtension.appex",
-// //   // });
-// // }
-
-/*
- * Generates iOS PBX-like UUID
- * @note: iOS-only
- */
-export function generateUuid() {
-  return (
-    Math.random().toString(16).slice(2, 10).toUpperCase() +
-    Math.random().toString(16).slice(2, 6).toUpperCase()
-  );
-}
+import crypto from "crypto";
+import { FileService } from "./FileService";
 
 // Returns update EAS Configuration
 export default function getEasManagedCredentialsConfigExtra(config: any): {
@@ -274,4 +36,265 @@ export default function getEasManagedCredentialsConfigExtra(config: any): {
       },
     },
   };
+}
+
+function createHash(src: string): string {
+  // this doesn't need to be secure, the shorter the better.
+  const hash = crypto.createHash("sha1").update(src).digest("hex");
+  return `sync-${hash}`;
+}
+
+function createGeneratedHeaderComment(
+  contents: string,
+  tag: string,
+  comment: string,
+): string {
+  const hashKey = createHash(contents);
+
+  // Everything after the `${tag} ` is unversioned and can be freely modified without breaking changes.
+  return `${comment} @generated begin ${tag} - expo prebuild (DO NOT MODIFY) ${hashKey}`;
+}
+
+function getGeneratedSectionIndexes(
+  src: string,
+  tag: string,
+): { contents: string[]; start: number; end: number } {
+  const contents = src.split("\n");
+  const start = contents.findIndex((line) =>
+    new RegExp(`@generated begin ${tag} -`).test(line),
+  );
+  const end = contents.findIndex((line) =>
+    new RegExp(`@generated end ${tag}$`).test(line),
+  );
+
+  return { contents, start, end };
+}
+
+/**
+ * Removes the generated section from a file, returns null when nothing can be removed.
+ * This sways heavily towards not removing lines unless it's certain that modifications were not made manually.
+ *
+ * @param src
+ */
+function removeGeneratedContents(src: string, tag: string): string | null {
+  const { contents, start, end } = getGeneratedSectionIndexes(src, tag);
+  if (start > -1 && end > -1 && start < end) {
+    contents.splice(start, end - start + 1);
+    // TODO: We could in theory check that the contents we're removing match the hash used in the header,
+    // this would ensure that we don't accidentally remove lines that someone added or removed from the generated section.
+    return contents.join("\n");
+  }
+  return null;
+}
+
+function addLines(
+  content: string,
+  find: string | RegExp,
+  offset: number,
+  toAdd: string[],
+) {
+  const lines = content.split("\n");
+
+  let lineIndex = lines.findIndex((line) => line.match(find));
+  if (lineIndex < 0) {
+    const error = new Error(
+      `Failed to match "${find}" in contents:\n${content}`,
+    );
+    // @ts-ignore
+    error.code = "ERR_NO_MATCH";
+    throw error;
+  }
+  for (const newLine of toAdd) {
+    lines.splice(lineIndex + offset, 0, newLine);
+    lineIndex++;
+  }
+
+  return lines.join("\n");
+}
+
+export function mergeContents({
+  src,
+  newSrc,
+  tag,
+  anchor,
+  offset,
+  comment,
+}: {
+  src: string;
+  newSrc: string;
+  tag: string;
+  anchor: string | RegExp;
+  offset: number;
+  comment: string;
+}): MergeResults {
+  const header = createGeneratedHeaderComment(newSrc, tag, comment);
+  if (!src.includes(header)) {
+    // Ensure the old generated contents are removed.
+    const sanitizedTarget = removeGeneratedContents(src, tag);
+    return {
+      contents: addLines(sanitizedTarget ?? src, anchor, offset, [
+        header,
+        ...newSrc.split("\n"),
+        `${comment} @generated end ${tag}`,
+      ]),
+      didMerge: true,
+      didClear: !!sanitizedTarget,
+    };
+  }
+  return { contents: src, didClear: false, didMerge: false };
+}
+
+export function removeContents({
+  src,
+  tag,
+}: {
+  src: string;
+  tag: string;
+}): MergeResults {
+  // Ensure the old generated contents are removed.
+  const sanitizedTarget = removeGeneratedContents(src, tag);
+
+  return {
+    contents: sanitizedTarget ?? src,
+    didMerge: false,
+    didClear: !!sanitizedTarget,
+  };
+}
+
+/**
+ * @see https://github.com/expo/expo/blob/60aeb1eac8693841c7932e037afce6c96a5e8841/packages/%40expo/config-plugins/src/ios/Maps.ts#L50
+ */
+export function addFirebaseAppDelegateImport(src: string): MergeResults {
+  const newSrc = ["#if canImport(Firebase)", "import Firebase", "#endif"];
+
+  return mergeContents({
+    tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
+    src,
+    newSrc: newSrc.join("\n"),
+    anchor: /(@main|@UIApplicationMain)/,
+    offset: 0,
+    comment: "//",
+  });
+}
+
+// export function removeFirebaseAppDelegateImport(src: string): MergeResults {
+//   return removeContents({
+//     tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
+//     src,
+//   });
+// }
+
+/**
+ * @see https://github.com/expo/expo/blob/60aeb1eac8693841c7932e037afce6c96a5e8841/packages/%40expo/config-plugins/src/ios/Maps.ts#L70
+ */
+export function addFirebaseAppDelegateInit(src: string): MergeResults {
+  const newSrc = [
+    "#if canImport(Firebase)",
+    "\tFirebaseApp.configure()",
+    "#endif",
+  ];
+
+  return mergeContents({
+    tag: RetenoIOSAutogenComments.FIREBASE_INIT,
+    src,
+    newSrc: newSrc.join("\n"),
+    anchor:
+      /\bsuper\.application\(\w+?, didFinishLaunchingWithOptions: \w+?\)/g,
+    offset: 0,
+    comment: "//",
+  });
+}
+
+// export function removeFirebaseAppDelegateInit(src: string): MergeResults {
+//   return removeContents({
+//     tag: RetenoIOSAutogenComments.FIREBASE_INIT,
+//     src,
+//   });
+// }
+
+export function addMessagingDelegate(src: string): MergeResults {
+  const newSrc = [
+    `extension AppDelegate: MessagingDelegate {
+    
+  public func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    guard let fcmToken = fcmToken else { return }
+        
+    Reteno.userNotificationService.processRemoteNotificationsToken(fcmToken)
+  }
+}`,
+  ];
+
+  return mergeContents({
+    tag: RetenoIOSAutogenComments.MESSAGING_DELEGATE,
+    src,
+    newSrc: newSrc.join("\n"),
+    anchor: /(@main|@UIApplicationMain)/,
+    offset: 0,
+    comment: "//",
+  });
+}
+
+export function addRetenoImport(src: string): MergeResults {
+  const newSrc = ["import Reteno"];
+
+  return mergeContents({
+    tag: RetenoIOSAutogenComments.RETENO_IMPORT,
+    src,
+    newSrc: newSrc.join("\n"),
+    anchor: /import Expo/,
+    offset: 0,
+    comment: "//",
+  });
+}
+
+export function addRetenoInit(
+  src: string,
+  config: { apiKey: string; isDebugMode?: boolean },
+): MergeResults {
+  const newSrc = [
+    `\tReteno.start(apiKey: "${config.apiKey}", isDebugMode: ${config.isDebugMode ?? false})`,
+  ];
+
+  return mergeContents({
+    tag: RetenoIOSAutogenComments.RETENO_INIT,
+    src,
+    newSrc: newSrc.join("\n"),
+    anchor:
+      /\bsuper\.application\(\w+?, didFinishLaunchingWithOptions: \w+?\)/g,
+    offset: 0,
+    comment: "//",
+  });
+}
+
+// Function installs pods through iteration
+export async function updatePodfile(
+  path: string,
+  pods: Record<"name" | "addon", string>[],
+  anchor: string,
+) {
+  const podfile = await FileService.read(`${path}/Podfile`);
+
+  if (podfile.indexOf(anchor) < 0) {
+    throw new Error("Anchor was not found");
+  }
+
+  const updates = [];
+
+  for (const p of pods) {
+    // TODO: Check if commented
+    if (podfile.indexOf(`pod '${p.name}'`) > -1) {
+      console.log(`Pod ${p} already exists, skipping...`);
+      continue;
+    } else {
+      updates.push(`pod '${p.name}'${p.addon !== "" ? ", " + p.addon : ""}`);
+    }
+  }
+
+  const contents = podfile.replace(
+    anchor,
+    `${anchor}\n\t${updates.join("\n\t")}
+  `,
+  );
+
+  await FileService.write(`${path}/Podfile`, contents);
 }

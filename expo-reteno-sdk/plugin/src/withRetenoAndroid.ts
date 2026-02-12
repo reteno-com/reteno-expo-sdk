@@ -1,7 +1,6 @@
 import {
   ConfigPlugin,
   withAppBuildGradle,
-  withDangerousMod,
   withGradleProperties,
   withProjectBuildGradle,
 } from "expo/config-plugins";
@@ -10,12 +9,8 @@ import {
   addModuleGradleDependencies,
   addGradleProperties,
   addProjectGradleDependencies,
-  copyGoogleServiceFile,
 } from "./support/android.functions";
-
-export type RetenoAndroidProps = {
-  googleService: string;
-};
+import { RetenoAndroidProps } from "./types";
 
 const withProjectGradleDependencies: ConfigPlugin = (config) => {
   return withProjectBuildGradle(config, (cfg: any) => {
@@ -67,29 +62,29 @@ const withAppCompileOptions: ConfigPlugin = (config) => {
   });
 };
 
-const withCopyGoogleServiceFile: ConfigPlugin<RetenoAndroidProps> = (
-  config,
-  props,
-) => {
-  return withDangerousMod(config, [
-    "android",
-    async (config) => {
-      await copyGoogleServiceFile(
-        config,
-        props.googleService,
-        "/app/google-services.json",
-      );
-
-      return config;
-    },
-  ]);
-};
+// const withCopyGoogleServiceFile: ConfigPlugin<RetenoAndroidProps> = (
+//   config,
+//   props,
+// ) => {
+//   return withDangerousMod(config, [
+//     "android",
+//     async (config) => {
+//       await copyGoogleServiceFile(
+//         config,
+//         props.googleServices,
+//         "/app/google-services.json",
+//       );
+//
+//       return config;
+//     },
+//   ]);
+// };
 
 export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
-  config = withCopyGoogleServiceFile(config, props);
+  // config = withCopyGoogleServiceFile(config, props);
   config = withProjectGradleDependencies(config);
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);

@@ -1,6 +1,4 @@
 import { androidConfig } from "./constants";
-import * as path from "path";
-import { FileService } from "./FileService";
 
 /*
  * Add dependencies to application's Gradle
@@ -41,7 +39,7 @@ export function addModuleGradleDependencies(content: string) {
     ${deps.join("\n  ")}`,
   );
 
-  updated = updated.concat("apply plugin: 'com.google.gms.google-services'");
+  // updated = updated.concat("apply plugin: 'com.google.gms.google-services'");
 
   return updated;
 }
@@ -64,7 +62,7 @@ export function addGradleProperties(props: any) {
   for (const prop in androidConfig.sdk.properties) {
     // @ts-ignore
     const value = androidConfig.sdk.properties[prop];
-    setProperty(prop, value);
+    setProperty(prop, `${value}`);
   }
 
   return props;
@@ -131,19 +129,4 @@ export function addCompileOptions(content: string) {
 
     defaultConfig`,
   );
-}
-
-export async function copyGoogleServiceFile(
-  config: any,
-  gsPath: string,
-  destination: string,
-) {
-  const rootDir = config.modRequest.projectRoot;
-
-  const from = path.join(rootDir, gsPath);
-  const to = config.modRequest.platformProjectRoot + destination;
-
-  await FileService.copy(from, to);
-
-  return true;
 }

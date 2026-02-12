@@ -1,11 +1,17 @@
 package expo.modules.retenosdk
 
 import expo.modules.kotlin.Promise
+import expo.modules.kotlin.records.Field
+import expo.modules.kotlin.records.Record
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 import java.net.URL
 import java.lang.ref.WeakReference
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 import android.os.Build
 import android.app.Application
@@ -29,6 +35,13 @@ import com.reteno.core.RetenoConfig
 import com.reteno.push.RetenoNotifications
 
 import com.google.firebase.FirebaseApp
+
+
+class InitResult : Record {
+    @Field val success: Boolean = false
+    @Field val message: String = ""
+    @Field val androidVersion: Int = Build.VERSION.SDK_INT
+}
 
 class ExpoRetenoSdkModule : Module() {
   val permission = Manifest.permission.POST_NOTIFICATIONS
@@ -64,48 +77,60 @@ class ExpoRetenoSdkModule : Module() {
     // The module will be accessible from `requireNativeModule('ExpoRetenoSdk')` in JavaScript.
     Name("ExpoRetenoSdk")
 
-    Events("onRetenoPushReceived")
+    Events("onPushNotificationReceived")
 
     // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("initialize") { key: String, withDebugMode: Boolean ->
-      val ctx = appContext.reactContext ?: return@Function
-      val activity = appContext.currentActivity ?: return@Function
+    AsyncFunction("initialize") { key: String, withDebugMode: Boolean, promise: Promise ->
+      val ctx = appContext.reactContext ?: return@AsyncFunction
+      val activity = appContext.currentActivity ?: return@AsyncFunction
 
       if (activity == null || ctx == null) {
-        return@Function
+        promise.reject("ERR_NO_CONTEXT", "Activity or Context is null", null)
+        return@AsyncFunction
       }
 
-      activity.runOnUiThread {
-        try {
+      // NOTE: initialize Firebase
+      // FirebaseApp.initializeApp(ctx)
+      try {
+        // print("Checking app...")
+        // if (FirebaseApp.getApps(ctx).isEmpty()) {
+        //   print("App was empty...")
+          FirebaseApp.initializeApp(ctx)
+        // }
+      } catch (t: Throwable) {
+        promise.reject("ERR_FIREBASE_INIT", t.message, t)
+        return@AsyncFunction
+      }
 
-        // NOTE: initialize Firebase
-        FirebaseApp.initializeApp(ctx)
 
-        Reteno.initWithConfig(
-          RetenoConfig.Builder()
+      try {
+        val config = RetenoConfig.Builder()
             .accessKey(key)
             .setDebug(withDebugMode)
-            .defaultNotificationChannelConfig { 
-              it.setName("Push notifications")
-              it.setDescription("Default push notifications")
-            }
             .build()
-        )      
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-          if (ContextCompat.checkSelfPermission(ctx, permission) == PackageManager.PERMISSION_GRANTED) {
-            // Already have permission
+        Reteno.initWithConfig(config)      
+      } catch(t: Throwable) {
+        promise.reject("ERR_SDK_INIT", t.message, t)
+        return@AsyncFunction
+      }
+
+      CoroutineScope(Dispatchers.Main).launch {
+        try {
+          val isGranted = RetenoNotifications.requestNotificationPermission()
+
+          if(isGranted) {
             updatePushPermissionStatus()
-          } else {
+          } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Request permission natively
             activity.requestPermissions(arrayOf(permission), PERMISSION_REQUEST_CODE)
           }
-        } else {
-          // Below API 33, notifications are granted by default
-          updatePushPermissionStatus()
-        }
+
+          promise.resolve(InitResult().apply {
+
+          })
         } catch (t: Throwable) {
-          t.printStackTrace()
+          promise.reject("ERR_SDK_INIT", t.message, t)
         }
       }
     }
@@ -167,13 +192,13 @@ class ExpoRetenoSdkModule : Module() {
     }
   }
 
-  private fun setUserAttributes(userId: String) {
-    try {
-      Reteno.instance.setUserAttributes(userId)
-    } catch (t: Throwable) {
-      t.printStackTrace()
-    }
-  }
+  // private fun setUserAttributes(userId: String) {
+  //   try {
+  //     Reteno.instance.setUserAttributes(userId)
+  //   } catch (t: Throwable) {
+  //     t.printStackTrace()
+  //   }
+  // }
 
   private fun handleIncomingNotification(payload: Map<String, Any?>) {
     // Send the event to JS

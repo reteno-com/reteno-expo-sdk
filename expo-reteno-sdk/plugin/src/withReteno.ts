@@ -1,11 +1,7 @@
 import { ConfigPlugin } from "expo/config-plugins";
-import { withRetenoIOS, RetenoIOS } from "./withRetenoIOS";
-import { RetenoAndroidProps, withRetenoAndroid } from "./withRetenoAndroid";
-
-type RetenoProps = {
-  ios: RetenoIOS;
-  android: RetenoAndroidProps;
-};
+import { withRetenoIOS } from "./withRetenoIOS";
+import { withRetenoAndroid } from "./withRetenoAndroid";
+import { RetenoProps } from "./types";
 
 const withReteno: ConfigPlugin<RetenoProps> = (config, props) => {
   if (!props) {
