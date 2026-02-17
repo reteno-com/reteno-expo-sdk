@@ -32,11 +32,13 @@ export function addModuleGradleDependencies(content: string) {
 
   const { anchor, deps } = androidConfig.sdk.module;
 
+  if (!deps.length) return content;
+
   let updated = content.replace(
     anchor,
     `${anchor}
-    \n\t// Reteno SDK dependencies
-    ${deps.join("\n  ")}`,
+\n\t// Reteno SDK dependencies
+\t${deps.join("\n  ")}`,
   );
 
   // updated = updated.concat("apply plugin: 'com.google.gms.google-services'");
@@ -129,4 +131,58 @@ export function addCompileOptions(content: string) {
 
     defaultConfig`,
   );
+}
+
+function addImports(
+  source: string,
+  imports: string[],
+  isJava: boolean,
+): string {
+  const lines = source.split("\n");
+  const lineIndexWithPackageDeclaration = lines.findIndex((line) =>
+    line.match(/^package .*;?$/),
+  );
+  for (const javaImport of imports) {
+    if (!source.includes(javaImport)) {
+      const importStatement = `import ${javaImport}${isJava ? ";" : ""}`;
+      lines.splice(lineIndexWithPackageDeclaration + 1, 0, importStatement);
+    }
+  }
+  return lines.join("\n");
+}
+
+export function addSdkAndFirebaseImports(
+  content: string,
+  language: "java" | "kt",
+) {
+  content = addImports(
+    content,
+    ["com.reteno.core.Reteno", "com.reteno.core.RetenoConfig"],
+    language === "java",
+  );
+
+  return content;
+}
+
+export function initializeSdk(
+  content: string,
+  config: { sdkAccessToken: string; debug?: boolean },
+) {
+  content = content.replace(
+    "super.onCreate()",
+    `super.onCreate()
+\t\ttry {
+\t\t\tval config = RetenoConfig.Builder()
+\t\t\t\t.accessKey("${config.sdkAccessToken}")
+\t\t\t\t.setDebug(${config.debug ?? false})
+\t\t\t\t.build()
+  
+\t\t\tReteno.initWithConfig(config)      
+\t\t} catch(t: Throwable) {
+\t\t\tprint("Failed to try initialize Reteno SDK") 
+\t\t}
+`,
+  );
+
+  return content;
 }

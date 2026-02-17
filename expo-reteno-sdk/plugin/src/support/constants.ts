@@ -11,13 +11,35 @@ export const iosConfig = {
   },
   targetedDeviceFamily: `"1,2"`,
   deploymentTarget: "15.1",
+  snippets: {
+    messaging: {
+      firebase: {
+        extension: [
+          "extension AppDelegate: MessagingDelegate {",
+          "\tpublic func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {",
+          '\t\tprint("[DEBUG] Successfully registered for Push Notifications")',
+          "\t\tguard let fcmToken = fcmToken else { return }",
+          "\t\tReteno.userNotificationService.processRemoteNotificationsToken(fcmToken)",
+          "\t}",
+          "}",
+        ],
+        application: [
+          "\tpublic override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {",
+          '\t\tlet tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()',
+          "\t\tMessaging.messaging().setAPNSToken(deviceToken, type: .unknown)",
+          "\t}",
+        ],
+      },
+      apns: [
+        "\tpublic override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {",
+        '\t\tprint("[APNS] Successfully registered for Push Notifications")',
+        '\t\tlet tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()',
+        "\t\tReteno.userNotificationService.processRemoteNotificationsToken(tokenString)",
+        "\t}",
+      ],
+    },
+  },
 };
-
-export const IOS_NSE_PODFILE_SNIPPET = `
-target '${iosConfig.nse.target}' do
-\tuse_frameworks!
-\tpod 'Reteno', '2.9.0'
-end`;
 
 export const androidConfig = {
   sdk: {
@@ -28,10 +50,14 @@ export const androidConfig = {
     module: {
       anchor: 'implementation("com.facebook.react:react-android")',
       deps: [
-        // "implementation 'com.google.firebase:firebase-core:9.6.1'",
+        "implementation 'com.reteno:core:2.8.9'",
+        "implementation 'com.reteno:push:2.8.9'",
         "implementation 'com.reteno:fcm:2.8.9'",
         "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
         "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
+        // "implementation 'com.google.firebase:firebase-core:9.6.1'",
+        // "implementation 'com.reteno:fcm:2.8.9'",
+        // "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
       ],
     },
     properties: {

@@ -31,11 +31,12 @@ import androidx.core.content.ContextCompat
 
 import com.reteno.core.Reteno
 import com.reteno.core.RetenoApplication
-import com.reteno.core.RetenoConfig
+// import com.reteno.core.util.Procedure
+// import com.reteno.core.util.Bundle
+// import com.reteno.core.RetenoConfig
 import com.reteno.push.RetenoNotifications
 
 import com.google.firebase.FirebaseApp
-
 
 class InitResult : Record {
     @Field val success: Boolean = false
@@ -46,6 +47,8 @@ class InitResult : Record {
 class ExpoRetenoSdkModule : Module() {
   val permission = Manifest.permission.POST_NOTIFICATIONS
   val PERMISSION_REQUEST_CODE = 1001
+
+  // private var notificationListener: Procedure<Bundle>? = null
 
   init {
     currentInstance = WeakReference(this)
@@ -80,38 +83,12 @@ class ExpoRetenoSdkModule : Module() {
     Events("onPushNotificationReceived")
 
     // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    AsyncFunction("initialize") { key: String, withDebugMode: Boolean, promise: Promise ->
+    AsyncFunction("registerForRemoteNotifications") { promise: Promise ->
       val ctx = appContext.reactContext ?: return@AsyncFunction
       val activity = appContext.currentActivity ?: return@AsyncFunction
 
       if (activity == null || ctx == null) {
         promise.reject("ERR_NO_CONTEXT", "Activity or Context is null", null)
-        return@AsyncFunction
-      }
-
-      // NOTE: initialize Firebase
-      // FirebaseApp.initializeApp(ctx)
-      try {
-        // print("Checking app...")
-        // if (FirebaseApp.getApps(ctx).isEmpty()) {
-        //   print("App was empty...")
-          FirebaseApp.initializeApp(ctx)
-        // }
-      } catch (t: Throwable) {
-        promise.reject("ERR_FIREBASE_INIT", t.message, t)
-        return@AsyncFunction
-      }
-
-
-      try {
-        val config = RetenoConfig.Builder()
-            .accessKey(key)
-            .setDebug(withDebugMode)
-            .build()
-
-        Reteno.initWithConfig(config)      
-      } catch(t: Throwable) {
-        promise.reject("ERR_SDK_INIT", t.message, t)
         return@AsyncFunction
       }
 
@@ -127,7 +104,7 @@ class ExpoRetenoSdkModule : Module() {
           }
 
           promise.resolve(InitResult().apply {
-
+            // ...
           })
         } catch (t: Throwable) {
           promise.reject("ERR_SDK_INIT", t.message, t)
@@ -135,7 +112,7 @@ class ExpoRetenoSdkModule : Module() {
       }
     }
 
-    Function("setUserAttributes") { userId: String->
+    Function("setUserAttributes") { userId: String ->
       Reteno.instance.setUserAttributes(userId)
 
       // NOTE: From Reteno React Native SDK:
@@ -148,7 +125,7 @@ class ExpoRetenoSdkModule : Module() {
       //   return;
       // }
       // try {
-      //   ((RetenoApplication) this.context.getCurrentActivity().getApplication())
+      //   ((RetenoApplication) this.ctx.getCurrentActivity().getApplication())
       //     .getRetenoInstance()
       //     .setUserAttributes(externalUserId, user);
       // } catch (Exception e) {
@@ -162,6 +139,28 @@ class ExpoRetenoSdkModule : Module() {
       // -----------------------------------
     }
 
+    // Function("addPushListener") {
+    //     if (notificationListener == null) {
+    //         notificationListener = Procedure<Bundle> { bundle : Bundle ->
+    //             val data = mutableMapOf<String, Any?>()
+    //             bundle.keySet().forEach { key ->
+    //                 data[key] = bundle.get(key)
+    //             }
+    //             handleIncomingNotification(data)
+    //         }
+    //         Reteno.instance.received.addListener(notificationListener)
+    //         print("Native notification listener added")
+    //     }
+    // }
+    //
+    // Function("removePushListener") {
+    //     notificationListener?.let {
+    //         Reteno.instance.received.removeListener(it)
+    //         notificationListener = null
+    //
+    //         print("Native notification listener removed")
+    //     }
+    // }
 
     // Listen for the result natively
     OnActivityResult { _, payload ->
@@ -171,6 +170,21 @@ class ExpoRetenoSdkModule : Module() {
             updatePushPermissionStatus()
           }
         }
+      }
+    }
+
+    OnCreate {
+      val ctx = appContext.reactContext
+      if (ctx != null) {
+          try {
+              if (FirebaseApp.getApps(ctx).isEmpty()) {
+                  FirebaseApp.initializeApp(ctx)
+                  print("Initialized Firebase")
+              }
+          } catch (t: Throwable) {
+            print("Cannot initialize Firebase")
+
+          }
       }
     }
   }
@@ -188,7 +202,7 @@ class ExpoRetenoSdkModule : Module() {
     try {
       Reteno.instance.updatePushPermissionStatus()
     } catch (t: Throwable) {
-      t.printStackTrace()
+      print("Cannot update push notification permissions")
     }
   }
 

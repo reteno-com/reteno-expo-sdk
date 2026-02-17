@@ -38,12 +38,13 @@
         "../expo-reteno-sdk/app.plugin.js",
         {
           "android": {
-            "googleServices": "./google-services.json"
+            "sdkAccessToken": "042793e9-2322-42b3-86e4-6280fd509a21",
+            "debug": true
           },
           "ios": {
-            "sdkAccessToken": "8982c7f7-24d7-4afb-ac1c-e2377555e359",
+            "sdkAccessToken": "b38ee75f-05e3-48db-b1eb-8eb5550e38c5",
             "debug": true,
-            "notificationService": "firebase",
+            "notificationService": "apns",
             "devTeam": "XTTV5LZZ73",
             "mode": "development",
             "appGroups": [

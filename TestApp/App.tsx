@@ -10,13 +10,12 @@ import {
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
-import messaging from "@react-native-firebase/messaging";
+// import messaging from "@react-native-firebase/messaging";
 
-const TOKEN = Platform.select({
-  ios: "",
-  android: "8982c7f7-24d7-4afb-ac1c-e2377555e359",
+const USER_TOKEN = Platform.select({
+  ios: "e3c23974-49ef-4a2c-88a4-2f4500237840",
+  android: "b2539427-a57c-4e6c-af6e-5035b651667c",
 });
-const USER_TOKEN = "e3c23974-49ef-4a2c-88a4-2f4500237840";
 
 type ButtonProps = {
   text: string;
@@ -56,21 +55,27 @@ export default function App() {
   };
 
   const handleSetAttribute = () => {
-    Reteno.setUserAttributes(USER_TOKEN);
+    Reteno.setUserAttributes(USER_TOKEN, {
+      phone: "+380994009999",
+      languageCode: "ua",
+      firstName: "John",
+      lastName: "Doe",
+    });
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {
-        const token = await messaging().getToken();
+        // const token = await messaging().getToken();
 
         // Reteno.setDeviceToken(token);
 
         setState((prev) => ({
           ...prev,
-          deviceToken: token,
+          // deviceToken: token,
           userToken: USER_TOKEN,
         }));
 
-        console.log(">>>", token);
+        // console.log(">>>", token);
+        //
       }
 
       getTokenOnIos();
@@ -100,7 +105,7 @@ export default function App() {
         ) : (
           <View style={{ gap: 8 }}>
             {Object.keys(state).map((s: string, key: number) => (
-              <View key={`State_${key}`}>
+              <View key={`State-${key}`}>
                 <Text style={{ fontWeight: "900" }}>{s}:</Text>
                 <Text>{state[s]}</Text>
               </View>

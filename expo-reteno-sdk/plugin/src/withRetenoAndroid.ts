@@ -2,6 +2,7 @@ import {
   ConfigPlugin,
   withAppBuildGradle,
   withGradleProperties,
+  withMainApplication,
   withProjectBuildGradle,
 } from "expo/config-plugins";
 import {
@@ -9,6 +10,8 @@ import {
   addModuleGradleDependencies,
   addGradleProperties,
   addProjectGradleDependencies,
+  addSdkAndFirebaseImports,
+  initializeSdk,
 } from "./support/android.functions";
 import { RetenoAndroidProps } from "./types";
 
@@ -62,23 +65,23 @@ const withAppCompileOptions: ConfigPlugin = (config) => {
   });
 };
 
-// const withCopyGoogleServiceFile: ConfigPlugin<RetenoAndroidProps> = (
-//   config,
-//   props,
-// ) => {
-//   return withDangerousMod(config, [
-//     "android",
-//     async (config) => {
-//       await copyGoogleServiceFile(
-//         config,
-//         props.googleServices,
-//         "/app/google-services.json",
-//       );
-//
-//       return config;
-//     },
-//   ]);
-// };
+const withAppMainActivity: ConfigPlugin<RetenoAndroidProps> = (
+  config,
+  props,
+) => {
+  return withMainApplication(config, (config) => {
+    config.modResults.contents = addSdkAndFirebaseImports(
+      config.modResults.contents,
+      config.modResults.language,
+    );
+    config.modResults.contents = initializeSdk(
+      config.modResults.contents,
+      props,
+    );
+
+    return config;
+  });
+};
 
 export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
@@ -89,6 +92,7 @@ export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
   config = withAppCompileOptions(config);
+  config = withAppMainActivity(config, props);
 
   return config;
 };

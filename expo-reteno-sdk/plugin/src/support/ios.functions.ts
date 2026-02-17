@@ -135,7 +135,7 @@ export function mergeContents({
       contents: addLines(sanitizedTarget ?? src, anchor, offset, [
         header,
         ...newSrc.split("\n"),
-        `${comment} @generated end ${tag}`,
+        `\t${comment} @generated end ${tag}`,
       ]),
       didMerge: true,
       didClear: !!sanitizedTarget,
@@ -177,13 +177,6 @@ export function addFirebaseAppDelegateImport(src: string): MergeResults {
   });
 }
 
-// export function removeFirebaseAppDelegateImport(src: string): MergeResults {
-//   return removeContents({
-//     tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
-//     src,
-//   });
-// }
-
 /**
  * @see https://github.com/expo/expo/blob/60aeb1eac8693841c7932e037afce6c96a5e8841/packages/%40expo/config-plugins/src/ios/Maps.ts#L70
  */
@@ -205,33 +198,40 @@ export function addFirebaseAppDelegateInit(src: string): MergeResults {
   });
 }
 
-// export function removeFirebaseAppDelegateInit(src: string): MergeResults {
-//   return removeContents({
-//     tag: RetenoIOSAutogenComments.FIREBASE_INIT,
-//     src,
-//   });
-// }
+export function addMessagingDelegate(
+  src: string,
+  service: "firebase" | "apns",
+): MergeResults {
+  if (service === "firebase") {
+    // Settings extension
+    const { contents } = mergeContents({
+      tag: RetenoIOSAutogenComments.FIREBASE_MESSAGING_DELEGATE,
+      src,
+      newSrc: iosConfig.snippets.messaging.firebase.extension.join("\n"),
+      anchor: /(@main|@UIApplicationMain)/,
+      offset: 0,
+      comment: "//",
+    });
 
-export function addMessagingDelegate(src: string): MergeResults {
-  const newSrc = [
-    `extension AppDelegate: MessagingDelegate {
-    
-  public func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-    guard let fcmToken = fcmToken else { return }
-        
-    Reteno.userNotificationService.processRemoteNotificationsToken(fcmToken)
+    // Settings APNs override
+    return mergeContents({
+      tag: RetenoIOSAutogenComments.RETENO_APNS,
+      src: contents,
+      newSrc: iosConfig.snippets.messaging.firebase.application.join("\n"),
+      anchor: /public override func application/,
+      offset: 0,
+      comment: "//",
+    });
+  } else {
+    return mergeContents({
+      tag: RetenoIOSAutogenComments.RETENO_APNS,
+      src,
+      newSrc: iosConfig.snippets.messaging.apns.join("\n"),
+      anchor: /public override func application/,
+      offset: 0,
+      comment: "//",
+    });
   }
-}`,
-  ];
-
-  return mergeContents({
-    tag: RetenoIOSAutogenComments.MESSAGING_DELEGATE,
-    src,
-    newSrc: newSrc.join("\n"),
-    anchor: /(@main|@UIApplicationMain)/,
-    offset: 0,
-    comment: "//",
-  });
 }
 
 export function addRetenoImport(src: string): MergeResults {

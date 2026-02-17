@@ -122,43 +122,62 @@ const withAppGroups = (config: any, groups: string[]) => {
 
 // Import Firebase at the top of AppDelegate.swift
 // TODO: Optimize it
-const withFirebaseConfiguration: ConfigPlugin = (config) => {
+const withAppDelegateConfiguration: ConfigPlugin<RetenoIOSProps> = (
+  config,
+  props,
+) => {
   return withAppDelegate(config, (config) => {
-    // NOTE: delete Firebase imports first
+    // Remove last used APNs service
     config.modResults.contents = removeContents({
       src: config.modResults.contents,
-      tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
+      tag: RetenoIOSAutogenComments.RETENO_APNS,
     }).contents;
 
-    config.modResults.contents = removeContents({
-      src: config.modResults.contents,
-      tag: RetenoIOSAutogenComments.FIREBASE_INIT,
-    }).contents;
+    if (props.notificationService === "firebase") {
+      // Firebase flow
+      // NOTE: delete Firebase imports first
+      config.modResults.contents = removeContents({
+        src: config.modResults.contents,
+        tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
+      }).contents;
 
-    config.modResults.contents = removeContents({
-      src: config.modResults.contents,
-      tag: RetenoIOSAutogenComments.MESSAGING_DELEGATE,
-    }).contents;
+      config.modResults.contents = removeContents({
+        src: config.modResults.contents,
+        tag: RetenoIOSAutogenComments.FIREBASE_INIT,
+      }).contents;
 
-    // NOTE: then re-install them
-    config.modResults.contents = addFirebaseAppDelegateImport(
-      config.modResults.contents,
-    ).contents;
-    addFirebaseAppDelegateInit;
+      config.modResults.contents = removeContents({
+        src: config.modResults.contents,
+        tag: RetenoIOSAutogenComments.FIREBASE_MESSAGING_DELEGATE,
+      }).contents;
 
-    config.modResults.contents = addFirebaseAppDelegateInit(
-      config.modResults.contents,
-    ).contents;
+      // NOTE: then re-install them
+      config.modResults.contents = addFirebaseAppDelegateImport(
+        config.modResults.contents,
+      ).contents;
+      addFirebaseAppDelegateInit;
 
-    config.modResults.contents = addMessagingDelegate(
-      config.modResults.contents,
-    ).contents;
+      config.modResults.contents = addFirebaseAppDelegateInit(
+        config.modResults.contents,
+      ).contents;
+
+      config.modResults.contents = addMessagingDelegate(
+        config.modResults.contents,
+        "firebase",
+      ).contents;
+    } else {
+      // APNS flow
+      config.modResults.contents = addMessagingDelegate(
+        config.modResults.contents,
+        "apns",
+      ).contents;
+    }
 
     return config;
   });
 };
 
-const withFirebasePodfileUpdate = (config: any) => {
+const withFirebasePodfileUpdate: ConfigPlugin = (config) => {
   return withDangerousMod(config, [
     "ios",
     async (config) => {
@@ -224,8 +243,9 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
 
   if (props.notificationService === "firebase") {
     config = withFirebasePodfileUpdate(config);
-    config = withFirebaseConfiguration(config);
   }
+
+  config = withAppDelegateConfiguration(config, props);
 
   return config;
 };

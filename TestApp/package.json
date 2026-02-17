@@ -13,8 +13,6 @@
     "restart:android": "npx expo prebuild -p android --clean && npx expo run:android"
   },
   "dependencies": {
-    "@react-native-firebase/app": "^23.8.6",
-    "@react-native-firebase/messaging": "^23.8.6",
     "expo": "~54.0.33",
     "expo-reteno-sdk": "link:../expo-reteno-sdk",
     "expo-status-bar": "~3.0.9",

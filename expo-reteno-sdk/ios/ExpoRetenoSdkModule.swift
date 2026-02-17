@@ -1,5 +1,77 @@
 import ExpoModulesCore
 import Reteno
+import Foundation
+
+
+struct RetenoUserAttributesField: Record {
+    // init(dictionary: [String: Any]) throws {
+    //     self = try JSONDecoder().decode(
+    //         RetenoUserAttributesField.self,
+    //         from: JSONSerialization.data(withJSONObject: dictionary)
+    //     )
+    // }
+
+    @Field var key: String = ""
+    @Field var value: String = ""
+}
+
+struct RetenoUserAttributesAddress: Record {
+    // init(dictionary: [String: Any]) throws {
+    //     self = try JSONDecoder().decode(
+    //         RetenoUserAttributesAddress.self,
+    //         from: JSONSerialization.data(withJSONObject: dictionary)
+    //     )
+    // }
+
+    @Field var region: String? = ""
+    @Field var town: String? = ""
+    @Field var address: String? = ""
+    @Field var postcode: String? = ""
+}
+
+struct RetenoUserAttributes: Record {
+    // init(dictionary: [String: Any]) throws {
+    //     self = try JSONDecoder().decode(
+    //         UsreAttributes.self,
+    //         from: JSONSerialization.data(withJSONObject: dictionary)
+    //     )
+    // }
+
+    @Field var phone: String? = ""
+    @Field var email: String? = ""
+    @Field var firstName: String? = ""
+    @Field var lastName: String? = ""
+    @Field var languageCode: String? = ""
+    @Field var timeZone: String? = ""
+    @Field var address: RetenoUserAttributesAddress?
+    @Field var fields: [RetenoUserAttributesField]?
+}
+
+struct RetenoUser: Record {
+    // init(dictionary: [String: Any]?) throws {
+    //     self = try JSONDecoder().decode(RetenoUserStruct.self, from: JSONSerialization.data(withJSONObject: dictionary ?? [:]))
+    // }
+
+    @Field var userAttributes: RetenoUserAttributes?
+    @Field var subscriptionKeys: [String]?
+    @Field var groupNamesInclude: [String]?
+    @Field var groupNamesExclude: [String]?
+}
+
+// !!! Potential error
+// public struct RetenoSetUserAttributes: Record {
+//     init(userAttributes: RetenoUserAttributes?, subscriptionKeys: [String], groupNamesInclude: [String], groupNamesExclude: [String]) {
+//         self.userAttributes = userAttributes;
+//         self.subscriptionKeys = subscriptionKeys;
+//         self.groupNamesInclude = groupNamesInclude;
+//         self.groupNamesExclude = groupNamesExclude;
+//     }
+//
+//     @Field var userAttributes: RetenoUserAttributes?
+//     @Field var subscriptionKeys: [String]
+//     @Field var groupNamesInclude: [String]
+//     @Field var groupNamesExclude: [String]
+// }
 
 let RetenoEvents = [
     "PushReceived":            "reteno-push-received",
@@ -39,12 +111,13 @@ public class ExpoRetenoSdkModule: Module {
   public func definition() -> ModuleDefinition {
     // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
     // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoRetenoSdk')` in JavaScript.
+    // The module will be accessible from `requireNativeModule('ExpoSdk')` in JavaScript.
     Name("ExpoRetenoSdk")
 
     Events("onPushNotificationReceived")
 
     OnCreate {
+      print("OnCreate")
       NotificationCenter.default.addObserver(
         self,
         selector: #selector(self.handleIncomingNotification),
@@ -54,6 +127,7 @@ public class ExpoRetenoSdkModule: Module {
     }
 
     OnDestroy {
+      print("OnDestroy")
       NotificationCenter.default.removeObserver(
         self,
         name: .pushReceived,
@@ -67,8 +141,34 @@ public class ExpoRetenoSdkModule: Module {
         )
     }
 
-    Function("setUserAttributes") { (userId: String) -> Void in
-        Reteno.updateUserAttributes(externalUserId: userId)
+    Function("setUserAttributes") { (
+        userId: String,
+        attributes: RetenoUserAttributes?
+    ) -> Void in
+        let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
+            UserCustomField(key: field.key ?? "", value: field.value )
+        }
+
+				let userAttributes = UserAttributes(
+                phone: getStringOrNil(input: attributes?.phone),
+                email: getStringOrNil(input: attributes?.email),
+                firstName: getStringOrNil(input: attributes?.firstName),
+                lastName: getStringOrNil(input: attributes?.lastName),
+                languageCode: getStringOrNil(input: attributes?.languageCode),
+                timeZone: getStringOrNil(input: attributes?.timeZone),
+                address: attributes?.address != nil ? Address(
+                    region: getStringOrNil(input: attributes?.address?.region),
+                    town: getStringOrNil(input: attributes?.address?.town),
+                    address: getStringOrNil(input: attributes?.address?.address),
+                    postcode: getStringOrNil(input: attributes?.address?.postcode)
+                ) : nil,
+                fields: fields 
+            )
+			
+        Reteno.updateUserAttributes(
+            externalUserId: userId,
+            userAttributes: userAttributes
+        )
     }
 
     AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
@@ -81,8 +181,16 @@ public class ExpoRetenoSdkModule: Module {
   @objc
   func handleIncomingNotification(_ notification: Notification) {
     // sendEvent("onNotificationReceived", [
+    print("Notification: \(notification.userInfo)")
     sendEvent("onPushNotificationReceived", [
       "payload": notification.userInfo
     ])
   }
+
+  @objc
+	func getStringOrNil(input userInput: String?) -> String {
+		//		print("UserInput: \(String(describing: userInput)) \(String(userInput ?? "")) \(userInput!) \(userInput ?? "")")
+		let value = (userInput ?? "").isEmpty ? "" : String(userInput ?? "")
+		return String(value)
+	}
 }

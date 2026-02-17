@@ -13,7 +13,10 @@ export type RetenoIOSProps = {
   mode: "development" | "production";
 };
 
-export type RetenoAndroidProps = {};
+export type RetenoAndroidProps = {
+  sdkAccessToken: string;
+  debug: boolean;
+};
 
 export type RetenoProps = {
   ios: RetenoIOSProps;
@@ -23,7 +26,8 @@ export type RetenoProps = {
 export const RetenoIOSAutogenComments = {
   RETENO_IMPORT: "expo-reteno-sdk - import",
   RETENO_INIT: "expo-reteno-sdk - init",
-  MESSAGING_DELEGATE: "@react-native-firebase/app - MessagingDelegate",
+  FIREBASE_MESSAGING_DELEGATE: "@react-native-firebase/app - MessagingDelegate",
   FIREBASE_INIT: "@react-native-firebase/app - init",
   FIREBASE_IMPORT: "@react-native-firebase/app - import",
+  RETENO_APNS: "expo-reteno-sdk - APNs",
 } as const;
