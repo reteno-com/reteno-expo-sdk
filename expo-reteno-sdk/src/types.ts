@@ -18,7 +18,7 @@ type UserAddress = {
   postcode?: string;
 };
 
-export type RetenoUserAttributes = {
+export type UserAttributes = {
   phone?: string;
   email?: string;
   firstName?: string;
@@ -26,5 +26,12 @@ export type RetenoUserAttributes = {
   languageCode?: string;
   timeZone?: string;
   address?: UserAddress;
+  fields?: UserCustomField[];
+};
+
+export type AnonymousUserAttributes = {
+  firstName?: string;
+  lastName?: string;
+  timeZone?: string;
   fields?: UserCustomField[];
 };

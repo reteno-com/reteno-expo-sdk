@@ -4,15 +4,17 @@ import {
   requireNativeModule,
 } from "expo-modules-core";
 import {
+  AnonymousUserAttributes,
   RetenoSubscription,
   RetenoSubscriptionEvents,
-  RetenoUserAttributes,
+  UserAttributes,
 } from "./types";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
   registerForRemoteNotifications(): string;
-  setUserAttributes(userId: string, attributes?: RetenoUserAttributes): void;
   setDeviceToken(messagingToken: string): void;
+  updateUserAttributes(userId: string, attributes?: UserAttributes): void;
+  updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
 }
 
 const ModuleInstance =
@@ -23,18 +25,15 @@ export const Reteno = {
   registerForRemoteNotifications() {
     return ModuleInstance.registerForRemoteNotifications();
   },
-  setUserAttributes(userId: string, attributes = {} as RetenoUserAttributes) {
-    return ModuleInstance.setUserAttributes(userId, attributes);
-  },
   setDeviceToken(token: string) {
     return ModuleInstance.setDeviceToken(token);
   },
-  // addPushListener: () => {
-  //   return ModuleInstance.addPushListener();
-  // },
-  // removePushListener: () => {
-  //   return ModuleInstance.removePushListener();
-  // },
+  updateUserAttributes(userId: string, attributes = {} as UserAttributes) {
+    return ModuleInstance.updateUserAttributes(userId, attributes);
+  },
+  updateAnonymousUserAttributes(attributes: AnonymousUserAttributes) {
+    return ModuleInstance.updateAnonymousUserAttributes(attributes);
+  },
   addPushNotificationListener(
     listener: (event: any) => void,
   ): RetenoSubscription {

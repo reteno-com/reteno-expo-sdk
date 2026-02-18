@@ -13,8 +13,8 @@ import { FC, useCallback, useEffect, useState } from "react";
 // import messaging from "@react-native-firebase/messaging";
 
 const USER_TOKEN = Platform.select({
-  ios: "e3c23974-49ef-4a2c-88a4-2f4500237840",
-  android: "b2539427-a57c-4e6c-af6e-5035b651667c",
+  ios: "IOS_TOKEN",
+  android: "ANDROID_TOKEN",
 });
 
 type ButtonProps = {
@@ -55,17 +55,23 @@ export default function App() {
   };
 
   const handleSetAttribute = () => {
-    Reteno.setUserAttributes(USER_TOKEN, {
-      phone: "+380994009999",
+    Reteno.updateUserAttributes(USER_TOKEN ?? "", {
+      phone: "YOUR_PHONE",
       languageCode: "ua",
       firstName: "John",
       lastName: "Doe",
     });
 
+    // NOTE: If you want to update anonymous:
+    // Reteno.updateAnonymousUserAttributes({
+    //   firstName: "John",
+    //   lastName: "Doe",
+    // });
+
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {
         // const token = await messaging().getToken();
-
+        //
         // Reteno.setDeviceToken(token);
 
         setState((prev) => ({

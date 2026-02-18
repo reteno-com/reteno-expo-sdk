@@ -56,3 +56,9 @@ yarn-error.log
 # Expo
 .expo/*
 example/
+
+# Remove after production
+TestApp/GoogleService-Info.plist
+TestApp/google-services.json
+TestApp/node_modules
+TestApp/app.json

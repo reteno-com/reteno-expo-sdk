@@ -30,13 +30,6 @@ struct RetenoUserAttributesAddress: Record {
 }
 
 struct RetenoUserAttributes: Record {
-    // init(dictionary: [String: Any]) throws {
-    //     self = try JSONDecoder().decode(
-    //         UsreAttributes.self,
-    //         from: JSONSerialization.data(withJSONObject: dictionary)
-    //     )
-    // }
-
     @Field var phone: String? = ""
     @Field var email: String? = ""
     @Field var firstName: String? = ""
@@ -47,31 +40,19 @@ struct RetenoUserAttributes: Record {
     @Field var fields: [RetenoUserAttributesField]?
 }
 
-struct RetenoUser: Record {
-    // init(dictionary: [String: Any]?) throws {
-    //     self = try JSONDecoder().decode(RetenoUserStruct.self, from: JSONSerialization.data(withJSONObject: dictionary ?? [:]))
-    // }
+struct RetenoAnonymousUserAttributes: Record {
+    @Field var firstName: String? = ""
+    @Field var lastName: String? = ""
+    @Field var timeZone: String? = ""
+    @Field var fields: [RetenoUserAttributesField]?
+}
 
+struct RetenoUser: Record {
     @Field var userAttributes: RetenoUserAttributes?
     @Field var subscriptionKeys: [String]?
     @Field var groupNamesInclude: [String]?
     @Field var groupNamesExclude: [String]?
 }
-
-// !!! Potential error
-// public struct RetenoSetUserAttributes: Record {
-//     init(userAttributes: RetenoUserAttributes?, subscriptionKeys: [String], groupNamesInclude: [String], groupNamesExclude: [String]) {
-//         self.userAttributes = userAttributes;
-//         self.subscriptionKeys = subscriptionKeys;
-//         self.groupNamesInclude = groupNamesInclude;
-//         self.groupNamesExclude = groupNamesExclude;
-//     }
-//
-//     @Field var userAttributes: RetenoUserAttributes?
-//     @Field var subscriptionKeys: [String]
-//     @Field var groupNamesInclude: [String]
-//     @Field var groupNamesExclude: [String]
-// }
 
 let RetenoEvents = [
     "PushReceived":            "reteno-push-received",
@@ -141,32 +122,55 @@ public class ExpoRetenoSdkModule: Module {
         )
     }
 
-    Function("setUserAttributes") { (
+    Function("updateUserAttributes") { (
         userId: String,
         attributes: RetenoUserAttributes?
     ) -> Void in
         let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
-            UserCustomField(key: field.key ?? "", value: field.value )
+            UserCustomField(key: field.key, value: field.value )
         }
+			
+				print("Fields \(fields)")
 
 				let userAttributes = UserAttributes(
-                phone: getStringOrNil(input: attributes?.phone),
-                email: getStringOrNil(input: attributes?.email),
-                firstName: getStringOrNil(input: attributes?.firstName),
-                lastName: getStringOrNil(input: attributes?.lastName),
-                languageCode: getStringOrNil(input: attributes?.languageCode),
-                timeZone: getStringOrNil(input: attributes?.timeZone),
-                address: attributes?.address != nil ? Address(
-                    region: getStringOrNil(input: attributes?.address?.region),
-                    town: getStringOrNil(input: attributes?.address?.town),
-                    address: getStringOrNil(input: attributes?.address?.address),
-                    postcode: getStringOrNil(input: attributes?.address?.postcode)
-                ) : nil,
-                fields: fields 
-            )
+            phone: getStringOrNil(input: attributes?.phone),
+            email: getStringOrNil(input: attributes?.email),
+            firstName: getStringOrNil(input: attributes?.firstName),
+            lastName: getStringOrNil(input: attributes?.lastName),
+            languageCode: getStringOrNil(input: attributes?.languageCode),
+            timeZone: getStringOrNil(input: attributes?.timeZone),
+            address: attributes?.address != nil ? Address(
+                region: getStringOrNil(input: attributes?.address?.region),
+                town: getStringOrNil(input: attributes?.address?.town),
+                address: getStringOrNil(input: attributes?.address?.address),
+                postcode: getStringOrNil(input: attributes?.address?.postcode)
+            ) : nil,
+            fields: fields ?? []
+        )
 			
         Reteno.updateUserAttributes(
             externalUserId: userId,
+            userAttributes: userAttributes
+        )
+    }
+
+    Function("updateAnonymousUserAttributes") { (
+        attributes: RetenoUserAttributes?
+    ) -> Void in
+        let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
+            UserCustomField(key: field.key, value: field.value )
+        }
+			
+				print("Fields \(fields)")
+
+				let userAttributes = AnonymousUserAttributes(
+            firstName: getStringOrNil(input: attributes?.firstName),
+            lastName: getStringOrNil(input: attributes?.lastName),
+            timeZone: getStringOrNil(input: attributes?.timeZone),
+            fields: fields ?? []
+        )
+			
+        Reteno.updateAnonymousUserAttributes(
             userAttributes: userAttributes
         )
     }
