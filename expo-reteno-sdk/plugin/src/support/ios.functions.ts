@@ -267,14 +267,14 @@ export function addRetenoInit(
 }
 
 // Function installs pods through iteration
-export async function updatePodfile(
+export async function addDependenciesToPodfile(
   path: string,
   pods: Record<"name" | "addon", string>[],
   anchor: string,
 ) {
   const podfile = await FileService.read(`${path}/Podfile`);
 
-  if (podfile.indexOf(anchor) < 0) {
+  if (!podfile.includes(anchor)) {
     throw new Error("Anchor was not found");
   }
 
@@ -282,7 +282,7 @@ export async function updatePodfile(
 
   for (const p of pods) {
     // TODO: Check if commented
-    if (podfile.indexOf(`pod '${p.name}'`) > -1) {
+    if (podfile.includes(`pod '${p.name}'`)) {
       console.log(`Pod ${p} already exists, skipping...`);
       continue;
     } else {
@@ -297,4 +297,53 @@ export async function updatePodfile(
   );
 
   await FileService.write(`${path}/Podfile`, contents);
+}
+
+// Function adds target to Podfile
+export async function addTargetToPodfile(path: string, target: string) {
+  let podfile = await FileService.read(`${path}/Podfile`);
+
+  if (podfile.includes(`target '${target}' do`)) {
+    console.log(`Target "${target}" was added before, skipping process...`);
+    return;
+  }
+
+  podfile += iosConfig.snippets.nse;
+
+  await FileService.write(`${path}/Podfile`, podfile);
+}
+
+export async function updateNSEEntitlements(
+  path: string,
+  groupIdentifier: string,
+  filtering?: boolean,
+): Promise<void> {
+  let entitlementsFile = await FileService.read(path);
+
+  entitlementsFile = entitlementsFile.replace(
+    /{{GROUP_IDENTIFIER}}/gm,
+    groupIdentifier,
+  );
+
+  if (filtering) {
+    const filteringKey = `  <key>com.apple.developer.usernotifications.filtering</key>\n  <true/>`;
+    entitlementsFile = entitlementsFile.replace(
+      "</dict>",
+      `${filteringKey}\n</dict>`,
+    );
+  }
+
+  await FileService.write(path, entitlementsFile);
+}
+
+export async function updateNSEBundleVersions(
+  path: string,
+  config: Record<"shortVersion" | "version", string>,
+): Promise<void> {
+  let file = await FileService.read(path);
+
+  file = file.replace(/{{BUNDLE_SHORT_VERSION}}/gm, config.shortVersion);
+  file = file.replace(/{{BUNDLE_VERSION}}/gm, config.version);
+
+  await FileService.write(path, file);
 }

@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "sdkVersion": "54.0.33",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -38,11 +39,11 @@
         "../expo-reteno-sdk/app.plugin.js",
         {
           "android": {
-            "sdkAccessToken": "YOUR_TOKEN",
+            "sdkAccessToken": "042793e9-2322-42b3-86e4-6280fd509a21",
             "debug": true
           },
           "ios": {
-            "sdkAccessToken": "YOUR_TOKEN",
+            "sdkAccessToken": "b38ee75f-05e3-48db-b1eb-8eb5550e38c5",
             "debug": true,
             "notificationService": "apns",
             "devTeam": "XTTV5LZZ73",

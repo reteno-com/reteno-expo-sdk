@@ -1,13 +1,15 @@
 export const iosConfig = {
   nse: {
     files: [
-      "NotificationService.swift",
+      // "NotificationService.swift",
+      "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
     ],
     source: "NotificationService.swift",
     target: "NotificationServiceExtension",
     entitlements: "NotificationServiceExtension.entitlements",
+    infoPlist: "Info.plist",
   },
   targetedDeviceFamily: `"1,2"`,
   deploymentTarget: "15.1",
@@ -38,6 +40,18 @@ export const iosConfig = {
         "\t}",
       ],
     },
+    nse: `
+target 'NotificationServiceExtension' do
+use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+  pod 'Reteno', '2.6.1'
+end
+      `,
+  },
+  defaultBundleVersions: {
+    shortVersion: "1.0.0",
+    version: "1",
   },
 };
 

@@ -10,7 +10,12 @@ export type RetenoIOSProps = {
   notificationService: "firebase" | "apns";
   devTeam: string;
   appGroups: string[];
+};
+
+export type RetenoNSEProps = {
   mode: "development" | "production";
+  nseFilepath: string;
+  deploymentTarget?: string;
 };
 
 export type RetenoAndroidProps = {
