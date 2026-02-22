@@ -14,12 +14,12 @@ import { FC, useCallback, useEffect, useState } from "react";
 
 const USER_TOKEN = Platform.select({
   ios: "b17cf99f-6bc8-449a-9da3-4aae73121cab",
-  android: "b2539427-a57c-4e6c-af6e-5035b651667c",
+  android: "2b5a1816-a8c0-40f9-a858-86a39901c920",
 });
 
 const user = {
-  phone: "+380990000002",
-  email: "emailtest2@gmail.com",
+  phone: "+380990000003",
+  email: "emailtest3@gmail.com",
   timeZone: "Europe/Kyiv",
   languageCode: "en-UA",
   firstName: "Ted",
@@ -71,13 +71,13 @@ export default function App() {
   };
 
   const handleSetAttribute = () => {
-    Reteno.updateUserAttributes(USER_TOKEN ?? "", user);
+    // Reteno.updateUserAttributes(USER_TOKEN ?? "", user);
 
     // If you want to update anonymous:
-    // Reteno.updateAnonymousUserAttributes({
-    //   firstName: "Ted`",
-    //   lastName: "Mosby",
-    // });
+    Reteno.updateAnonymousUserAttributes({
+      firstName: "Ted",
+      lastName: "Mosby",
+    });
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {

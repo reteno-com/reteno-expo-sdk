@@ -165,7 +165,7 @@ public class ExpoRetenoSdkModule: Module {
     }
 
     AsyncFunction("updateAnonymousUserAttributes") { (
-        attributes: RetenoUserAttributes?,
+        attributes: RetenoAnonymousUserAttributes?,
 				promise: Promise
     ) -> Void in
 			do {

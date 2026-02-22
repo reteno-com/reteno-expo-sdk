@@ -1,12 +1,13 @@
 package expo.modules.retenosdk
 
+import RetenoAnonymousUserAttributes
+import RetenoMultiAccountUserAttributesPayload
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
-import java.net.URL
 import java.lang.ref.WeakReference
 
 import kotlinx.coroutines.CoroutineScope
@@ -14,29 +15,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 import android.os.Build
-import android.app.Application
-import android.app.AlertDialog
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.provider.Settings
-import android.widget.Toast
-import android.net.Uri
 import android.Manifest
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-
+import RetenoUserAttributesPayload
+import com.reteno.core.domain.model.user.Address
+import com.reteno.core.domain.model.user.UserAttributes
+import com.reteno.core.domain.model.user.UserCustomField
 import com.reteno.core.Reteno
-import com.reteno.core.RetenoApplication
-// import com.reteno.core.util.Procedure
-// import com.reteno.core.util.Bundle
-// import com.reteno.core.RetenoConfig
 import com.reteno.push.RetenoNotifications
 
 import com.google.firebase.FirebaseApp
+import com.reteno.core.domain.model.user.User
+import com.reteno.core.domain.model.user.UserAttributesAnonymous
 
 class InitResult : Record {
     @Field val success: Boolean = false
@@ -44,11 +37,13 @@ class InitResult : Record {
     @Field val androidVersion: Int = Build.VERSION.SDK_INT
 }
 
+private fun getStringOrNull(input: String?): String? {
+    return if (input.isNullOrBlank()) null else input
+}
+
 class ExpoRetenoSdkModule : Module() {
   val permission = Manifest.permission.POST_NOTIFICATIONS
   val PERMISSION_REQUEST_CODE = 1001
-
-  // private var notificationListener: Procedure<Bundle>? = null
 
   init {
     currentInstance = WeakReference(this)
@@ -112,55 +107,130 @@ class ExpoRetenoSdkModule : Module() {
       }
     }
 
-    Function("setUserAttributes") { userId: String ->
-      Reteno.instance.setUserAttributes(userId)
+    AsyncFunction("updateUserAttributes") { payload: RetenoUserAttributesPayload, promise: Promise ->
+    try {
+        // Map the custom fields
+        val fields = payload.userAttributes?.fields?.map { f ->
+            UserCustomField(key = f.key, value = f.value)
+        } ?: emptyList()
 
-      // NOTE: From Reteno React Native SDK:
-      // -----------------------------------
-      // -----------------------------------
-      // String externalUserId = payload.getString("externalUserId");
-      // User user = RetenoUserAttributes.buildUserFromPayload(payload);
-      // if (externalUserId == null) {
-      //   promise.reject("Parsing error", "externalUserId cannot be null");
-      //   return;
-      // }
-      // try {
-      //   ((RetenoApplication) this.ctx.getCurrentActivity().getApplication())
-      //     .getRetenoInstance()
-      //     .setUserAttributes(externalUserId, user);
-      // } catch (Exception e) {
-      //   promise.reject("Reteno Android SDK Error", e);
-      //   return;
-      // }
-      // WritableMap res = new WritableNativeMap();
-      // res.putBoolean("success", true);
-      // promise.resolve(res);
-      // -----------------------------------
-      // -----------------------------------
+        // Map the user attributes
+        val userAttributes = UserAttributes(
+            phone = getStringOrNull(payload.userAttributes?.phone),
+            email = getStringOrNull(payload.userAttributes?.email),
+            firstName = getStringOrNull(payload.userAttributes?.firstName),
+            lastName = getStringOrNull(payload.userAttributes?.lastName),
+            languageCode = getStringOrNull(payload.userAttributes?.languageCode),
+            timeZone = getStringOrNull(payload.userAttributes?.timeZone),
+            address = payload.userAttributes?.address?.let { addr ->
+                Address(
+                    region = getStringOrNull(addr.region),
+                    town = getStringOrNull(addr.town),
+                    address = getStringOrNull(addr.address),
+                    postcode = getStringOrNull(addr.postcode)
+                )
+            },
+            fields = fields
+        )
+
+        // Call the native Reteno SDK
+        Reteno.instance.setUserAttributes(
+            externalUserId = payload.externalUserId,
+            user = User(
+                userAttributes = userAttributes,
+                subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
+                groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
+                groupNamesExclude = payload.groupNamesExclude ?: emptyList()
+            ),
+        )
+
+        promise.resolve(mapOf("success" to true))
+
+    } catch (e: Exception) {
+        // Passing the exception 'e' is good practice in Kotlin to retain the stack trace
+        promise.reject("500", "Reteno Expo SDK Error", e) 
     }
+  }
 
-    // Function("addPushListener") {
-    //     if (notificationListener == null) {
-    //         notificationListener = Procedure<Bundle> { bundle : Bundle ->
-    //             val data = mutableMapOf<String, Any?>()
-    //             bundle.keySet().forEach { key ->
-    //                 data[key] = bundle.get(key)
-    //             }
-    //             handleIncomingNotification(data)
-    //         }
-    //         Reteno.instance.received.addListener(notificationListener)
-    //         print("Native notification listener added")
-    //     }
-    // }
-    //
-    // Function("removePushListener") {
-    //     notificationListener?.let {
-    //         Reteno.instance.received.removeListener(it)
-    //         notificationListener = null
-    //
-    //         print("Native notification listener removed")
-    //     }
-    // }
+      AsyncFunction("updateAnonymousUserAttributes") { payload: RetenoAnonymousUserAttributes, promise: Promise ->
+          try {
+              // Map the custom fields
+              val fields = payload.fields?.map { f ->
+                  UserCustomField(key = f.key, value = f.value)
+              } ?: emptyList()
+
+              // Map the user attributes
+              val userAttributes = UserAttributesAnonymous(
+                  firstName = getStringOrNull(payload.firstName),
+                  lastName = getStringOrNull(payload.lastName),
+                  timeZone = getStringOrNull(payload.timeZone),
+                  languageCode = getStringOrNull(payload.languageCode),
+                  address = payload.address?.let { addr ->
+                      Address(
+                          region = getStringOrNull(addr.region),
+                          town = getStringOrNull(addr.town),
+                          address = getStringOrNull(addr.address),
+                          postcode = getStringOrNull(addr.postcode)
+                      ) },
+                  fields = fields
+              )
+
+              // Call the native Reteno SDK
+              Reteno.instance.setAnonymousUserAttributes(userAttributes)
+
+              promise.resolve(mapOf("success" to true))
+
+          } catch (e: Exception) {
+              // Passing the exception 'e' is good practice in Kotlin to retain the stack trace
+              promise.reject("500", "Reteno Expo SDK Error", e)
+          }
+      }
+
+
+      AsyncFunction("updateMultiAccountUserAttributes") { payload: RetenoMultiAccountUserAttributesPayload, promise: Promise ->
+          try {
+              // Map the custom fields
+              val fields = payload.userAttributes?.fields?.map { f ->
+                  UserCustomField(key = f.key, value = f.value)
+              } ?: emptyList()
+
+              // Map the user attributes
+              val userAttributes = UserAttributes(
+                  phone = getStringOrNull(payload.userAttributes?.phone),
+                  email = getStringOrNull(payload.userAttributes?.email),
+                  firstName = getStringOrNull(payload.userAttributes?.firstName),
+                  lastName = getStringOrNull(payload.userAttributes?.lastName),
+                  languageCode = getStringOrNull(payload.userAttributes?.languageCode),
+                  timeZone = getStringOrNull(payload.userAttributes?.timeZone),
+                  address = payload.userAttributes?.address?.let { addr ->
+                      Address(
+                          region = getStringOrNull(addr.region),
+                          town = getStringOrNull(addr.town),
+                          address = getStringOrNull(addr.address),
+                          postcode = getStringOrNull(addr.postcode)
+                      )
+                  },
+                  fields = fields
+              )
+
+              // Call the native Reteno SDK
+              Reteno.instance.setMultiAccountUserAttributes(
+                  externalUserId = payload.externalUserId,
+                  user = User(
+                      userAttributes = userAttributes,
+                      subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
+                      groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
+                      groupNamesExclude = payload.groupNamesExclude ?: emptyList(),
+                  ),
+              )
+
+              promise.resolve(mapOf("success" to true))
+
+          } catch (e: Exception) {
+              // Passing the exception 'e' is good practice in Kotlin to retain the stack trace
+              promise.reject("500", "Reteno Expo SDK Error", e)
+          }
+      }
 
     // Listen for the result natively
     OnActivityResult { _, payload ->
@@ -205,14 +275,6 @@ class ExpoRetenoSdkModule : Module() {
       print("Cannot update push notification permissions")
     }
   }
-
-  // private fun setUserAttributes(userId: String) {
-  //   try {
-  //     Reteno.instance.setUserAttributes(userId)
-  //   } catch (t: Throwable) {
-  //     t.printStackTrace()
-  //   }
-  // }
 
   private fun handleIncomingNotification(payload: Map<String, Any?>) {
     // Send the event to JS

@@ -32,7 +32,6 @@ export const Reteno = {
     return ModuleInstance.setDeviceToken(token);
   },
   updateUserAttributes(userId: string, attributes = {} as UserAttributes) {
-    console.log("[JS]:", userId, attributes);
     return ModuleInstance.updateUserAttributes({
       externalUserId: userId,
       userAttributes: attributes,
