@@ -260,27 +260,31 @@ const withRetenoNSE: ConfigPlugin<RetenoNSEProps> = (config, props) => {
       const { defaultBundleVersions, nse: nseConfig } = iosConfig;
       const { target, files, source, entitlements, infoPlist } = nseConfig;
 
+      const destPath = `${iosPath}/${target}`;
+
       FileService.createFolder(`${iosPath}/${target}`, {
         recursive: true,
       });
 
+      // Copy Plists and Entitlements
       for (let i = 0; i < files.length; i++) {
         const extFile = files[i];
-        const targetFile = `${iosPath}/${target}/${extFile}`;
+        const targetFile = `${destPath}/${extFile}`;
 
         await FileService.copy(`${sourceDir}/${extFile}`, targetFile);
       }
 
+      // Copy NotificationServiceExtension.swift
       const sourcePath = props.nseFilepath ?? `${sourceDir}/${source}`;
-      const targetFile = `${iosPath}/${target}/${source}`;
+      const targetFile = `${destPath}/${source}`;
       await FileService.copy(`${sourcePath}`, targetFile);
 
       await updateNSEEntitlements(
-        `${sourceDir}/${entitlements}`,
-        `group.${config.ios?.bundleIdentifier}.nse`,
+        `${destPath}/${entitlements}`,
+        `group.${config.ios?.bundleIdentifier}.${source}`,
       );
 
-      await updateNSEBundleVersions(`${sourceDir}/${infoPlist}`, {
+      await updateNSEBundleVersions(`${destPath}/${infoPlist}`, {
         shortVersion:
           config.ios?.buildNumber ?? defaultBundleVersions.shortVersion,
         version: config.ios?.version ?? defaultBundleVersions.version,
@@ -433,12 +437,13 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   config = withAppEnvironment(config, props as RetenoIOSProps & RetenoNSEProps);
   config = withRemoteNotificationsPermissions(config);
   config = withAppGroups(config, props.appGroups);
+
+  config = withRetenoInit(config, props);
   config = withRetenoNSE(config, props as RetenoIOSProps & RetenoNSEProps);
   config = withRetenoNSEProject(
     config,
     props as RetenoIOSProps & RetenoNSEProps,
   );
-  config = withRetenoInit(config, props);
   config = withNSEPodfileUpdate(config);
 
   if (props.notificationService === "firebase") {

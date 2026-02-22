@@ -1,7 +1,6 @@
 export const iosConfig = {
   nse: {
     files: [
-      // "NotificationService.swift",
       "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
