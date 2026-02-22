@@ -10,12 +10,28 @@ import {
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
-import messaging from "@react-native-firebase/messaging";
+// import messaging from "@react-native-firebase/messaging";
 
 const USER_TOKEN = Platform.select({
-  ios: "e3c23974-49ef-4a2c-88a4-2f4500237840",
+  ios: "b17cf99f-6bc8-449a-9da3-4aae73121cab",
   android: "b2539427-a57c-4e6c-af6e-5035b651667c",
 });
+
+const user = {
+  phone: "+380990000002",
+  email: "emailtest2@gmail.com",
+  timeZone: "Europe/Kyiv",
+  languageCode: "en-UA",
+  firstName: "Ted",
+  lastName: "Mosby",
+  address: {
+    region: "Ukraine",
+    town: "Kyiv",
+    address: "42 Random st.",
+    postcode: "4815162342",
+  },
+  fields: [{ key: "custom_field", value: "Custom Value" }],
+};
 
 type ButtonProps = {
   text: string;
@@ -55,18 +71,13 @@ export default function App() {
   };
 
   const handleSetAttribute = () => {
-    // Reteno.updateUserAttributes(USER_TOKEN ?? "", {
-    //   phone: "YOUR_PHONE",
-    //   languageCode: "ua",
-    //   firstName: "John",
-    //   lastName: "Doe",
-    // });
+    Reteno.updateUserAttributes(USER_TOKEN ?? "", user);
 
     // If you want to update anonymous:
-    Reteno.updateAnonymousUserAttributes({
-      firstName: "Ted`",
-      lastName: "Mosby",
-    });
+    // Reteno.updateAnonymousUserAttributes({
+    //   firstName: "Ted`",
+    //   lastName: "Mosby",
+    // });
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {
@@ -77,12 +88,17 @@ export default function App() {
           ...prev,
           // deviceToken: token,
           userToken: USER_TOKEN,
+          userAttributes: user,
         }));
       }
 
       getTokenOnIos();
     } else {
-      setState((prev) => ({ ...prev, userToken: USER_TOKEN }));
+      setState((prev) => ({
+        ...prev,
+        userToken: USER_TOKEN,
+        userAttributes: user,
+      }));
     }
   };
 
@@ -109,7 +125,7 @@ export default function App() {
             {Object.keys(state).map((s: string, key: number) => (
               <View key={`State-${key}`}>
                 <Text style={{ fontWeight: "900" }}>{s}:</Text>
-                <Text>{state[s]}</Text>
+                <Text>{JSON.stringify(state[s])}</Text>
               </View>
             ))}
           </View>

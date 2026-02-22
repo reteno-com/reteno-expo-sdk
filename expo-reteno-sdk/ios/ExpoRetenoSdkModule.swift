@@ -4,25 +4,11 @@ import Foundation
 
 
 struct RetenoUserAttributesField: Record {
-    // init(dictionary: [String: Any]) throws {
-    //     self = try JSONDecoder().decode(
-    //         RetenoUserAttributesField.self,
-    //         from: JSONSerialization.data(withJSONObject: dictionary)
-    //     )
-    // }
-
     @Field var key: String = ""
     @Field var value: String = ""
 }
 
 struct RetenoUserAttributesAddress: Record {
-    // init(dictionary: [String: Any]) throws {
-    //     self = try JSONDecoder().decode(
-    //         RetenoUserAttributesAddress.self,
-    //         from: JSONSerialization.data(withJSONObject: dictionary)
-    //     )
-    // }
-
     @Field var region: String? = ""
     @Field var town: String? = ""
     @Field var address: String? = ""
@@ -48,10 +34,27 @@ struct RetenoAnonymousUserAttributes: Record {
 }
 
 struct RetenoUser: Record {
-    @Field var userAttributes: RetenoUserAttributes?
+    @Field var user: RetenoUserAttributes?
     @Field var subscriptionKeys: [String]?
     @Field var groupNamesInclude: [String]?
     @Field var groupNamesExclude: [String]?
+}
+
+struct RetenoUserAttributesPayload: Record {
+    @Field var externalUserId: String = ""
+		@Field var userAttributes: RetenoUserAttributes?
+		@Field var subscriptionKeys: [String]?
+		@Field var groupNamesInclude: [String]?
+		@Field var groupNamesExclude: [String]?
+}
+
+struct RetenoMultiAccountUserAttributesPayload: Record {
+		@Field var externalUserId: String = ""
+		@Field var userAttributes: RetenoUserAttributes?
+		@Field var subscriptionKeys: [String]?
+		@Field var groupNamesInclude: [String]?
+		@Field var groupNamesExclude: [String]?
+		@Field var accountSuffix: String? = nil
 }
 
 let RetenoEvents = [
@@ -122,57 +125,109 @@ public class ExpoRetenoSdkModule: Module {
         )
     }
 
-    Function("updateUserAttributes") { (
-        userId: String,
-        attributes: RetenoUserAttributes?
+    AsyncFunction("updateUserAttributes") { (
+        payload: RetenoUserAttributesPayload,
+        promise: Promise
     ) -> Void in
-        let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
-            UserCustomField(key: field.key, value: field.value )
-        }
-			
-				print("Fields \(fields)")
-
+			do {
+				let fields = (payload.userAttributes?.fields ?? []).map { (f: RetenoUserAttributesField ) in
+					UserCustomField(key: f.key, value: f.value )
+				}
+				
 				let userAttributes = UserAttributes(
-            phone: getStringOrNil(input: attributes?.phone),
-            email: getStringOrNil(input: attributes?.email),
-            firstName: getStringOrNil(input: attributes?.firstName),
-            lastName: getStringOrNil(input: attributes?.lastName),
-            languageCode: getStringOrNil(input: attributes?.languageCode),
-            timeZone: getStringOrNil(input: attributes?.timeZone),
-            address: attributes?.address != nil ? Address(
-                region: getStringOrNil(input: attributes?.address?.region),
-                town: getStringOrNil(input: attributes?.address?.town),
-                address: getStringOrNil(input: attributes?.address?.address),
-                postcode: getStringOrNil(input: attributes?.address?.postcode)
-            ) : nil,
-            fields: fields ?? []
-        )
-			
-        Reteno.updateUserAttributes(
-            externalUserId: userId,
-            userAttributes: userAttributes
-        )
+					phone: getStringOrNil(input: payload.userAttributes?.phone),
+					email: getStringOrNil(input: payload.userAttributes?.email),
+					firstName: getStringOrNil(input: payload.userAttributes?.firstName),
+					lastName: getStringOrNil(input: payload.userAttributes?.lastName),
+					languageCode: getStringOrNil(input: payload.userAttributes?.languageCode),
+					timeZone: getStringOrNil(input: payload.userAttributes?.timeZone),
+					address: payload.userAttributes?.address != nil ? Address(
+						region: getStringOrNil(input: payload.userAttributes?.address?.region),
+						town: getStringOrNil(input: payload.userAttributes?.address?.town),
+						address: getStringOrNil(input: payload.userAttributes?.address?.address),
+						postcode: getStringOrNil(input: payload.userAttributes?.address?.postcode)
+					) : nil,
+					fields: fields ?? []
+				)
+				
+				Reteno.updateUserAttributes(
+					externalUserId: payload.externalUserId,
+					userAttributes: userAttributes,
+					subscriptionKeys: payload.subscriptionKeys ?? [],
+					groupNamesInclude: payload.groupNamesInclude ?? [],
+					groupNamesExclude: payload.groupNamesExclude ?? []
+				)
+				
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("500", "Reteno Expo SDK Error")
+			}
     }
 
-    Function("updateAnonymousUserAttributes") { (
-        attributes: RetenoUserAttributes?
+    AsyncFunction("updateAnonymousUserAttributes") { (
+        attributes: RetenoUserAttributes?,
+				promise: Promise
     ) -> Void in
-        let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
-            UserCustomField(key: field.key, value: field.value )
-        }
-			
-				print("Fields \(fields)")
-
+			do {
+				let fields = (attributes?.fields ?? []).map { (field: RetenoUserAttributesField ) in
+					UserCustomField(key: field.key, value: field.value )
+				}
+				
 				let userAttributes = AnonymousUserAttributes(
-            firstName: getStringOrNil(input: attributes?.firstName),
-            lastName: getStringOrNil(input: attributes?.lastName),
-            timeZone: getStringOrNil(input: attributes?.timeZone),
-            fields: fields ?? []
-        )
-			
-        Reteno.updateAnonymousUserAttributes(
-            userAttributes: userAttributes
-        )
+					firstName: getStringOrNil(input: attributes?.firstName),
+					lastName: getStringOrNil(input: attributes?.lastName),
+					timeZone: getStringOrNil(input: attributes?.timeZone),
+					fields: fields ?? []
+				)
+				
+				Reteno.updateAnonymousUserAttributes(
+					userAttributes: userAttributes
+				)
+				
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("500", "Reteno Expo SDK Error")
+			}
+    }
+		
+		AsyncFunction("updateMultiAccountUserAttributes") { (
+        payload: RetenoMultiAccountUserAttributesPayload,
+        promise: Promise
+    ) -> Void in
+			do {
+				let fields = (payload.userAttributes?.fields ?? []).map { (f: RetenoUserAttributesField ) in
+					UserCustomField(key: f.key, value: f.value )
+				}
+				
+				let userAttributes = UserAttributes(
+					phone: getStringOrNil(input: payload.userAttributes?.phone),
+					email: getStringOrNil(input: payload.userAttributes?.email),
+					firstName: getStringOrNil(input: payload.userAttributes?.firstName),
+					lastName: getStringOrNil(input: payload.userAttributes?.lastName),
+					languageCode: getStringOrNil(input: payload.userAttributes?.languageCode),
+					timeZone: getStringOrNil(input: payload.userAttributes?.timeZone),
+					address: payload.userAttributes?.address != nil ? Address(
+						region: getStringOrNil(input: payload.userAttributes?.address?.region),
+						town: getStringOrNil(input: payload.userAttributes?.address?.town),
+						address: getStringOrNil(input: payload.userAttributes?.address?.address),
+						postcode: getStringOrNil(input: payload.userAttributes?.address?.postcode)
+					) : nil,
+					fields: fields ?? []
+				)
+				
+				Reteno.updateMultiAccountUserAttributes(
+					externalUserId: payload.externalUserId,
+					userAttributes: userAttributes,
+					subscriptionKeys: payload.subscriptionKeys ?? [],
+					groupNamesInclude: payload.groupNamesInclude ?? [],
+					groupNamesExclude: payload.groupNamesExclude ?? [],
+					accountSuffix: getStringOrNil(input: payload.accountSuffix)
+				)
+				
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("500", "Reteno Expo SDK Error")
+			}
     }
 
     AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
@@ -184,7 +239,6 @@ public class ExpoRetenoSdkModule: Module {
 
   @objc
   func handleIncomingNotification(_ notification: Notification) {
-    // sendEvent("onNotificationReceived", [
     print("Notification: \(notification.userInfo)")
     sendEvent("onPushNotificationReceived", [
       "payload": notification.userInfo
@@ -193,8 +247,11 @@ public class ExpoRetenoSdkModule: Module {
 
   @objc
 	func getStringOrNil(input userInput: String?) -> String {
-		//		print("UserInput: \(String(describing: userInput)) \(String(userInput ?? "")) \(userInput!) \(userInput ?? "")")
 		let value = (userInput ?? "").isEmpty ? "" : String(userInput ?? "")
 		return String(value)
+	}
+	
+	func getUserAttributes(payload p: RetenoUserAttributesPayload) {
+		
 	}
 }

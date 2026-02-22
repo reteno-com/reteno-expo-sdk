@@ -13,7 +13,10 @@ import {
 declare class ExpoRetenoSdkModule extends NativeModule {
   registerForRemoteNotifications(): string;
   setDeviceToken(messagingToken: string): void;
-  updateUserAttributes(userId: string, attributes?: UserAttributes): void;
+  updateUserAttributes(payload: {
+    externalUserId: string;
+    userAttributes?: UserAttributes;
+  }): void;
   updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
 }
 
@@ -29,7 +32,11 @@ export const Reteno = {
     return ModuleInstance.setDeviceToken(token);
   },
   updateUserAttributes(userId: string, attributes = {} as UserAttributes) {
-    return ModuleInstance.updateUserAttributes(userId, attributes);
+    console.log("[JS]:", userId, attributes);
+    return ModuleInstance.updateUserAttributes({
+      externalUserId: userId,
+      userAttributes: attributes,
+    });
   },
   updateAnonymousUserAttributes(attributes: AnonymousUserAttributes) {
     return ModuleInstance.updateAnonymousUserAttributes(attributes);
