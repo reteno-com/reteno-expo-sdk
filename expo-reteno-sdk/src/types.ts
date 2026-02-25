@@ -35,3 +35,17 @@ export type AnonymousUserAttributes = {
   timeZone?: string;
   fields?: UserCustomField[];
 };
+
+export type LogEventParameter = {
+  name: string;
+  value?: string;
+};
+
+export type LogEventPayload = {
+  eventName: string;
+  date: string;
+  parameters: LogEventParameter[];
+  forcePush?: boolean; // iOS-only
+};
+
+export type LogScreenViewPayload = string;

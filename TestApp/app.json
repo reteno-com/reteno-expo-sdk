@@ -44,10 +44,12 @@
           },
           "ios": {
             "sdkAccessToken": "b38ee75f-05e3-48db-b1eb-8eb5550e38c5",
-            "debug": true,
             "notificationService": "apns",
             "devTeam": "XTTV5LZZ73",
             "mode": "development",
+            "debug": true,
+            "isAutomaticSessionReportingEnabled": true,
+            "isAutomaticPushSubsriptionReportingEnabled": true,
             "appGroups": [
               "group.expo.modules.retenosdk.example",
               "group.expo.modules.retenosdk.example.reteno-local-storage"

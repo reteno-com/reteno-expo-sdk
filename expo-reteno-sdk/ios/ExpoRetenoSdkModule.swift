@@ -235,6 +235,44 @@ public class ExpoRetenoSdkModule: Module {
             Reteno.userNotificationService.processRemoteNotificationsToken(deviceToken)
         );
     }
+
+		AsyncFunction("logEvent") { (payload: [String: Any], promise: Promise) -> Void in
+        do {
+						let requestPayload = try RetenoEvent.buildEventPayload(payload: payload);
+					
+            Reteno.logEvent(
+                eventTypeKey: requestPayload.eventName,
+                date: requestPayload.date,
+                parameters: requestPayload.parameters,
+                forcePush: requestPayload.forcePush
+            );
+					
+						promise.resolve(["success":true]);
+        } catch {
+						promise.reject("100", "Reteno iOS SDK Error");
+        }
+    }
+		
+		AsyncFunction("logScreenView") { (screenName: String, promise: Promise) -> Void in
+				Reteno.logEvent(
+						eventTypeKey: "screenView",
+						date: Date(),
+						parameters: [Event.Parameter(name: "screenView", value: screenName)],
+				);
+
+				promise.resolve(["success":true]);
+		}
+		
+		AsyncFunction("forcePushData") { (promise: Promise) -> Void in
+				Reteno.logEvent(
+						eventTypeKey: "",
+						date: Date(),
+						parameters: [],
+						forcePush: true
+				);
+
+				promise.resolve(["success":true]);
+		}
   }
 
   @objc
@@ -249,9 +287,5 @@ public class ExpoRetenoSdkModule: Module {
 	func getStringOrNil(input userInput: String?) -> String {
 		let value = (userInput ?? "").isEmpty ? "" : String(userInput ?? "")
 		return String(value)
-	}
-	
-	func getUserAttributes(payload p: RetenoUserAttributesPayload) {
-		
 	}
 }

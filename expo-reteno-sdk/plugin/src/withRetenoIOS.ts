@@ -236,10 +236,13 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
       config.modResults.contents,
     ).contents;
 
-    config.modResults.contents = addRetenoInit(config.modResults.contents, {
-      apiKey: props.sdkAccessToken,
-      isDebugMode: props.debug,
-    }).contents;
+    config.modResults.contents = addRetenoInit(
+      config.modResults.contents,
+      props.sdkAccessToken,
+      {
+        isDebugMode: props.debug,
+      },
+    ).contents;
 
     return config;
   });

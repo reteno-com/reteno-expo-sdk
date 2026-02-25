@@ -5,10 +5,13 @@ import {
 } from "expo-modules-core";
 import {
   AnonymousUserAttributes,
+  LogEventPayload,
+  LogScreenViewPayload,
   RetenoSubscription,
   RetenoSubscriptionEvents,
   UserAttributes,
 } from "./types";
+// import { Platform } from "react-native";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
   registerForRemoteNotifications(): string;
@@ -18,6 +21,9 @@ declare class ExpoRetenoSdkModule extends NativeModule {
     userAttributes?: UserAttributes;
   }): void;
   updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
+  logEvent(payload: LogEventPayload): Promise<boolean | string>;
+  logScreenView(payload: LogScreenViewPayload): Promise<boolean | string>;
+  forcePushData(): Promise<void>;
 }
 
 const ModuleInstance =
@@ -44,6 +50,19 @@ export const Reteno = {
     listener: (event: any) => void,
   ): RetenoSubscription {
     return emitter.addListener("onPushNotificationReceived", listener);
+  },
+  logEvent(payload: LogEventPayload): Promise<boolean | string> {
+    return ModuleInstance.logEvent(payload);
+  },
+  logScreenView(screenName: LogScreenViewPayload): Promise<boolean | string> {
+    return ModuleInstance.logScreenView(screenName);
+  },
+  forcePushData(): Promise<void> {
+    // if (Platform.OS === "ios") {
+    //   return ModuleInstance.forcePushData();
+    // }
+
+    return ModuleInstance.forcePushData();
   },
 };
 

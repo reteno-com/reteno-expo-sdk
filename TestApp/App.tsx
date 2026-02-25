@@ -10,6 +10,10 @@ import {
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
+import {
+  LogEventPayload,
+  LogScreenViewPayload,
+} from "expo-reteno-sdk/src/types";
 // import messaging from "@react-native-firebase/messaging";
 
 const USER_TOKEN = Platform.select({
@@ -102,6 +106,43 @@ export default function App() {
     }
   };
 
+  const handleLogEvent = () => {
+    const event: LogEventPayload = {
+      eventName: "TestCustomEvent",
+      date: new Date().toISOString(),
+      parameters: [{ name: "CustomName", value: "Custom Value" }],
+    };
+
+    Reteno.logEvent(event);
+
+    setState((prev) => ({
+      ...prev,
+      customEvents: JSON.stringify(event),
+    }));
+  };
+
+  const handleLogScreenViewEvent = () => {
+    Reteno.logScreenView(
+      "DashboardScreen-ae88afd0-74a0-460d-ab73-c546f4b7eeb6",
+    );
+
+    setState((prev) => ({
+      ...prev,
+      logScreenView: JSON.stringify(
+        "DashboardScreen-ae88afd0-74a0-460d-ab73-c546f4b7eeb6",
+      ),
+    }));
+  };
+
+  const handleForcePushData = () => {
+    Reteno.forcePushData();
+
+    setState((prev) => ({
+      ...prev,
+      forcePushData: true,
+    }));
+  };
+
   useEffect(() => {
     const l = Reteno.addPushNotificationListener(onRetenoPushReceived);
 
@@ -115,9 +156,15 @@ export default function App() {
       <StatusBar style="auto" />
       <View style={{ alignItems: "center", gap: 8 }}>
         <Text>Reteno installation SDK</Text>
-        <Button text="Request push permissions" onPress={handleStart} />
 
+        <Button text="Request push permissions" onPress={handleStart} />
         <Button text="Set UserID" onPress={handleSetAttribute} />
+
+        <Text>Log events</Text>
+        <Button text="Log custom event" onPress={handleLogEvent} />
+        <Button text="Log screen view" onPress={handleLogScreenViewEvent} />
+        <Button text="Force push data" onPress={handleForcePushData} />
+
         {!Object.keys(state).length ? (
           <Text>Press `Start SDK` button to initialize Reteno SDK</Text>
         ) : (
