@@ -29,6 +29,29 @@ export type UserAttributes = {
   fields?: UserCustomField[];
 };
 
+export type User = {
+  userAttributes?: UserAttributes;
+  subscriptionKeys?: string[];
+  groupNamesInclude?: string[];
+  groupNamesExclude?: string[];
+};
+
+export type UserInformationPayload = {
+  externalUserId: string;
+  user: User;
+};
+
+export type UserInformationMultiAccountPayload = {
+  externalUserId: string;
+  user: {
+    attributes?: UserAttributes;
+    subscriptionKeys?: string[];
+    groupNamesInclude?: string[];
+    groupNamesExclude?: string[];
+    accountSuffix?: string;
+  };
+};
+
 export type AnonymousUserAttributes = {
   firstName?: string;
   lastName?: string;

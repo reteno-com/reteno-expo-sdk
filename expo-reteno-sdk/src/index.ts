@@ -9,18 +9,21 @@ import {
   LogScreenViewPayload,
   RetenoSubscription,
   RetenoSubscriptionEvents,
+  User,
   UserAttributes,
+  UserInformationPayload,
 } from "./types";
 // import { Platform } from "react-native";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
   registerForRemoteNotifications(): string;
   setDeviceToken(messagingToken: string): void;
-  updateUserAttributes(payload: {
-    externalUserId: string;
-    userAttributes?: UserAttributes;
-  }): void;
+  updateUserAttributes(payload: UserInformationPayload): void;
   updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
+  updateMultiAccountUserAttributes(
+    payload: UserInformationPayload,
+    accountSuffix: string,
+  ): void;
   logEvent(payload: LogEventPayload): Promise<boolean | string>;
   logScreenView(payload: LogScreenViewPayload): Promise<boolean | string>;
   forcePushData(): Promise<void>;
@@ -37,14 +40,27 @@ export const Reteno = {
   setDeviceToken(token: string) {
     return ModuleInstance.setDeviceToken(token);
   },
-  updateUserAttributes(userId: string, attributes = {} as UserAttributes) {
+  updateUserAttributes(userId: string, attributes = {} as User) {
     return ModuleInstance.updateUserAttributes({
       externalUserId: userId,
-      userAttributes: attributes,
+      user: attributes,
     });
   },
   updateAnonymousUserAttributes(attributes: AnonymousUserAttributes) {
     return ModuleInstance.updateAnonymousUserAttributes(attributes);
+  },
+  updateMultiAccountUserAttributes(
+    userId: string,
+    attributes = {} as User,
+    accountSuffix = "",
+  ) {
+    return ModuleInstance.updateMultiAccountUserAttributes(
+      {
+        externalUserId: userId,
+        user: attributes,
+      },
+      accountSuffix,
+    );
   },
   addPushNotificationListener(
     listener: (event: any) => void,
@@ -58,10 +74,6 @@ export const Reteno = {
     return ModuleInstance.logScreenView(screenName);
   },
   forcePushData(): Promise<void> {
-    // if (Platform.OS === "ios") {
-    //   return ModuleInstance.forcePushData();
-    // }
-
     return ModuleInstance.forcePushData();
   },
 };
