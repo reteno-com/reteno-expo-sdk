@@ -10,24 +10,24 @@ import {
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
-import {
-  LogEventPayload,
-  LogScreenViewPayload,
-} from "expo-reteno-sdk/src/types";
+// import {
+//   LogEventPayload,
+//   LogScreenViewPayload,
+// } from "expo-reteno-sdk/src/types";
 // import messaging from "@react-native-firebase/messaging";
 
 const USER_TOKEN = Platform.select({
-  ios: "b17cf99f-6bc8-449a-9da3-4aae73121cab",
+  ios: "a81fbb6e-f1d4-4c5b-a06f-fcff840aa0ae",
   android: "2b5a1816-a8c0-40f9-a858-86a39901c920",
 });
 
 const user = {
-  phone: "+380990000003",
+  phone: "+380990000004",
   email: "emailtest3@gmail.com",
   timeZone: "Europe/Kyiv",
   languageCode: "en-UA",
-  firstName: "Ted",
-  lastName: "Mosby",
+  firstName: "Tracy",
+  lastName: "McConnell",
   address: {
     region: "Ukraine",
     town: "Kyiv",
@@ -75,12 +75,14 @@ export default function App() {
   };
 
   const handleSetAttribute = () => {
-    // Reteno.updateUserAttributes(USER_TOKEN ?? "", user);
+    // Reteno.updateUserAttributes(USER_TOKEN ?? "", {
+    //   userAttributes: user,
+    // });
 
     // If you want to update anonymous:
     Reteno.updateAnonymousUserAttributes({
-      firstName: "Ted",
-      lastName: "Mosby",
+      firstName: user.firstName,
+      lastName: user.lastName,
     });
 
     if (Platform.OS === "ios") {
