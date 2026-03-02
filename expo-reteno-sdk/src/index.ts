@@ -7,6 +7,12 @@ import {
   AnonymousUserAttributes,
   AppInboxEvents,
   AppInboxPayload,
+  EcomEventCartUpdatedPayload,
+  EcomEventOrderActionPayload,
+  EcomEventOrderPayload,
+  EcomEventProductCategoryViewedPayload,
+  EcomEventProductPayload,
+  EcomEventSearchRequestPayload,
   InAppDisplayData,
   InAppErrorData,
   InAppEvents,
@@ -70,6 +76,29 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined;
+  logEcomEventProductViewed: (
+    payload: EcomEventProductPayload,
+  ) => Promise<void>;
+  logEcomEventProductAddedToWishlist: (
+    payload: EcomEventProductPayload,
+  ) => Promise<void>;
+  logEcomEventProductCategoryViewed: (
+    payload: EcomEventProductCategoryViewedPayload,
+  ) => Promise<void>;
+  logEcomEventCartUpdated: (
+    payload: EcomEventCartUpdatedPayload,
+  ) => Promise<void>;
+  logEcomEventOrderCreated: (payload: EcomEventOrderPayload) => Promise<void>;
+  logEcomEventOrderUpdated: (payload: EcomEventOrderPayload) => Promise<void>;
+  logEcomEventOrderDelivered: (
+    payload: EcomEventOrderActionPayload,
+  ) => Promise<void>;
+  logEcomEventOrderCancelled: (
+    payload: EcomEventOrderActionPayload,
+  ) => Promise<void>;
+  logEcomEventSearchRequest: (
+    payload: EcomEventSearchRequestPayload,
+  ) => Promise<void>;
 }
 
 const ModuleInstance =
@@ -141,8 +170,35 @@ export const Reteno = {
   getAppInboxMessagesCount() {
     return ModuleInstance.getAppInboxMessagesCount();
   },
-  getInitialNotification() {
-    return ModuleInstance.getInitialNotification();
+
+  logEcomEventProductViewed: (payload: EcomEventProductPayload) => {
+    return ModuleInstance.logEcomEventProductViewed(payload);
+  },
+  logEcomEventProductAddedToWishlist: (payload: EcomEventProductPayload) => {
+    return ModuleInstance.logEcomEventProductAddedToWishlist(payload);
+  },
+  logEcomEventProductCategoryViewed: (
+    payload: EcomEventProductCategoryViewedPayload,
+  ) => {
+    return ModuleInstance.logEcomEventProductCategoryViewed(payload);
+  },
+  logEcomEventCartUpdated: (payload: EcomEventCartUpdatedPayload) => {
+    return ModuleInstance.logEcomEventCartUpdated(payload);
+  },
+  logEcomEventOrderCreated: (payload: EcomEventOrderPayload) => {
+    return ModuleInstance.logEcomEventOrderCreated(payload);
+  },
+  logEcomEventOrderUpdated: (payload: EcomEventOrderPayload) => {
+    return ModuleInstance.logEcomEventOrderUpdated(payload);
+  },
+  logEcomEventOrderDelivered: (payload: EcomEventOrderActionPayload) => {
+    return ModuleInstance.logEcomEventOrderDelivered(payload);
+  },
+  logEcomEventOrderCancelled: (payload: EcomEventOrderActionPayload) => {
+    return ModuleInstance.logEcomEventOrderCancelled(payload);
+  },
+  logEcomEventSearchRequest: (payload: EcomEventSearchRequestPayload) => {
+    return ModuleInstance.logEcomEventSearchRequest(payload);
   },
 
   // Listeners
@@ -205,8 +261,7 @@ export const Reteno = {
       () => {},
     );
   },
-  // NOTE: It should be initialized inside `AppDelegate.swift`;
-  // TODO: check documentation
+
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {

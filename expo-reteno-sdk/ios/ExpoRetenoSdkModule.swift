@@ -63,62 +63,6 @@ enum RetenoExpoEvent {
 	}
 }
 
-//let RetenoEvents: [: String] = [
-//    "InAppCustomDataReceived": "reteno-in-app-custom-data-received",
-//    "BeforeInAppDisplay":      "reteno-before-in-app-display",
-//    "OnInAppDisplay":          "reteno-on-in-app-display",
-//    "BeforeInAppClose":        "reteno-before-in-app-close",
-//    "AfterInAppClose":         "reteno-after-in-app-close",
-//    "OnInAppError":            "reteno-on-in-app-error",
-//    "UnreadMessagesCount":     "reteno-unread-messages-count",
-//    "Stub":                    "reteno-default"
-//]
-//
-//func getEventName(for key: RetenoExpoEvent) -> String {
-//	return RetenoExpoEvent. ?? "Default"
-//}
-
-
-//func getNotificationNameAsString(from key: String) -> String {
-//	return RetenoEvents[key] ?? "Stub"
-//}
-//
-//func getNotificationName(from key: String) -> NSNotification.Name {
-//    return Notification.Name(RetenoEvents[key] ?? "Stub")
-//}
-
-//extension String.EventName {
-//	/// Push Notifications
-//	static let pushReceived 		 = getNotificationName(from: "PushReceived")
-//	static let pushClicked 			 = getNotificationName(from: "PushClicked")
-//	static let pushButtonClicked = getNotificationName(from: "PushButtonClicked")
-//	/// In-App Events
-//	static let inAppCustomDataReceived = getNotificationName(from: "InAppCustomDataReceived")
-//	static let beforeInAppDisplay 		 = getNotificationName(from: "BeforeInAppDisplay")
-//	static let onInAppDisplay 				 = getNotificationName(from: "OnInAppDisplay")
-//	static let onInAppError 					 = getNotificationName(from: "OnInAppError")
-//	static let beforeInAppClose 			 = getNotificationName(from: "BeforeInAppClose")
-//	static let afterInAppClose 				 = getNotificationName(from: "AfterInAppClose")
-//	/// App Inbox
-//	static let unreadMessagesCount = getNotificationName(from: "UnreadMessagesCount")
-//}
-
-//extension Notification.Name {
-//		/// Push Notifications
-//    static let pushReceived 		 = getNotificationName(from: "PushReceived")
-//    static let pushClicked 			 = getNotificationName(from: "PushClicked")
-//    static let pushButtonClicked = getNotificationName(from: "PushButtonClicked")
-//	  /// In-App Events
-//    static let inAppCustomDataReceived = getNotificationName(from: "InAppCustomDataReceived")
-//    static let beforeInAppDisplay 		 = getNotificationName(from: "BeforeInAppDisplay")
-//    static let onInAppDisplay 				 = getNotificationName(from: "OnInAppDisplay")
-//    static let onInAppError 					 = getNotificationName(from: "OnInAppError")
-//    static let beforeInAppClose 			 = getNotificationName(from: "BeforeInAppClose")
-//    static let afterInAppClose 				 = getNotificationName(from: "AfterInAppClose")
-//		/// App Inbox
-//    static let unreadMessagesCount = getNotificationName(from: "UnreadMessagesCount")
-//}
-
 public class ExpoRetenoSdkModule: Module {
 	// Each module class must implement the definition function. The definition consists of components
 	// that describes the module's functionality and behavior.
@@ -142,12 +86,12 @@ public class ExpoRetenoSdkModule: Module {
 		)
 		
 		OnCreate {
-//			NotificationCenter.default.addObserver(
-//				self,
-//				selector: #selector(self.handleIncomingNotification),
-//				name: .pushReceived,
-//				object: nil
-//			)
+			//			NotificationCenter.default.addObserver(
+			//				self,
+			//				selector: #selector(self.handleIncomingNotification),
+			//				name: .pushReceived,
+			//				object: nil
+			//			)
 			
 			print(RetenoExpoEvent.onPushNotificationReceived.value)
 			
@@ -157,7 +101,7 @@ public class ExpoRetenoSdkModule: Module {
 					userInfo as! [String : Any?]
 				)
 			}
-
+			
 			Reteno.userNotificationService.didReceiveNotificationResponseHandler = { response in
 				self.sendEvent(
 					RetenoExpoEvent.onPushNotificationClicked.value,
@@ -166,9 +110,9 @@ public class ExpoRetenoSdkModule: Module {
 			}
 			
 			Reteno.userNotificationService.notificationActionHandler = { userInfo, action in
-			  let actionId = action.actionId
-			  let customData = action.customData
-			  let actionLink = action.link
+				let actionId = action.actionId
+				let customData = action.customData
+				let actionLink = action.link
 				
 				self.sendEvent(
 					RetenoExpoEvent.onPushButtonClicked.value,
@@ -178,12 +122,12 @@ public class ExpoRetenoSdkModule: Module {
 		}
 		
 		OnDestroy {
-//			print("OnDestroy")
-//			NotificationCenter.default.removeObserver(
-//				self,
-//				name: .pushReceived,
-//				object: nil
-//			)
+			//			print("OnDestroy")
+			//			NotificationCenter.default.removeObserver(
+			//				self,
+			//				name: .pushReceived,
+			//				object: nil
+			//			)
 		}
 		
 		Function("registerForRemoteNotifications") { () -> Void in
@@ -193,18 +137,18 @@ public class ExpoRetenoSdkModule: Module {
 		}
 		
 		AsyncFunction("getInitialNotification") { (promise: Promise) -> Void in
-				var initialNotif: Any? = nil;
-//				let remoteUserInfo = bridge.launchOptions?[UIApplication.LaunchOptionsKey.remoteNotification];
-//				
-//				if (remoteUserInfo != nil) {
-//						initialNotif = remoteUserInfo;
-//				}
+			var initialNotif: Any? = nil;
+			//				let remoteUserInfo = bridge.launchOptions?[UIApplication.LaunchOptionsKey.remoteNotification];
+			//
+			//				if (remoteUserInfo != nil) {
+			//						initialNotif = remoteUserInfo;
+			//				}
 			
-				if (initialNotif != nil) {
-					promise.resolve(initialNotif);
-				} else {
-					promise.resolve(nil);
-				}
+			if (initialNotif != nil) {
+				promise.resolve(initialNotif);
+			} else {
+				promise.resolve(nil);
+			}
 		}
 		
 		AsyncFunction("updateUserAttributes") { (payload: [String: Any], promise: Promise) -> Void in
@@ -314,11 +258,11 @@ public class ExpoRetenoSdkModule: Module {
 						let categoryId = payload["categoryId"] as? String,
 						let filters = payload["filters"] as? [NSDictionary],
 						let fields = payload["fields"] as? [String] else {
-
+				
 				promise.reject("100", "Reteno iOS SDK Error: Invalid payload")
 				return
 			}
-
+			
 			var recomFilters: [RecomFilter]? = nil
 			if let filters = filters as? [[String: Any]] {
 				recomFilters = filters.compactMap { dict in
@@ -328,31 +272,31 @@ public class ExpoRetenoSdkModule: Module {
 					return RecomFilter(name: name, values: values)
 				}
 			}
-
-		 Reteno.recommendations().getRecoms(
-			recomVariantId: recomVariantId,
-			productIds: productIds,
-			categoryId: categoryId,
-			filters: recomFilters,
-			fields: fields
-		 ) { (result: Result<[Recommendation], Error>) in
-			 switch result {
-				 case .success(let recommendations):
-						 let serializedRecommendations = recommendations.map { recommendation in
-								 return [
-										 "productId": 	recommendation.productId,
-										 "name": 				recommendation.name,
-										 "description": recommendation.description ?? "",
-										 "imageUrl": 		recommendation.imageUrl?.absoluteString ?? "",
-										 "price": 			recommendation.price
-								 ]
-						 }
-					 promise.resolve(serializedRecommendations)
-
-				 case .failure(let error):
-					 promise.reject("100", "Reteno iOS SDK getRecommendations Error")
-				 }
-			 }
+			
+			Reteno.recommendations().getRecoms(
+				recomVariantId: recomVariantId,
+				productIds: productIds,
+				categoryId: categoryId,
+				filters: recomFilters,
+				fields: fields
+			) { (result: Result<[Recommendation], Error>) in
+				switch result {
+				case .success(let recommendations):
+					let serializedRecommendations = recommendations.map { recommendation in
+						return [
+							"productId": 	recommendation.productId,
+							"name": 				recommendation.name,
+							"description": recommendation.description ?? "",
+							"imageUrl": 		recommendation.imageUrl?.absoluteString ?? "",
+							"price": 			recommendation.price
+						]
+					}
+					promise.resolve(serializedRecommendations)
+					
+				case .failure(let error):
+					promise.reject("100", "Reteno iOS SDK getRecommendations Error")
+				}
+			}
 		}
 		
 		AsyncFunction("logRecommendationEvent") { (payload: [String: Any], promise: Promise) -> Void in
@@ -360,37 +304,37 @@ public class ExpoRetenoSdkModule: Module {
 						let impressions = payload["impressions"] as? [[String: Any]],
 						let clicks = payload["clicks"] as? [[String: Any]],
 						let forcePush = payload["forcePush"] as? Bool else {
-//							let error = NSError(
-//								domain: "InvalidPayload",
-//								code: 0,
-//								userInfo: [NSLocalizedDescriptionKey: "Invalid payload"]
-//							)
-						
-							promise.reject("100", "Reteno iOS SDK logRecommendationEvent Error")
-							return
-						}
-	
-		  var impressionEvents: [RecomEvent] = []
-		  var clickEvents: [RecomEvent] = []
-
-		  for impression in impressions {
+				//							let error = NSError(
+				//								domain: "InvalidPayload",
+				//								code: 0,
+				//								userInfo: [NSLocalizedDescriptionKey: "Invalid payload"]
+				//							)
+				
+				promise.reject("100", "Reteno iOS SDK logRecommendationEvent Error")
+				return
+			}
+			
+			var impressionEvents: [RecomEvent] = []
+			var clickEvents: [RecomEvent] = []
+			
+			for impression in impressions {
 				let productId = impression["productId"] as? String
 				impressionEvents.append(RecomEvent(date: Date(), productId: productId ?? ""))
-		  }
-
-		  for click in clicks {
+			}
+			
+			for click in clicks {
 				let productId = click["productId"] as? String
 				clickEvents.append(RecomEvent(date: Date(), productId: productId ?? ""))
-		  }
-
-		  Reteno.recommendations().logEvent(
+			}
+			
+			Reteno.recommendations().logEvent(
 				recomVariantId: recomVariantId,
 				impressions: impressionEvents,
 				clicks: clickEvents,
 				forcePush: forcePush
 			)
-
-		  let res: [String: Bool] = ["success": true]
+			
+			let res: [String: Bool] = ["success": true]
 			promise.resolve(res)
 		}
 		
@@ -415,103 +359,235 @@ public class ExpoRetenoSdkModule: Module {
 				}
 			}
 		}
-
-    AsyncFunction("getAppInboxMessages") { (payload: [String: Any?], promise: Promise) -> Void in
-        let page = payload["page"] as? Int
-        let pageSize = payload["pageSize"] as? Int
-        let statusString = payload["status"] as? String
-      
-        let status: AppInboxMessagesStatus? = {
-            switch statusString?.uppercased() {
-                case "OPENED":
-                  return .opened
-                case "UNOPENED":
-                  return .unopened
-                default:
-                  return nil
-                }
-            }()
-        
-        Reteno.inbox().downloadMessages(page: page, pageSize: pageSize, status: status) { result in
-					switch result {
-						case .success(let response):
-							let messages = response.messages.map { message in
-								return [
-									"id": message.id,
-									"createdDate": message.createdDate?.timeIntervalSince1970 as Any,
-									"title": message.title as Any,
-									"content": message.content as Any,
-									"imageURL": message.imageURL?.absoluteString as Any,
-									"linkURL": message.linkURL?.absoluteString as Any,
-									"isNew": message.isNew,
-								]
-							}
-							promise.resolve(["messages": messages, "totalPages": response.totalPages as Any])
-							
-						case .failure(let error):
-							print("[ERROR] Download messages: \(error)")
-							promise.reject("100", "Reteno iOS SDK downloadMessages Error")
-						}
+		
+		AsyncFunction("getAppInboxMessages") { (payload: [String: Any?], promise: Promise) -> Void in
+			let page = payload["page"] as? Int
+			let pageSize = payload["pageSize"] as? Int
+			let statusString = payload["status"] as? String
+			
+			let status: AppInboxMessagesStatus? = {
+				switch statusString?.uppercased() {
+				case "OPENED":
+					return .opened
+				case "UNOPENED":
+					return .unopened
+				default:
+					return nil
+				}
+			}()
+			
+			Reteno.inbox().downloadMessages(page: page, pageSize: pageSize, status: status) { result in
+				switch result {
+				case .success(let response):
+					let messages = response.messages.map { message in
+						return [
+							"id": message.id,
+							"createdDate": message.createdDate?.timeIntervalSince1970 as Any,
+							"title": message.title as Any,
+							"content": message.content as Any,
+							"imageURL": message.imageURL?.absoluteString as Any,
+							"linkURL": message.linkURL?.absoluteString as Any,
+							"isNew": message.isNew,
+						]
 					}
-				}
-		
-			Function("addUnreadMessagesListener") { () -> Void in
-				Reteno.inbox().onUnreadMessagesCountChanged = { count in
-					self.sendEvent(
-						RetenoExpoEvent.unreadMessagesCount.value,
-						["count": count]
-					)
+					promise.resolve(["messages": messages, "totalPages": response.totalPages as Any])
+					
+				case .failure(let error):
+					print("[ERROR] Download messages: \(error)")
+					promise.reject("100", "Reteno iOS SDK downloadMessages Error")
 				}
 			}
+		}
 		
-			AsyncFunction("markAsOpened") { (messageIds: [String], promise: Promise) -> Void in
-				Reteno.inbox().markAsOpened(messageIds: messageIds) { result in
-					switch result {
-						case .success:
-							promise.resolve(true)
-						case .failure(let error):
-							print("[ERROR] markAsOpened(): \(error)")
-							promise.reject("100", "Reteno iOS SDK markAsOpened Error")
-						}
+		Function("addUnreadMessagesListener") { () -> Void in
+			Reteno.inbox().onUnreadMessagesCountChanged = { count in
+				self.sendEvent(
+					RetenoExpoEvent.unreadMessagesCount.value,
+					["count": count]
+				)
+			}
+		}
+		
+		AsyncFunction("markAsOpened") { (messageIds: [String], promise: Promise) -> Void in
+			Reteno.inbox().markAsOpened(messageIds: messageIds) { result in
+				switch result {
+				case .success:
+					promise.resolve(true)
+				case .failure(let error):
+					print("[ERROR] markAsOpened(): \(error)")
+					promise.reject("100", "Reteno iOS SDK markAsOpened Error")
 				}
 			}
+		}
 		
 		AsyncFunction("markAllAsOpened") { (promise: Promise) -> Void in
-					Reteno.inbox().markAllAsOpened { result in
-							switch result {
-							case .success:
-								promise.resolve(true)
-							case .failure(let error):
-								print("[ERROR] markAllAsOpened(): \(error)")
-								promise.reject("100", "Reteno iOS SDK markAllAsOpened Error")
-							}
-					}
+			Reteno.inbox().markAllAsOpened { result in
+				switch result {
+				case .success:
+					promise.resolve(true)
+				case .failure(let error):
+					print("[ERROR] markAllAsOpened(): \(error)")
+					promise.reject("100", "Reteno iOS SDK markAllAsOpened Error")
+				}
 			}
+		}
 		
 		AsyncFunction("getAppInboxMessagesCount") { (promise: Promise) -> Void in
-				Reteno.inbox().getUnreadMessagesCount { result in
-						switch result {
-						case .success(let unreadCount):
-							promise.resolve(unreadCount)
-						case .failure(let error):
-							print("[ERROR] getAppInboxMessagesCount(): \(error)")
-							promise.reject("100", "Reteno iOS SDK getAppInboxMessagesCount Error")
-						}
+			Reteno.inbox().getUnreadMessagesCount { result in
+				switch result {
+				case .success(let unreadCount):
+					promise.resolve(unreadCount)
+				case .failure(let error):
+					print("[ERROR] getAppInboxMessagesCount(): \(error)")
+					promise.reject("100", "Reteno iOS SDK getAppInboxMessagesCount Error")
 				}
+			}
 		}
 		
-		Function("set") { (promise: Promise) -> Void in
-				Reteno.inbox().getUnreadMessagesCount { result in
-						switch result {
-						case .success(let unreadCount):
-							promise.resolve(unreadCount)
-						case .failure(let error):
-							print("[ERROR] getAppInboxMessagesCount(): \(error)")
-							promise.reject("100", "Reteno iOS SDK getAppInboxMessagesCount Error")
-						}
-				}
-		}
-		}
+		AsyncFunction("logEcomEventProductViewed", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload) else {
+					promise.reject("Payload Error", "Payload cannot be null")
+					return
+			}
+			
+			do {
+					Reteno.ecommerce().logEvent(type: .productViewed(product: data.product, currencyCode: data.currencyCode),
+																			date: Date(),
+																			forcePush: true)
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventProductCategoryViewed", { ( payload: [String: Any?], promise: Promise ) -> Void in
+					guard let category = RetenoEcomEvent.buildProductCategoryDataFromPayload(payload) else {
+						promise.reject("Payload Error", "Payload cannot be null")
+							return
+					}
+					
+					do {
+							Reteno.ecommerce().logEvent(type: .productCategoryViewed(category: category),
+																					date: Date(),
+																					forcePush: true)
+						promise.resolve(["success": true])
+					} catch {
+						promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+					}
+		})
+		
+		AsyncFunction("logEcomEventProductAddedToWishlist", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+				return
+			}
+			
+			do {
+				Reteno.ecommerce().logEvent(type: .productAddedToWishlist(product: data.product, currencyCode: data.currencyCode),
+																		date: Date(),
+																		forcePush: true)
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventCartUpdated", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildCartUpdatedDataFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+					return
+			}
+			
+			do {
+					Reteno.ecommerce().logEvent(type: .cartUpdated(
+							cartId: data.cartId,
+							products: data.products,
+							currencyCode: data.currencyCode
+					),
+																			date: Date(),
+																			forcePush: true)
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventOrderCreated", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+				return
+			}
+			do {
+				Reteno.ecommerce().logEvent(type: .orderCreated(order: data.order, currencyCode: data.currencyCode),
+																		date: Date(),
+																		forcePush: true)
+				
+				
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventOrderUpdated", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+				return
+			}
+			
+			do {
+				Reteno.ecommerce().logEvent(type: .orderUpdated(order: data.order, currencyCode: data.currencyCode),
+																		date: Date(),
+																		forcePush: true)
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventOrderDelivered", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+					return
+			}
+			
+			do {
+					Reteno.ecommerce().logEvent(type: .orderDelivered(externalOrderId: externalOrderId))
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventOrderCancelled", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+				return
+			}
+			
+			do {
+				Reteno.ecommerce().logEvent(type: .orderCancelled(externalOrderId: externalOrderId),
+																		date: Date(),
+																		forcePush: true)
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+		
+		AsyncFunction("logEcomEventSearchRequest", { ( payload: [String: Any?], promise: Promise ) -> Void in
+			guard let data = RetenoEcomEvent.buildSearchRequestDataFromPayload(payload) else {
+				promise.reject("Payload Error", "Payload cannot be null")
+				return
+			}
+			do {
+				Reteno.ecommerce().logEvent(type: .searchRequest(query: data.searchQuery, isFound: data.isFound))
+				promise.resolve(["success": true])
+			} catch {
+				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
+			}
+		})
+	}
 
 		@objc
 		func getStringOrNil(input userInput: String?) -> String {

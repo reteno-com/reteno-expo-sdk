@@ -176,3 +176,107 @@ export type UnreadMessagesCountErrorData = {
   response?: string | null;
   error?: string | null;
 };
+
+//ECOMMERCE EVENTS
+
+export type EcomAttribute = {
+  name: string;
+  value: (string | null)[];
+};
+
+export type EcomSimpleAttribute = {
+  name: string;
+  value: string;
+};
+
+export type EcomProductView = {
+  productId: string;
+  price: number;
+  isInStock: boolean;
+  attributes?: EcomAttribute[] | null;
+};
+
+export type EcomCartItem = {
+  productId: string;
+  quantity: number;
+  price: number;
+  discount?: number | null;
+  name?: string | null;
+  category?: string | null;
+};
+
+export enum OrderStatus {
+  Initialized,
+  InProgress,
+  Delivered,
+  Cancelled,
+}
+
+export type EcomOrder = {
+  externalOrderId: string;
+  externalCustomerId?: string | null;
+  totalCost: number;
+  status: OrderStatus;
+  cartId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  shipping?: number | null;
+  discount?: number | null;
+  taxes?: number | null;
+  restoreId?: string | null;
+  statusDescription?: string | null;
+  storeId?: string | null;
+  source?: string | null;
+  deliveryMethod?: string | null;
+  deliveryAddress?: string | null;
+  paymentMethod?: string | null;
+  orderItems?: EcomOrderItem[] | null;
+  attributes?: EcomSimpleAttribute[] | null;
+};
+
+export type EcomOrderItem = {
+  externalItemId: string;
+  name: string;
+  category: string;
+  quantity: number;
+  price: number;
+  url: string;
+  imageUrl?: string | null;
+  description?: string | null;
+};
+
+export type EcomCategoryView = {
+  productCategoryId: string;
+  attributes?: EcomAttribute[] | null;
+};
+
+export type EcomEventProductPayload = {
+  product: EcomProductView;
+  currencyCode?: string | null;
+};
+
+export type EcomEventProductCategoryViewedPayload = {
+  category: EcomCategoryView;
+};
+
+export type EcomEventCartUpdatedPayload = {
+  cartItems: EcomCartItem[];
+  currencyCode?: string | null;
+  cartId: string;
+};
+
+export type EcomEventOrderPayload = {
+  order: EcomOrder;
+  currencyCode?: string | null;
+};
+
+export type EcomEventOrderActionPayload = {
+  externalOrderId: string;
+};
+
+export type EcomEventSearchRequestPayload = {
+  searchQuery: string;
+  isFound: boolean;
+};
