@@ -258,8 +258,8 @@ export function addRetenoInit(
   config: RetenoInitConfig,
 ): MergeResults {
   const retenoConfigKeys = [
-    "isAutomaticSessionReportingEnabled",
     "isAutomaticPushSubsriptionReportingEnabled",
+    "isAutomaticSessionReportingEnabled",
     "isDebugMode",
   ];
 

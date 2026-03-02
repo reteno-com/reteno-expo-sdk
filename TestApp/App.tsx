@@ -10,10 +10,10 @@ import {
 
 import Reteno from "expo-reteno-sdk";
 import { FC, useCallback, useEffect, useState } from "react";
-// import {
-//   LogEventPayload,
-//   LogScreenViewPayload,
-// } from "expo-reteno-sdk/src/types";
+import {
+  LogEventPayload,
+  LogScreenViewPayload,
+} from "expo-reteno-sdk/src/types";
 // import messaging from "@react-native-firebase/messaging";
 
 const USER_TOKEN = Platform.select({
@@ -35,6 +35,14 @@ const user = {
     postcode: "4815162342",
   },
   fields: [{ key: "custom_field", value: "Custom Value" }],
+};
+
+const recommendation = {
+  recomVariantId: "r1107v1482",
+  productIds: ["240-LV09", "24-WG080"],
+  categoryId: "",
+  filters: [],
+  fields: ["productId", "name", "descr", "imageUrl", "price"],
 };
 
 type ButtonProps = {
@@ -62,6 +70,7 @@ const Button: FC<ButtonProps> = (props) => {
 
 export default function App() {
   const [state, setState] = useState({});
+  const [didPauseInAppMessages, setPauseInAppMessages] = useState(false);
 
   const onRetenoPushReceived = useCallback((event: any) => {
     Alert.alert(
@@ -145,6 +154,41 @@ export default function App() {
     }));
   };
 
+  const handleGetRecommendations = async () => {
+    const res = await Reteno.getRecommendations(recommendation);
+
+    setState((prev) => ({
+      ...prev,
+      recommendation: res,
+    }));
+  };
+
+  const handleLogRecommendationEvent = async () => {
+    try {
+      await Reteno.logRecommendationEvent({
+        recomVariantId: "r1107v1482",
+        impressions: [{ productId: "240-LV09" }],
+        clicks: [{ productId: "24-WG080" }],
+        forcePush: true,
+      });
+      console.log("Recommendation event logged successfully");
+    } catch (error) {
+      console.error("Error logging recommendation event", error);
+    }
+  };
+
+  const handleInAppMessagesStatus = async () => {
+    try {
+      await Reteno.pauseInAppMessages(!didPauseInAppMessages);
+      setPauseInAppMessages((prev) => {
+        console.log(`Messages ${!prev ? "paused" : "started"} successfully`);
+        return !prev;
+      });
+    } catch (error) {
+      console.error("Error changing In-App messages status", error);
+    }
+  };
+
   useEffect(() => {
     const l = Reteno.addPushNotificationListener(onRetenoPushReceived);
 
@@ -166,6 +210,19 @@ export default function App() {
         <Button text="Log custom event" onPress={handleLogEvent} />
         <Button text="Log screen view" onPress={handleLogScreenViewEvent} />
         <Button text="Force push data" onPress={handleForcePushData} />
+
+        <Text>Recommendations</Text>
+        <Button text="Get recommendations" onPress={handleGetRecommendations} />
+        <Button
+          text="Log recommendarion event"
+          onPress={handleLogRecommendationEvent}
+        />
+
+        <Text>In-App Messages</Text>
+        <Button
+          text={`${didPauseInAppMessages ? "Start" : "Pause"} messages`}
+          onPress={handleInAppMessagesStatus}
+        />
 
         {!Object.keys(state).length ? (
           <Text>Press `Start SDK` button to initialize Reteno SDK</Text>
