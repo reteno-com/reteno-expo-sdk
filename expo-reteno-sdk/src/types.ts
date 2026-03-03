@@ -8,19 +8,26 @@ export const InAppEvents = {
   BeforeInAppClose: "beforeInAppClose",
   AfterInAppClose: "afterInAppClose",
   OnInAppError: "onInAppError",
+  OnInAppMessageCustomData: "onInAppMessageCustomData",
 } as const;
 
 export const PushNotificationEvents = {
   OnPushNotificationReceived: "onPushNotificationReceived",
+  OnPushNotificationClicked: "onPushNotificationClicked",
   OnPushButtonClicked: "onPushButtonClicked",
 } as const;
 
 export const AppInboxEvents = {
   OnUnreadMessagesCountChanged: "onUnreadMessagesCountChanged",
+  UnreadMessagesCount: "unreadMessagesCount",
 } as const;
 
 export type RetenoSubscriptionEvents = {
   [PushNotificationEvents.OnPushNotificationReceived]: (event: {
+    body: string;
+    [key: string]: any;
+  }) => void;
+  [PushNotificationEvents.OnPushNotificationClicked]: (event: {
     body: string;
     [key: string]: any;
   }) => void;
@@ -33,7 +40,11 @@ export type RetenoSubscriptionEvents = {
   [InAppEvents.BeforeInAppClose]: (callback: InAppDisplayData) => void;
   [InAppEvents.AfterInAppClose]: (callback: InAppDisplayData) => void;
   [InAppEvents.OnInAppError]: (callback: InAppErrorData) => void;
+  [InAppEvents.OnInAppMessageCustomData]: (callback: InAppCustomData) => void;
   [AppInboxEvents.OnUnreadMessagesCountChanged]: () => void;
+  [AppInboxEvents.UnreadMessagesCount]: (
+    callback: UnreadMessagesCountData,
+  ) => void;
 };
 
 type UserCustomField = Record<"key" | "value", string>;

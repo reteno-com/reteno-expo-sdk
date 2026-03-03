@@ -13,6 +13,7 @@ import {
   EcomEventProductCategoryViewedPayload,
   EcomEventProductPayload,
   EcomEventSearchRequestPayload,
+  InAppCustomData,
   InAppDisplayData,
   InAppErrorData,
   InAppEvents,
@@ -24,6 +25,7 @@ import {
   RecommendationPayload,
   RetenoSubscription,
   RetenoSubscriptionEvents,
+  UnreadMessagesCountData,
   User,
   UserInformationPayload,
 } from "./types";
@@ -73,9 +75,17 @@ declare class ExpoRetenoSdkModule extends NativeModule {
     callback: (data: InAppErrorData) => void,
   ): RetenoSubscription;
   onUnreadMessagesCountChanged(): RetenoSubscription;
+  unreadMessagesCountHandler(
+    callback: (data: UnreadMessagesCountData) => void,
+  ): RetenoSubscription;
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined;
+  onInAppMessageCustomDataHandler(
+    callback: (data: InAppCustomData) => void,
+  ): RetenoSubscription;
+
+  // Ecommerce Events
   logEcomEventProductViewed: (
     payload: EcomEventProductPayload,
   ) => Promise<void>;
@@ -223,11 +233,19 @@ export const Reteno = {
   },
 
   // Listeners
-  addPushNotificationListener(
+  setOnRetenoPushReceivedListener(
     listener: (event: any) => void,
   ): RetenoSubscription {
     return emitter.addListener(
       PushNotificationEvents.OnPushNotificationReceived,
+      listener,
+    );
+  },
+  setOnRetenoPushClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription {
+    return emitter.addListener(
+      PushNotificationEvents.OnPushNotificationClicked,
       listener,
     );
   },
@@ -276,12 +294,32 @@ export const Reteno = {
       }
     });
   },
+  onInAppMessageCustomDataHandler(
+    callback: (data: InAppCustomData) => void,
+  ): RetenoSubscription {
+    return emitter.addListener(InAppEvents.OnInAppMessageCustomData, (data) => {
+      if (callback && typeof callback === "function") {
+        callback(data);
+      }
+    });
+  },
+
+  unreadMessagesCountHandler(
+    callback: (data: UnreadMessagesCountData) => void,
+  ) {
+    return emitter.addListener(AppInboxEvents.UnreadMessagesCount, (data) => {
+      if (callback && typeof callback === "function") {
+        callback(data);
+      }
+    });
+  },
   onUnreadMessagesCountChanged(): RetenoSubscription {
     return emitter.addListener(
       AppInboxEvents.OnUnreadMessagesCountChanged,
       () => {},
     );
   },
+
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {
