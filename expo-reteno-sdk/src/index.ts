@@ -99,6 +99,9 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   logEcomEventSearchRequest: (
     payload: EcomEventSearchRequestPayload,
   ) => Promise<void>;
+
+  setAutoOpenLinks: (state: boolean) => Promise<boolean>;
+  getAutoOpenLinks: () => Promise<boolean>;
 }
 
 const ModuleInstance =
@@ -106,6 +109,7 @@ const ModuleInstance =
 const emitter = new EventEmitter<RetenoSubscriptionEvents>(ModuleInstance);
 
 export const Reteno = {
+  // User notifications
   registerForRemoteNotifications() {
     return ModuleInstance.registerForRemoteNotifications();
   },
@@ -115,6 +119,8 @@ export const Reteno = {
   setDeviceToken(token: string) {
     return ModuleInstance.setDeviceToken(token);
   },
+
+  // User attributes
   updateUserAttributes(userId: string, attributes = {} as User) {
     return ModuleInstance.updateUserAttributes({
       externalUserId: userId,
@@ -137,6 +143,8 @@ export const Reteno = {
       accountSuffix,
     );
   },
+
+  // Log events
   logEvent(payload: LogEventPayload): Promise<boolean | string> {
     return ModuleInstance.logEvent(payload);
   },
@@ -146,12 +154,16 @@ export const Reteno = {
   forcePushData(): Promise<void> {
     return ModuleInstance.forcePushData();
   },
+
+  // Recommendations
   getRecommendations(payload: RecommendationPayload): Promise<any> {
     return ModuleInstance.getRecommendations(payload);
   },
   logRecommendationEvent(payload: RecommendationEventPayload): Promise<void> {
     return ModuleInstance.logRecommendationEvent(payload);
   },
+
+  // In-App Messages
   pauseInAppMessages(state: boolean): Promise<void> {
     return ModuleInstance.pauseInAppMessages(state);
   },
@@ -171,6 +183,7 @@ export const Reteno = {
     return ModuleInstance.getAppInboxMessagesCount();
   },
 
+  // Ecommerce events
   logEcomEventProductViewed: (payload: EcomEventProductPayload) => {
     return ModuleInstance.logEcomEventProductViewed(payload);
   },
@@ -199,6 +212,14 @@ export const Reteno = {
   },
   logEcomEventSearchRequest: (payload: EcomEventSearchRequestPayload) => {
     return ModuleInstance.logEcomEventSearchRequest(payload);
+  },
+
+  // Links handle
+  setAutoOpenLinks: (state: boolean) => {
+    return ModuleInstance.setAutoOpenLinks(state);
+  },
+  getAutoOpenLinks: () => {
+    return ModuleInstance.getAutoOpenLinks();
   },
 
   // Listeners
@@ -261,7 +282,6 @@ export const Reteno = {
       () => {},
     );
   },
-
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {

@@ -67,10 +67,25 @@ public class ExpoRetenoSdkModule: Module {
 	// Each module class must implement the definition function. The definition consists of components
 	// that describes the module's functionality and behavior.
 	// See https://docs.expo.dev/modules/module-api for more details about available components.
+	private static let autoOpenLinksKey = "RetenoAutoOpenLinks"
+	
+	private static var autoOpenLinks: Bool {
+			get {
+					if UserDefaults.standard.object(forKey: autoOpenLinksKey) == nil {
+							return true // default value
+					}
+					return UserDefaults.standard.bool(forKey: autoOpenLinksKey)
+			}
+			set {
+					UserDefaults.standard.set(newValue, forKey: autoOpenLinksKey)
+			}
+	}
+	
 	public func definition() -> ModuleDefinition {
 		// Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
 		// Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
 		// The module will be accessible from `requireNativeModule('ExpoSdk')` in JavaScript.
+		
 		Name("ExpoRetenoSdk")
 		
 		Events(
@@ -92,6 +107,31 @@ public class ExpoRetenoSdkModule: Module {
 			//				name: .pushReceived,
 			//				object: nil
 			//			)
+			
+			// Listen for link events from AppDelegate via NotificationCenter (cold start support)
+			NotificationCenter.default.addObserver(
+					self,
+					selector: #selector(handleLinkReceived(_:)),
+					name: NSNotification.Name("RetenoLinkReceived"),
+					object: nil
+			)
+
+			// Fallback: set link handler for clients who don't add it in AppDelegate
+			// If AppDelegate already set a handler, this overrides it — which is fine,
+			// because cold start links were already handled by AppDelegate's handler
+			Reteno.addLinkHandler { linkInfo in
+				self.sendEvent(
+					RetenoExpoEvent.inAppCustomDataReceived.value,
+					["body": [
+						"customData": linkInfo.customData as Any,
+						"url": linkInfo.url?.absoluteString as Any
+					]]
+				)
+					
+					if ExpoRetenoSdkModule.autoOpenLinks, let url = linkInfo.url {
+							UIApplication.shared.open(url)
+					}
+			}
 			
 			print(RetenoExpoEvent.onPushNotificationReceived.value)
 			
@@ -116,7 +156,12 @@ public class ExpoRetenoSdkModule: Module {
 				
 				self.sendEvent(
 					RetenoExpoEvent.onPushButtonClicked.value,
-					["userInfo": userInfo, "actionId": actionId, "customData": customData as Any, "actionLink": actionLink as Any]
+					[
+						"userInfo": userInfo,
+						"actionId": actionId,
+						"customData": customData as Any,
+						"actionLink": actionLink as Any
+					]
 				)
 			}
 		}
@@ -293,7 +338,7 @@ public class ExpoRetenoSdkModule: Module {
 					}
 					promise.resolve(serializedRecommendations)
 					
-				case .failure(let error):
+				case .failure(_):
 					promise.reject("100", "Reteno iOS SDK getRecommendations Error")
 				}
 			}
@@ -445,7 +490,7 @@ public class ExpoRetenoSdkModule: Module {
 		}
 		
 		AsyncFunction("logEcomEventProductViewed", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload as [String : Any]) else {
 					promise.reject("Payload Error", "Payload cannot be null")
 					return
 			}
@@ -461,7 +506,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventProductCategoryViewed", { ( payload: [String: Any?], promise: Promise ) -> Void in
-					guard let category = RetenoEcomEvent.buildProductCategoryDataFromPayload(payload) else {
+			guard let category = RetenoEcomEvent.buildProductCategoryDataFromPayload(payload as [String : Any]) else {
 						promise.reject("Payload Error", "Payload cannot be null")
 							return
 					}
@@ -477,7 +522,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventProductAddedToWishlist", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 				return
 			}
@@ -493,7 +538,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventCartUpdated", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildCartUpdatedDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildCartUpdatedDataFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 					return
 			}
@@ -513,7 +558,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventOrderCreated", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 				return
 			}
@@ -530,7 +575,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventOrderUpdated", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildOrderDataFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 				return
 			}
@@ -546,7 +591,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventOrderDelivered", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload) else {
+			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 					return
 			}
@@ -560,7 +605,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventOrderCancelled", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload) else {
+			guard let externalOrderId = RetenoEcomEvent.buildOrderExternalIdFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 				return
 			}
@@ -576,7 +621,7 @@ public class ExpoRetenoSdkModule: Module {
 		})
 		
 		AsyncFunction("logEcomEventSearchRequest", { ( payload: [String: Any?], promise: Promise ) -> Void in
-			guard let data = RetenoEcomEvent.buildSearchRequestDataFromPayload(payload) else {
+			guard let data = RetenoEcomEvent.buildSearchRequestDataFromPayload(payload as [String : Any]) else {
 				promise.reject("Payload Error", "Payload cannot be null")
 				return
 			}
@@ -587,8 +632,29 @@ public class ExpoRetenoSdkModule: Module {
 				promise.reject("Reteno iOS SDK Error", error.localizedDescription)
 			}
 		})
+		
+		// TODO: should it be refactored to default getter/setter?
+		// -------------------------------------------------------
+		AsyncFunction("setAutoOpenLinks") { (state: Bool, promise: Promise) -> Void in
+				ExpoRetenoSdkModule.autoOpenLinks = state
+				promise.resolve(true)
+		}
+
+		AsyncFunction("getAutoOpenLinks") { (promise: Promise) -> Void in
+			promise.resolve(ExpoRetenoSdkModule.autoOpenLinks)
+		}
+		// -------------------------------------------------------
 	}
 
+	@objc
+	func handleLinkReceived(_ notification: Notification) {
+			guard let userInfo = notification.userInfo else { return }
+		sendEvent(
+			RetenoExpoEvent.inAppCustomDataReceived.value,
+			["body": userInfo]
+		)
+	}
+	
 		@objc
 		func getStringOrNil(input userInput: String?) -> String {
 			let value = (userInput ?? "").isEmpty ? "" : String(userInput ?? "")
