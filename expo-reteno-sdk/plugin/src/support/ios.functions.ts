@@ -1,4 +1,9 @@
-import { MergeResults, RetenoIOSAutogenComments } from "../types";
+import {
+  MergeResults,
+  RetenoInitConfig,
+  RetenoInitConfigKeys,
+  RetenoIOSAutogenComments,
+} from "../types";
 import { iosConfig } from "./constants";
 import crypto from "crypto";
 import { FileService } from "./FileService";
@@ -249,10 +254,24 @@ export function addRetenoImport(src: string): MergeResults {
 
 export function addRetenoInit(
   src: string,
-  config: { apiKey: string; isDebugMode?: boolean },
+  apiKey: string,
+  config: RetenoInitConfig,
 ): MergeResults {
+  const retenoConfigKeys = [
+    "isAutomaticPushSubsriptionReportingEnabled",
+    "isAutomaticSessionReportingEnabled",
+    "isDebugMode",
+  ];
+
+  const configurationString = retenoConfigKeys
+    .map((key) => {
+      return `${key}: ${config[key as RetenoInitConfigKeys] ?? false}`;
+    })
+    .join(", ");
+
   const newSrc = [
-    `\tReteno.start(apiKey: "${config.apiKey}", isDebugMode: ${config.isDebugMode ?? false})`,
+    `\tlet configuration = RetenoConfiguration(${configurationString})`,
+    `\tReteno.start(apiKey: "${apiKey}", configuration: configuration)`,
   ];
 
   return mergeContents({

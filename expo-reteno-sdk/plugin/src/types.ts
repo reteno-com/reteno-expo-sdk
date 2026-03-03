@@ -36,3 +36,12 @@ export const RetenoIOSAutogenComments = {
   FIREBASE_IMPORT: "@react-native-firebase/app - import",
   RETENO_APNS: "expo-reteno-sdk - APNs",
 } as const;
+
+export type RetenoInitConfigKeys =
+  | "isDebugMode"
+  | "isAutomaticSessionReportingEnabled"
+  | "isAutomaticPushSubsriptionReportingEnabled";
+
+export type RetenoInitConfig = Partial<{
+  [key in RetenoInitConfigKeys]: boolean;
+}>;
