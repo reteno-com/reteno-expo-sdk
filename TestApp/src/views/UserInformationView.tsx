@@ -1,4 +1,5 @@
 import Reteno from "expo-reteno-sdk";
+import { UserAttributes } from "expo-reteno-sdk/build/types";
 import { useState } from "react";
 import { Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
@@ -43,15 +44,10 @@ export const UserInformationView = () => {
   const [anonymous, setAnonymous] = useState({});
 
   const handleSetAttributes = () => {
-    Reteno.updateUserAttributes(USER_TOKEN ?? "", {
-      userAttributes: user,
+    Reteno.updateUserAttributes({
+      externalUserId: USER_TOKEN ?? "",
+      user: userData as UserAttributes,
     });
-
-    // If you want to update anonymous:
-    // Reteno.updateAnonymousUserAttributes({
-    //   firstName: user.firstName,
-    //   lastName: user.lastName,
-    // });
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {

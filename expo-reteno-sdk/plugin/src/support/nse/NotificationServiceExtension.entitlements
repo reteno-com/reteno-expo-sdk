@@ -4,7 +4,8 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>{{GROUP_IDENTIFIER}}</string>
+		<string>group.{{GROUP_IDENTIFIER}}.reteno-local-storage</string>
+		<string>group.{{GROUP_IDENTIFIER}}.NotificationServiceExtension</string>
 	</array>
 </dict>
 </plist>

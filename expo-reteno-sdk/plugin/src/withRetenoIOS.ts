@@ -284,7 +284,7 @@ const withRetenoNSE: ConfigPlugin<RetenoNSEProps> = (config, props) => {
 
       await updateNSEEntitlements(
         `${destPath}/${entitlements}`,
-        `group.${config.ios?.bundleIdentifier}.${source}`,
+        String(config.ios?.bundleIdentifier),
       );
 
       await updateNSEBundleVersions(`${destPath}/${infoPlist}`, {

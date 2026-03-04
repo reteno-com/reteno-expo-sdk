@@ -76,7 +76,7 @@ export type User = {
 
 export type UserInformationPayload = {
   externalUserId: string;
-  user: User;
+  user: UserAttributes;
 };
 
 export type UserInformationMultiAccountPayload = {
