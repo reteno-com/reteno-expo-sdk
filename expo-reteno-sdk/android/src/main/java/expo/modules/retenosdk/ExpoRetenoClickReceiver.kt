@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-class ExpoRetenoPushReceiver : BroadcastReceiver() {
-  override fun onReceive(context: Context, intent: Intent) {
+class ExpoRetenoClickReceiver : BroadcastReceiver() {
+  override fun onClick(context: Context, intent: Intent) {
     // Extract data from the intent 
     val dataMap = mutableMapOf<String, Any?>()
     
@@ -20,22 +20,9 @@ class ExpoRetenoPushReceiver : BroadcastReceiver() {
     }
 
     try {
-      ExpoRetenoSdkModule.onReceiveNotification(dataMap)
+      ExpoRetenoSdkModule.onClickNotification(dataMap)
     } catch (e: Exception) {
       Log.e("ExpoRetenoPushReceiver", "Failed to forward notification to module", e)
     }
   }
 }
-
-// package expo.modules.retenosdk;
-//
-// import android.content.BroadcastReceiver;
-// import android.content.Context;
-// import android.content.Intent;
-//
-// public class RetenoPushReceiver extends BroadcastReceiver {
-//   @Override
-//   public void onReceive(Context context, Intent intent) {
-//     ExpoRetenoSdkModule.onRetenoPushReceived(context, intent);
-//   }
-// }

@@ -52,6 +52,7 @@ dependencies {
   implementation 'androidx.appcompat:appcompat:1.7.1'
   implementation "androidx.activity:activity-ktx:1.8.2" 
   implementation "androidx.fragment:fragment-ktx:1.6.2"
+  implementation "com.facebook.react:react-android"
   implementation 'com.reteno:core:2.8.9'
   implementation 'com.reteno:push:2.8.9'
   implementation 'com.reteno:fcm:2.8.9'
