@@ -46,12 +46,14 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   ): RetenoSubscription | undefined;
 
   // User attributes
-  updateUserAttributes(payload: UserInformationPayload): void;
-  updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
+  updateUserAttributes(payload: UserInformationPayload): Promise<void>;
+  updateAnonymousUserAttributes(
+    payload: AnonymousUserAttributes,
+  ): Promise<void>;
   updateMultiAccountUserAttributes(
     payload: UserInformationPayload,
     accountSuffix: string,
-  ): void;
+  ): Promise<void>;
 
   // Log events
   logEvent(payload: LogEventPayload): Promise<boolean | string>;
@@ -175,8 +177,8 @@ export const Reteno = {
   updateUserAttributes(payload) {
     return ModuleInstance.updateUserAttributes(payload);
   },
-  updateAnonymousUserAttributes(attributes: AnonymousUserAttributes) {
-    return ModuleInstance.updateAnonymousUserAttributes(attributes);
+  updateAnonymousUserAttributes(payload: AnonymousUserAttributes) {
+    return ModuleInstance.updateAnonymousUserAttributes(payload);
   },
   updateMultiAccountUserAttributes(payload, accountSuffix) {
     return ModuleInstance.updateMultiAccountUserAttributes(

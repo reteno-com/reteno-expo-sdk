@@ -90,11 +90,27 @@ export type UserInformationMultiAccountPayload = {
   };
 };
 
+type Address = {
+  region?: string | null;
+  town?: string | null;
+  address?: string | null;
+  postcode?: string | null;
+};
+
+type Field = {
+  key: string;
+  value: string;
+};
+
+type Fields = Field[];
+
 export type AnonymousUserAttributes = {
-  firstName?: string;
-  lastName?: string;
-  timeZone?: string;
-  fields?: UserCustomField[];
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  languageCode?: string | null | undefined;
+  timeZone?: string | null | undefined;
+  address?: Address | null | undefined;
+  fields?: Fields | null | undefined;
 };
 
 export type LogEventParameter = {

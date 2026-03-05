@@ -88,7 +88,7 @@ export const UserInformationView = () => {
           ...prev,
           // deviceToken: token,
           userToken: USER_TOKEN,
-          userAttributes: user,
+          userAttributes: anonymousData,
         }));
       }
 
