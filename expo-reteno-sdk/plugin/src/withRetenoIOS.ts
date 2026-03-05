@@ -236,10 +236,13 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
       config.modResults.contents,
     ).contents;
 
-    config.modResults.contents = addRetenoInit(config.modResults.contents, {
-      apiKey: props.sdkAccessToken,
-      isDebugMode: props.debug,
-    }).contents;
+    config.modResults.contents = addRetenoInit(
+      config.modResults.contents,
+      props.sdkAccessToken,
+      {
+        isDebugMode: props.debug,
+      },
+    ).contents;
 
     return config;
   });
@@ -281,7 +284,7 @@ const withRetenoNSE: ConfigPlugin<RetenoNSEProps> = (config, props) => {
 
       await updateNSEEntitlements(
         `${destPath}/${entitlements}`,
-        `group.${config.ios?.bundleIdentifier}.${source}`,
+        String(config.ios?.bundleIdentifier),
       );
 
       await updateNSEBundleVersions(`${destPath}/${infoPlist}`, {

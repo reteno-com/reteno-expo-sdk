@@ -10,9 +10,13 @@ const withReteno: ConfigPlugin<RetenoProps> = (config, props) => {
     );
   }
 
-  // TODO: Add possibility to install SDK only for one platform
-  config = withRetenoAndroid(config, props.android);
-  config = withRetenoIOS(config, props.ios);
+  if (props.android) {
+    config = withRetenoAndroid(config, props.android);
+  }
+
+  if (props.ios) {
+    config = withRetenoIOS(config, props.ios);
+  }
 
   return config;
 };
