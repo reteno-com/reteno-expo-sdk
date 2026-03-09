@@ -13,6 +13,7 @@ import {
   EcomEventProductCategoryViewedPayload,
   EcomEventProductPayload,
   EcomEventSearchRequestPayload,
+  InAppCustomData,
   InAppDisplayData,
   InAppErrorData,
   InAppEvents,
@@ -24,29 +25,46 @@ import {
   RecommendationPayload,
   RetenoSubscription,
   RetenoSubscriptionEvents,
-  User,
+  UnreadMessagesCountData,
   UserInformationPayload,
 } from "./types";
 import { Platform } from "react-native";
-// import { Platform } from "react-native";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
+  // Push Notifications
   registerForRemoteNotifications(): string;
   getInitialNotification: () => Promise<boolean>;
   setDeviceToken(messagingToken: string): void;
-  updateUserAttributes(payload: UserInformationPayload): void;
-  updateAnonymousUserAttributes(attributes?: AnonymousUserAttributes): void;
+  setOnRetenoPushReceivedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription;
+  setOnRetenoPushClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription;
+  setOnRetenoPushButtonClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription | undefined;
+
+  // User attributes
+  updateUserAttributes(payload: UserInformationPayload): Promise<void>;
+  updateAnonymousUserAttributes(
+    payload: AnonymousUserAttributes,
+  ): Promise<void>;
   updateMultiAccountUserAttributes(
     payload: UserInformationPayload,
     accountSuffix: string,
-  ): void;
+  ): Promise<void>;
+
+  // Log events
   logEvent(payload: LogEventPayload): Promise<boolean | string>;
   logScreenView(payload: LogScreenViewPayload): Promise<boolean | string>;
   forcePushData(): Promise<void>;
+
+  // Recommendations
   getRecommendations(payload: RecommendationPayload): Promise<any>;
   logRecommendationEvent(payload: RecommendationEventPayload): Promise<void>;
-  pauseInAppMessages(state: boolean): Promise<void>;
-  setInAppLifecycleCallback(): void;
+
+  // App Inbox messages
   getAppInboxMessages(
     payload: AppInboxPayload,
   ): Promise<InboxMessage[] | Error>;
@@ -54,9 +72,11 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   markAllAsOpened: () => Promise<boolean>;
   getAppInboxMessagesCount: () => Promise<number>;
 
-  addPushNotificationListener(
-    listener: (event: any) => void,
-  ): RetenoSubscription;
+  // In-App Listeners
+  pauseInAppMessages(state: boolean): Promise<void>;
+  setInAppLifecycleCallback(): void;
+
+  // In-App Listeners
   beforeInAppDisplayHandler(
     callback: (data: InAppDisplayData) => void,
   ): RetenoSubscription;
@@ -72,10 +92,15 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   onInAppErrorHandler(
     callback: (data: InAppErrorData) => void,
   ): RetenoSubscription;
+  onInAppMessageCustomDataHandler(
+    callback: (data: InAppCustomData) => void,
+  ): RetenoSubscription;
+  unreadMessagesCountHandler(
+    callback: (data: UnreadMessagesCountData) => void,
+  ): RetenoSubscription;
   onUnreadMessagesCountChanged(): RetenoSubscription;
-  setOnRetenoPushButtonClickedListener(
-    listener: (event: any) => void,
-  ): RetenoSubscription | undefined;
+
+  // Ecommerce Events
   logEcomEventProductViewed: (
     payload: EcomEventProductPayload,
   ) => Promise<void>;
@@ -100,6 +125,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
     payload: EcomEventSearchRequestPayload,
   ) => Promise<void>;
 
+  // Autolinks
   setAutoOpenLinks: (state: boolean) => Promise<boolean>;
   getAutoOpenLinks: () => Promise<boolean>;
 }
@@ -109,7 +135,7 @@ const ModuleInstance =
 const emitter = new EventEmitter<RetenoSubscriptionEvents>(ModuleInstance);
 
 export const Reteno = {
-  // User notifications
+  // Push notifications
   registerForRemoteNotifications() {
     return ModuleInstance.registerForRemoteNotifications();
   },
@@ -117,29 +143,49 @@ export const Reteno = {
     return ModuleInstance.getInitialNotification();
   },
   setDeviceToken(token: string) {
+    if (Platform.OS === "android")
+      throw new Error("[Reteno] `setDeviceToken` is iOS-only");
+
     return ModuleInstance.setDeviceToken(token);
+  },
+  setOnRetenoPushReceivedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription {
+    return emitter.addListener(
+      PushNotificationEvents.OnPushNotificationReceived,
+      listener,
+    );
+  },
+  setOnRetenoPushClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription {
+    return emitter.addListener(
+      PushNotificationEvents.OnPushNotificationClicked,
+      listener,
+    );
+  },
+  setOnRetenoPushButtonClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription | undefined {
+    if (Platform.OS === "ios") {
+      return emitter.addListener(
+        PushNotificationEvents.OnPushButtonClicked,
+        listener,
+      );
+    }
+    return undefined;
   },
 
   // User attributes
-  updateUserAttributes(userId: string, attributes = {} as User) {
-    return ModuleInstance.updateUserAttributes({
-      externalUserId: userId,
-      user: attributes,
-    });
+  updateUserAttributes(payload) {
+    return ModuleInstance.updateUserAttributes(payload);
   },
-  updateAnonymousUserAttributes(attributes: AnonymousUserAttributes) {
-    return ModuleInstance.updateAnonymousUserAttributes(attributes);
+  updateAnonymousUserAttributes(payload: AnonymousUserAttributes) {
+    return ModuleInstance.updateAnonymousUserAttributes(payload);
   },
-  updateMultiAccountUserAttributes(
-    userId: string,
-    attributes = {} as User,
-    accountSuffix = "",
-  ) {
+  updateMultiAccountUserAttributes(payload, accountSuffix) {
     return ModuleInstance.updateMultiAccountUserAttributes(
-      {
-        externalUserId: userId,
-        user: attributes,
-      },
+      payload,
       accountSuffix,
     );
   },
@@ -163,13 +209,7 @@ export const Reteno = {
     return ModuleInstance.logRecommendationEvent(payload);
   },
 
-  // In-App Messages
-  pauseInAppMessages(state: boolean): Promise<void> {
-    return ModuleInstance.pauseInAppMessages(state);
-  },
-  setInAppLifecycleCallback() {
-    ModuleInstance.setInAppLifecycleCallback();
-  },
+  // App Inbox Messages
   getAppInboxMessages(payload: AppInboxPayload) {
     return ModuleInstance.getAppInboxMessages(payload);
   },
@@ -183,54 +223,15 @@ export const Reteno = {
     return ModuleInstance.getAppInboxMessagesCount();
   },
 
-  // Ecommerce events
-  logEcomEventProductViewed: (payload: EcomEventProductPayload) => {
-    return ModuleInstance.logEcomEventProductViewed(payload);
+  // In-App Messages
+  pauseInAppMessages(state: boolean): Promise<void> {
+    return ModuleInstance.pauseInAppMessages(state);
   },
-  logEcomEventProductAddedToWishlist: (payload: EcomEventProductPayload) => {
-    return ModuleInstance.logEcomEventProductAddedToWishlist(payload);
-  },
-  logEcomEventProductCategoryViewed: (
-    payload: EcomEventProductCategoryViewedPayload,
-  ) => {
-    return ModuleInstance.logEcomEventProductCategoryViewed(payload);
-  },
-  logEcomEventCartUpdated: (payload: EcomEventCartUpdatedPayload) => {
-    return ModuleInstance.logEcomEventCartUpdated(payload);
-  },
-  logEcomEventOrderCreated: (payload: EcomEventOrderPayload) => {
-    return ModuleInstance.logEcomEventOrderCreated(payload);
-  },
-  logEcomEventOrderUpdated: (payload: EcomEventOrderPayload) => {
-    return ModuleInstance.logEcomEventOrderUpdated(payload);
-  },
-  logEcomEventOrderDelivered: (payload: EcomEventOrderActionPayload) => {
-    return ModuleInstance.logEcomEventOrderDelivered(payload);
-  },
-  logEcomEventOrderCancelled: (payload: EcomEventOrderActionPayload) => {
-    return ModuleInstance.logEcomEventOrderCancelled(payload);
-  },
-  logEcomEventSearchRequest: (payload: EcomEventSearchRequestPayload) => {
-    return ModuleInstance.logEcomEventSearchRequest(payload);
+  setInAppLifecycleCallback() {
+    ModuleInstance.setInAppLifecycleCallback();
   },
 
-  // Links handle
-  setAutoOpenLinks: (state: boolean) => {
-    return ModuleInstance.setAutoOpenLinks(state);
-  },
-  getAutoOpenLinks: () => {
-    return ModuleInstance.getAutoOpenLinks();
-  },
-
-  // Listeners
-  addPushNotificationListener(
-    listener: (event: any) => void,
-  ): RetenoSubscription {
-    return emitter.addListener(
-      PushNotificationEvents.OnPushNotificationReceived,
-      listener,
-    );
-  },
+  // In-App Listeners
   beforeInAppDisplayHandler(
     callback: (data: InAppDisplayData) => void,
   ): RetenoSubscription {
@@ -276,25 +277,70 @@ export const Reteno = {
       }
     });
   },
+  onInAppMessageCustomDataHandler(
+    callback: (data: InAppCustomData) => void,
+  ): RetenoSubscription {
+    return emitter.addListener(InAppEvents.OnInAppMessageCustomData, (data) => {
+      if (callback && typeof callback === "function") {
+        callback(data);
+      }
+    });
+  },
+  unreadMessagesCountHandler(
+    callback: (data: UnreadMessagesCountData) => void,
+  ) {
+    return emitter.addListener(AppInboxEvents.UnreadMessagesCount, (data) => {
+      if (callback && typeof callback === "function") {
+        callback(data);
+      }
+    });
+  },
   onUnreadMessagesCountChanged(): RetenoSubscription {
     return emitter.addListener(
       AppInboxEvents.OnUnreadMessagesCountChanged,
       () => {},
     );
   },
-  setOnRetenoPushButtonClickedListener(
-    listener: (event: any) => void,
-  ): RetenoSubscription | undefined {
-    if (Platform.OS === "ios") {
-      return emitter.addListener(
-        PushNotificationEvents.OnPushButtonClicked,
-        listener,
-      );
-    }
 
-    return undefined;
+  // Ecommerce Events
+  logEcomEventProductViewed: (payload: EcomEventProductPayload) => {
+    return ModuleInstance.logEcomEventProductViewed(payload);
   },
-};
+  logEcomEventProductAddedToWishlist: (payload: EcomEventProductPayload) => {
+    return ModuleInstance.logEcomEventProductAddedToWishlist(payload);
+  },
+  logEcomEventProductCategoryViewed: (
+    payload: EcomEventProductCategoryViewedPayload,
+  ) => {
+    return ModuleInstance.logEcomEventProductCategoryViewed(payload);
+  },
+  logEcomEventCartUpdated: (payload: EcomEventCartUpdatedPayload) => {
+    return ModuleInstance.logEcomEventCartUpdated(payload);
+  },
+  logEcomEventOrderCreated: (payload: EcomEventOrderPayload) => {
+    return ModuleInstance.logEcomEventOrderCreated(payload);
+  },
+  logEcomEventOrderUpdated: (payload: EcomEventOrderPayload) => {
+    return ModuleInstance.logEcomEventOrderUpdated(payload);
+  },
+  logEcomEventOrderDelivered: (payload: EcomEventOrderActionPayload) => {
+    return ModuleInstance.logEcomEventOrderDelivered(payload);
+  },
+  logEcomEventOrderCancelled: (payload: EcomEventOrderActionPayload) => {
+    return ModuleInstance.logEcomEventOrderCancelled(payload);
+  },
+  logEcomEventSearchRequest: (payload: EcomEventSearchRequestPayload) => {
+    return ModuleInstance.logEcomEventSearchRequest(payload);
+  },
+
+  // Links handle
+  setAutoOpenLinks: (state: boolean) => {
+    return ModuleInstance.setAutoOpenLinks(state);
+  },
+  getAutoOpenLinks: () => {
+    return ModuleInstance.getAutoOpenLinks();
+  },
+} as ExpoRetenoSdkModule;
 
 // This call loads the native module object from the JSI.
 export default Reteno;

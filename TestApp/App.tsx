@@ -1,252 +1,76 @@
-import { StatusBar } from "expo-status-bar";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+  ActionButtonsView,
+  AppInboxMessagesView,
+  InAppMessagesView,
+  InstallationView,
+  MenuView,
+  PushNotificationsView,
+  RecommendationsView,
+  UserBehaviourView,
+  UserInformationView,
+} from "src/views";
+import { NavigationContainer } from "@react-navigation/native";
+import { EcommerceView } from "src/views/EcommerceView";
 
-import Reteno from "expo-reteno-sdk";
-import { FC, useCallback, useEffect, useState } from "react";
-import {
-  LogEventPayload,
-  LogScreenViewPayload,
-} from "expo-reteno-sdk/src/types";
-// import messaging from "@react-native-firebase/messaging";
+const Stack = createNativeStackNavigator();
 
-const USER_TOKEN = Platform.select({
-  ios: "a81fbb6e-f1d4-4c5b-a06f-fcff840aa0ae",
-  android: "2b5a1816-a8c0-40f9-a858-86a39901c920",
-});
-
-const user = {
-  phone: "+380990000004",
-  email: "emailtest3@gmail.com",
-  timeZone: "Europe/Kyiv",
-  languageCode: "en-UA",
-  firstName: "Tracy",
-  lastName: "McConnell",
-  address: {
-    region: "Ukraine",
-    town: "Kyiv",
-    address: "42 Random st.",
-    postcode: "4815162342",
-  },
-  fields: [{ key: "custom_field", value: "Custom Value" }],
-};
-
-const recommendation = {
-  recomVariantId: "r1107v1482",
-  productIds: ["240-LV09", "24-WG080"],
-  categoryId: "",
-  filters: [],
-  fields: ["productId", "name", "descr", "imageUrl", "price"],
-};
-
-type ButtonProps = {
-  text: string;
-  onPress: () => void;
-};
-
-const Button: FC<ButtonProps> = (props) => {
+function RootStack() {
   return (
-    <TouchableOpacity
-      onPress={props.onPress}
-      activeOpacity={0.75}
-      style={{
-        alignItems: "center",
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: "#ededed",
-      }}
-    >
-      <Text>{props.text}</Text>
-    </TouchableOpacity>
-  );
-};
-
-export default function App() {
-  const [state, setState] = useState({});
-  const [didPauseInAppMessages, setPauseInAppMessages] = useState(false);
-
-  const onRetenoPushReceived = useCallback((event: any) => {
-    Alert.alert(
-      "onPushNotificationReceived",
-      event ? JSON.stringify(event) : event,
-    );
-  }, []);
-
-  const handleStart = () => {
-    Reteno.registerForRemoteNotifications();
-  };
-
-  const handleSetAttribute = () => {
-    // Reteno.updateUserAttributes(USER_TOKEN ?? "", {
-    //   userAttributes: user,
-    // });
-
-    // If you want to update anonymous:
-    Reteno.updateAnonymousUserAttributes({
-      firstName: user.firstName,
-      lastName: user.lastName,
-    });
-
-    if (Platform.OS === "ios") {
-      async function getTokenOnIos() {
-        // const token = await messaging().getToken();
-        // Reteno.setDeviceToken(token);
-
-        setState((prev) => ({
-          ...prev,
-          // deviceToken: token,
-          userToken: USER_TOKEN,
-          userAttributes: user,
-        }));
-      }
-
-      getTokenOnIos();
-    } else {
-      setState((prev) => ({
-        ...prev,
-        userToken: USER_TOKEN,
-        userAttributes: user,
-      }));
-    }
-  };
-
-  const handleLogEvent = () => {
-    const event: LogEventPayload = {
-      eventName: "TestCustomEvent",
-      date: new Date().toISOString(),
-      parameters: [{ name: "CustomName", value: "Custom Value" }],
-    };
-
-    Reteno.logEvent(event);
-
-    setState((prev) => ({
-      ...prev,
-      customEvents: JSON.stringify(event),
-    }));
-  };
-
-  const handleLogScreenViewEvent = () => {
-    Reteno.logScreenView(
-      "DashboardScreen-ae88afd0-74a0-460d-ab73-c546f4b7eeb6",
-    );
-
-    setState((prev) => ({
-      ...prev,
-      logScreenView: JSON.stringify(
-        "DashboardScreen-ae88afd0-74a0-460d-ab73-c546f4b7eeb6",
-      ),
-    }));
-  };
-
-  const handleForcePushData = () => {
-    Reteno.forcePushData();
-
-    setState((prev) => ({
-      ...prev,
-      forcePushData: true,
-    }));
-  };
-
-  const handleGetRecommendations = async () => {
-    const res = await Reteno.getRecommendations(recommendation);
-
-    setState((prev) => ({
-      ...prev,
-      recommendation: res,
-    }));
-  };
-
-  const handleLogRecommendationEvent = async () => {
-    try {
-      await Reteno.logRecommendationEvent({
-        recomVariantId: "r1107v1482",
-        impressions: [{ productId: "240-LV09" }],
-        clicks: [{ productId: "24-WG080" }],
-        forcePush: true,
-      });
-      console.log("Recommendation event logged successfully");
-    } catch (error) {
-      console.error("Error logging recommendation event", error);
-    }
-  };
-
-  const handleInAppMessagesStatus = async () => {
-    try {
-      await Reteno.pauseInAppMessages(!didPauseInAppMessages);
-      setPauseInAppMessages((prev) => {
-        console.log(`Messages ${!prev ? "paused" : "started"} successfully`);
-        return !prev;
-      });
-    } catch (error) {
-      console.error("Error changing In-App messages status", error);
-    }
-  };
-
-  useEffect(() => {
-    const l = Reteno.addPushNotificationListener(onRetenoPushReceived);
-
-    return () => {
-      l.remove();
-    };
-  }, []);
-
-  return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <View style={{ alignItems: "center", gap: 8 }}>
-        <Text>Reteno installation SDK</Text>
-
-        <Button text="Request push permissions" onPress={handleStart} />
-        <Button text="Set UserID" onPress={handleSetAttribute} />
-
-        <Text>Log events</Text>
-        <Button text="Log custom event" onPress={handleLogEvent} />
-        <Button text="Log screen view" onPress={handleLogScreenViewEvent} />
-        <Button text="Force push data" onPress={handleForcePushData} />
-
-        <Text>Recommendations</Text>
-        <Button text="Get recommendations" onPress={handleGetRecommendations} />
-        <Button
-          text="Log recommendarion event"
-          onPress={handleLogRecommendationEvent}
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Menu"
+          component={MenuView}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Installation" component={InstallationView} />
+        <Stack.Screen
+          name="UserInformation"
+          component={UserInformationView}
+          options={{ headerTitle: "User Information" }}
         />
 
-        <Text>In-App Messages</Text>
-        <Button
-          text={`${didPauseInAppMessages ? "Start" : "Pause"} messages`}
-          onPress={handleInAppMessagesStatus}
+        <Stack.Screen
+          name="UserBehaviour"
+          component={UserBehaviourView}
+          options={{ headerTitle: "User Behaviour" }}
         />
 
-        {!Object.keys(state).length ? (
-          <Text>Press `Start SDK` button to initialize Reteno SDK</Text>
-        ) : (
-          <View style={{ gap: 8 }}>
-            {Object.keys(state).map((s: string, key: number) => (
-              <View key={`State-${key}`}>
-                <Text style={{ fontWeight: "900" }}>{s}:</Text>
-                <Text>{JSON.stringify(state[s])}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    </View>
+        <Stack.Screen
+          name="PushNotifications"
+          component={PushNotificationsView}
+          options={{ headerTitle: "Push Notifications" }}
+        />
+
+        <Stack.Screen name="Recommendations" component={RecommendationsView} />
+        <Stack.Screen
+          name="InAppMessages"
+          component={InAppMessagesView}
+          options={{ headerTitle: "In-App Messages" }}
+        />
+        <Stack.Screen
+          name="AppInboxMessages"
+          component={AppInboxMessagesView}
+          options={{ headerTitle: "App Inbox Messages" }}
+        />
+
+        <Stack.Screen
+          name="ActionButtons"
+          component={ActionButtonsView}
+          options={{ headerTitle: "Action Buttons" }}
+        />
+
+        <Stack.Screen
+          name="Ecommerce"
+          component={EcommerceView}
+          options={{ headerTitle: "Ecommerce Events" }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-});
+export default function App() {
+  return <RootStack />;
+}

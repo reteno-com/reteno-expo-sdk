@@ -101,13 +101,6 @@ public class ExpoRetenoSdkModule: Module {
 		)
 		
 		OnCreate {
-			//			NotificationCenter.default.addObserver(
-			//				self,
-			//				selector: #selector(self.handleIncomingNotification),
-			//				name: .pushReceived,
-			//				object: nil
-			//			)
-			
 			// Listen for link events from AppDelegate via NotificationCenter (cold start support)
 			NotificationCenter.default.addObserver(
 					self,
@@ -166,16 +159,23 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 		
-		OnDestroy {
+		// OnDestroy {
 			//			print("OnDestroy")
 			//			NotificationCenter.default.removeObserver(
 			//				self,
 			//				name: .pushReceived,
 			//				object: nil
 			//			)
+		// }
+		
+    // Push notifications
+		AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
+			promise.resolve(
+				Reteno.userNotificationService.processRemoteNotificationsToken(deviceToken)
+			);
 		}
 		
-		Function("registerForRemoteNotifications") { () -> Void in
+		AsyncFunction("registerForRemoteNotifications") { () -> Void in
 			Reteno.userNotificationService.registerForRemoteNotifications(
 				with: [.sound, .alert, .badge],
 			)
@@ -196,6 +196,7 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 		
+    // User information
 		AsyncFunction("updateUserAttributes") { (payload: [String: Any], promise: Promise) -> Void in
 			let externalUserId = payload["externalUserId"] as? String;
 			
@@ -253,12 +254,7 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 		
-		AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
-			promise.resolve(
-				Reteno.userNotificationService.processRemoteNotificationsToken(deviceToken)
-			);
-		}
-		
+    // User behaviour
 		AsyncFunction("logEvent") { (payload: [String: Any], promise: Promise) -> Void in
 			do {
 				let requestPayload = try RetenoEvent.buildEventPayload(payload: payload);
@@ -297,6 +293,7 @@ public class ExpoRetenoSdkModule: Module {
 			promise.resolve(["success":true]);
 		}
 		
+    // Recommendations
 		AsyncFunction("getRecommendations") { (payload: [String: Any], promise: Promise) -> Void in
 			guard let recomVariantId = payload["recomVariantId"] as? String,
 						let productIds = payload["productIds"] as? [String],
@@ -349,11 +346,6 @@ public class ExpoRetenoSdkModule: Module {
 						let impressions = payload["impressions"] as? [[String: Any]],
 						let clicks = payload["clicks"] as? [[String: Any]],
 						let forcePush = payload["forcePush"] as? Bool else {
-				//							let error = NSError(
-				//								domain: "InvalidPayload",
-				//								code: 0,
-				//								userInfo: [NSLocalizedDescriptionKey: "Invalid payload"]
-				//							)
 				
 				promise.reject("100", "Reteno iOS SDK logRecommendationEvent Error")
 				return
@@ -382,7 +374,8 @@ public class ExpoRetenoSdkModule: Module {
 			let res: [String: Bool] = ["success": true]
 			promise.resolve(res)
 		}
-		
+
+    // In-App messages
 		AsyncFunction("pauseInAppMessages") { (state: Bool, promise: Promise) -> Void in
 			Reteno.pauseInAppMessages(isPaused: state);
 			promise.resolve(true)
@@ -404,6 +397,8 @@ public class ExpoRetenoSdkModule: Module {
 				}
 			}
 		}
+
+    // App inbox messages
 		
 		AsyncFunction("getAppInboxMessages") { (payload: [String: Any?], promise: Promise) -> Void in
 			let page = payload["page"] as? Int
@@ -488,7 +483,8 @@ public class ExpoRetenoSdkModule: Module {
 				}
 			}
 		}
-		
+
+    // Ecommerce events
 		AsyncFunction("logEcomEventProductViewed", { ( payload: [String: Any?], promise: Promise ) -> Void in
 			guard let data = RetenoEcomEvent.buildProductDataFromPayload(payload as [String : Any]) else {
 					promise.reject("Payload Error", "Payload cannot be null")

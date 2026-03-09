@@ -339,7 +339,7 @@ export async function updateNSEEntitlements(
 ): Promise<void> {
   let entitlementsFile = await FileService.read(path);
 
-  entitlementsFile = entitlementsFile.replace(
+  entitlementsFile = entitlementsFile.replaceAll(
     /{{GROUP_IDENTIFIER}}/gm,
     groupIdentifier,
   );
