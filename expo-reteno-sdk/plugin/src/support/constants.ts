@@ -58,19 +58,16 @@ export const androidConfig = {
   sdk: {
     project: {
       anchor: "dependencies {",
-      deps: ["classpath 'com.google.gms:google-services:4.3.2'"],
+      deps: ["classpath 'com.google.gms:google-services:4.4.4'"],
     },
     module: {
       anchor: 'implementation("com.facebook.react:react-android")',
       deps: [
-        "implementation 'com.reteno:core:2.8.9'",
-        "implementation 'com.reteno:push:2.8.9'",
-        "implementation 'com.reteno:fcm:2.8.9'",
+        "implementation 'com.reteno:core:2.9.1'",
+        "implementation 'com.reteno:push:2.9.1'",
+        "implementation 'com.reteno:fcm:2.9.1'",
         "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
         "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
-        // "implementation 'com.google.firebase:firebase-core:9.6.1'",
-        // "implementation 'com.reteno:fcm:2.8.9'",
-        // "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
       ],
     },
     properties: {

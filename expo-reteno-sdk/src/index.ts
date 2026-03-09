@@ -143,6 +143,9 @@ export const Reteno = {
     return ModuleInstance.getInitialNotification();
   },
   setDeviceToken(token: string) {
+    if (Platform.OS === "android")
+      throw new Error("[Reteno] `setDeviceToken` is iOS-only");
+
     return ModuleInstance.setDeviceToken(token);
   },
   setOnRetenoPushReceivedListener(
