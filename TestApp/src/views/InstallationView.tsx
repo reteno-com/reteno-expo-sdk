@@ -27,7 +27,7 @@ export const InstallationView = () => {
           Check {Platform.OS === "ios" ? "Xcode" : "Android Studio"} project
           files
         </Text>
-        <Button text="Set DeviceToken" onPress={handleDeviceToken} />
+        <Button text="[IOS-ONLY] Set DeviceToken" onPress={handleDeviceToken} />
       </Block>
 
       {Boolean(token.length) && (

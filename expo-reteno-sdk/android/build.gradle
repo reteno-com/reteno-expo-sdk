@@ -23,9 +23,9 @@ if (useManagedAndroidSdkVersions) {
     }
 
     // NOTE: Add Firebase App
-    dependencies {
-      classpath 'com.google.gms:google-services:4.4.4'
-    }
+    // dependencies {
+    //   classpath 'com.google.gms:google-services:4.4.4'
+    // }
   }
 
   project.android {

@@ -46,6 +46,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.time.ZonedDateTime
+import androidx.core.content.edit
 
 
 class InitResult : Record {
@@ -76,7 +77,7 @@ class ExpoRetenoSdkModule : Module() {
     private const val AUTO_OPEN_LINKS_KEY = "auto_open_links"
 
     // Helper function (if you don't already have it defined elsewhere)
-    private fun isAutoOpenLinksEnabled(context: Context): Boolean {
+    fun isAutoOpenLinksEnabled(context: Context): Boolean {
       val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
       // Assuming default is false if not set
       return prefs.getBoolean(AUTO_OPEN_LINKS_KEY, false)
@@ -778,6 +779,185 @@ class ExpoRetenoSdkModule : Module() {
       }
 
       // Ecommerce events
+      AsyncFunction("logEcomEventProductViewed") { payload: ReadableMap, promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildProductViewedFromPayload(payload) ?: run {
+                  promise.reject("PayloadError", "Payload cannot be null or invalid", null)
+                  return@AsyncFunction
+              }
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+
+          } catch (e: Exception) {
+              promise.reject(
+                  "LogEcomEventProductViewedError",
+                  "Reteno Android SDK Error",
+                  e
+              )
+          }
+      }
+
+      AsyncFunction("logEcomEventProductCategoryViewed") { payload: ReadableMap, promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildProductCategoryViewedFromPayload(payload) ?: run {
+                  promise.reject(
+                      "LogEcomEventProductCategoryViewedError",
+                      "Payload cannot be null",
+                      null
+                  );
+                  return@AsyncFunction
+              };
+
+              Reteno.instance.logEcommerceEvent(event);
+              promise.resolve(mapOf("success" to true))
+          } catch (e: Exception) {
+              promise.reject("LogEcomEventProductCategoryViewedError", "Reteno Android SDK Error", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventProductAddedToWishlist") { payload: ReadableMap, promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildProductAddedToWishlistFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventProductAddedToWishlistError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              }
+
+              Reteno.instance.logEcommerceEvent(event);
+              promise.resolve(mapOf("success" to true))
+          } catch (e: Exception) {
+              promise.reject("LogEcomEventProductAddedToWishlistError", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventCartUpdated") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildCartUpdatedFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventCartUpdatedError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventCartUpdatedError", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventOrderCreated") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildOrderCreatedFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventOrderCreatedError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventOrderCreatedError", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventOrderUpdated") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildOrderUpdatedFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventOrderUpdatedError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventOrderUpdatedError", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventOrderDelivered") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildOrderDeliveredFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventOrderDeliveredErrpr", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventOrderDeliveredErrpr", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventOrderCancelled") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildOrderCancelledFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventOrderCancelledError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventOrderCancelledError", "Payload", e);
+          }
+      }
+
+      AsyncFunction("logEcomEventSearchRequest") { payload: ReadableMap,  promise: Promise ->
+          try {
+              appContext.currentActivity ?: run {
+                  promise.reject("ContextError", "Current activity is null", null)
+                  return@AsyncFunction
+              }
+
+              val event = RetenoEcomEvent.buildSearchRequestFromPayload(payload) ?: run {
+                  promise.reject("LogEcomEventSearchRequestError", "Payload cannot be null", null);
+                  return@AsyncFunction;
+              };
+
+              Reteno.instance.logEcommerceEvent(event)
+              promise.resolve(mapOf("success" to true))
+          } catch ( e: Exception) {
+              promise.reject("LogEcomEventSearchRequestError", "Payload", e);
+          }
+      }
 
       // Link handlers
       AsyncFunction("setAutoOpenLinks") { isEnabled: Boolean, promise: Promise ->
@@ -787,7 +967,7 @@ class ExpoRetenoSdkModule : Module() {
           }
 
           val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-          prefs.edit().putBoolean(AUTO_OPEN_LINKS_KEY, isEnabled).apply()
+          prefs.edit { putBoolean(AUTO_OPEN_LINKS_KEY, isEnabled) }
 
           promise.resolve(true)
       }

@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
 export const MenuView = () => {

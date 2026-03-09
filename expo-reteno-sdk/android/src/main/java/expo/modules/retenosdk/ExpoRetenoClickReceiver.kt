@@ -6,7 +6,7 @@ import android.content.Intent
 import android.util.Log
 
 class ExpoRetenoClickReceiver : BroadcastReceiver() {
-  override fun onClick(context: Context, intent: Intent) {
+  override fun onReceive(context: Context, intent: Intent) {
     // Extract data from the intent 
     val dataMap = mutableMapOf<String, Any?>()
     
