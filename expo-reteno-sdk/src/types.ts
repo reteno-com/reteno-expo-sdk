@@ -76,16 +76,12 @@ export type User = {
 
 export type UserInformationPayload = {
   externalUserId: string;
-  user: UserAttributes;
+  user: User;
 };
 
 export type UserInformationMultiAccountPayload = {
   externalUserId: string;
-  user: {
-    attributes?: UserAttributes;
-    subscriptionKeys?: string[];
-    groupNamesInclude?: string[];
-    groupNamesExclude?: string[];
+  user: User & {
     accountSuffix?: string;
   };
 };

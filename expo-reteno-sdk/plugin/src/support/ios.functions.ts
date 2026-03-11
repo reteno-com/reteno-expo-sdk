@@ -319,7 +319,11 @@ export async function addDependenciesToPodfile(
 }
 
 // Function adds target to Podfile
-export async function addTargetToPodfile(path: string, target: string) {
+export async function addTargetToPodfile(
+  path: string,
+  target: string,
+  snippet: "service" | "content",
+) {
   let podfile = await FileService.read(`${path}/Podfile`);
 
   if (podfile.includes(`target '${target}' do`)) {
@@ -327,12 +331,13 @@ export async function addTargetToPodfile(path: string, target: string) {
     return;
   }
 
-  podfile += iosConfig.snippets.nse;
+  podfile += iosConfig.snippets[snippet === "service" ? "nse" : "nce"];
 
   await FileService.write(`${path}/Podfile`, podfile);
 }
 
-export async function updateNSEEntitlements(
+export async function updateExtensionEntitlements(
+  extension: "service" | "content",
   path: string,
   groupIdentifier: string,
   filtering?: boolean,
@@ -344,7 +349,7 @@ export async function updateNSEEntitlements(
     groupIdentifier,
   );
 
-  if (filtering) {
+  if (filtering && extension === "service") {
     const filteringKey = `  <key>com.apple.developer.usernotifications.filtering</key>\n  <true/>`;
     entitlementsFile = entitlementsFile.replace(
       "</dict>",
@@ -355,7 +360,7 @@ export async function updateNSEEntitlements(
   await FileService.write(path, entitlementsFile);
 }
 
-export async function updateNSEBundleVersions(
+export async function updateExtensionBundleVersions(
   path: string,
   config: Record<"shortVersion" | "version", string>,
 ): Promise<void> {

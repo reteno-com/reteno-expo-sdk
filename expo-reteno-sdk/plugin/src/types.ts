@@ -12,9 +12,10 @@ export type RetenoIOSProps = {
   appGroups: string[];
 };
 
-export type RetenoNSEProps = {
+export type RetenoExtensionProps = {
   mode: "development" | "production";
   nseFilepath: string;
+  nceFilepath: string;
   deploymentTarget?: string;
 };
 
