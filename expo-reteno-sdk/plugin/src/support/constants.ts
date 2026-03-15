@@ -3,25 +3,25 @@ const SDK_VERSION = "2.6.1";
 export const iosConfig = {
   nse: {
     files: [
-      "Info.plist",
+      // "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
     ],
     source: "NotificationService.swift",
     target: "NotificationServiceExtension",
     entitlements: "NotificationServiceExtension.entitlements",
-    infoPlist: "Info.plist",
+    infoPlist: "NotificationServiceExtension-Info.plist",
   },
   nce: {
     files: [
-      "Info.plist",
+      // "Info.plist",
       "NotificationContentExtension-Info.plist",
       "NotificationContentExtension.entitlements",
     ],
     source: "NotificationViewController.swift",
     target: "NotificationContentExtension",
     entitlements: "NotificationContentExtension.entitlements",
-    infoPlist: "Info.plist",
+    infoPlist: "NotificationContentExtension-Info.plist",
   },
   targetedDeviceFamily: `"1,2"`,
   deploymentTarget: "15.1",

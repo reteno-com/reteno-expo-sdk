@@ -6,6 +6,7 @@
 	<array>
 		<string>group.{{GROUP_IDENTIFIER}}.reteno-local-storage</string>
 		<string>group.{{GROUP_IDENTIFIER}}.NotificationContentExtension</string>
+		<string>group.{{GROUP_IDENTIFIER}}</string>
 	</array>
 </dict>
 </plist>

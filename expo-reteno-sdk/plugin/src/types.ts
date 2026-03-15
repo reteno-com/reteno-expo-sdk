@@ -19,6 +19,8 @@ export type RetenoExtensionProps = {
   deploymentTarget?: string;
 };
 
+export type RetenoExtensionTarget = RetenoIOSProps & RetenoExtensionProps;
+
 export type RetenoAndroidProps = {
   sdkAccessToken: string;
   debug: boolean;
