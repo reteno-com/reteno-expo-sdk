@@ -347,7 +347,6 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   );
   config = withRemoteNotificationsPermissions(config);
   config = withAppGroups(config, props.appGroups);
-
   config = withRetenoInit(config, props);
 
   // Notification Service Extension
@@ -355,10 +354,12 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
     config,
     props as RetenoIOSProps & RetenoExtensionProps,
   );
+
   config = withNotificationServiceExtensionTarget(
     config,
     props as RetenoIOSProps & RetenoExtensionProps,
   );
+
   config = withNotificationServiceExtensionPodfileUpdate(config);
 
   // Notification Content Extensions

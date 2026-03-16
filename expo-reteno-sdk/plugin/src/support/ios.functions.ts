@@ -503,8 +503,6 @@ export function addNotificationServiceExtensionTarget(
     nseTarget.uuid,
   );
 
-  // Edit the Deployment info of the new Target, only IphoneOS and Targeted Device Family
-  // However, can be more
   const configurations = xcodeProject.pbxXCBuildConfigurationSection();
   for (const key in configurations) {
     if (
@@ -626,7 +624,6 @@ export function addNotificationContentExtensionTarget(
     target: nceTarget.uuid,
   });
 
-  // Edit the Deployment info of the new Target
   const configurations = xcodeProject.pbxXCBuildConfigurationSection();
   for (const key in configurations) {
     if (
@@ -636,19 +633,14 @@ export function addNotificationContentExtensionTarget(
     ) {
       const { buildSettings } = configurations[key];
 
-      // Fix: Use the dynamic target folder instead of hardcoded NotificationServiceExtension
       buildSettings.INFOPLIST_FILE = `"${target}/${infoPlist}"`;
       buildSettings.DEVELOPMENT_TEAM = props?.devTeam;
       buildSettings.IPHONEOS_DEPLOYMENT_TARGET =
         props?.deploymentTarget ?? deploymentTarget;
       buildSettings.TARGETED_DEVICE_FAMILY = targetedDeviceFamily;
-
-      // If you aren't copying an entitlements file for this specific target, you might need to comment this out.
       buildSettings.CODE_SIGN_ENTITLEMENTS = `"${target}/${entitlements}"`;
       buildSettings.CODE_SIGN_STYLE = "Automatic";
       buildSettings.SWIFT_VERSION = "5.0";
-
-      // Ensure it's treated as an extension
       buildSettings.APPLICATION_EXTENSION_API_ONLY = "YES";
       buildSettings.SKIP_INSTALL = "YES";
 

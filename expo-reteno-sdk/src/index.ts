@@ -67,10 +67,11 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   // App Inbox messages
   getAppInboxMessages(
     payload: AppInboxPayload,
-  ): Promise<InboxMessage[] | Error>;
+  ): Promise<{ messages: InboxMessage[]; totalPages: null | number } | Error>;
   markAsOpened: (messageIds: string[]) => Promise<boolean>;
   markAllAsOpened: () => Promise<boolean>;
   getAppInboxMessagesCount: () => Promise<number>;
+  startListeningForUnreadMessages: () => void;
 
   // In-App Listeners
   pauseInAppMessages(state: boolean): Promise<void>;
@@ -95,10 +96,9 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   onInAppMessageCustomDataHandler(
     callback: (data: InAppCustomData) => void,
   ): RetenoSubscription;
-  unreadMessagesCountHandler(
-    callback: (data: UnreadMessagesCountData) => void,
+  onUnreadMessagesCountChanged(
+    callback?: (data: UnreadMessagesCountData) => void,
   ): RetenoSubscription;
-  onUnreadMessagesCountChanged(): RetenoSubscription;
 
   // Ecommerce Events
   logEcomEventProductViewed: (
@@ -286,19 +286,18 @@ export const Reteno = {
       }
     });
   },
-  unreadMessagesCountHandler(
+  onUnreadMessagesCountChanged(
     callback: (data: UnreadMessagesCountData) => void,
-  ) {
-    return emitter.addListener(AppInboxEvents.UnreadMessagesCount, (data) => {
-      if (callback && typeof callback === "function") {
-        callback(data);
-      }
-    });
-  },
-  onUnreadMessagesCountChanged(): RetenoSubscription {
+  ): RetenoSubscription {
+    ModuleInstance.startListeningForUnreadMessages();
+
     return emitter.addListener(
       AppInboxEvents.OnUnreadMessagesCountChanged,
-      () => {},
+      (data) => {
+        if (callback && typeof callback === "function") {
+          callback(data);
+        }
+      },
     );
   },
 

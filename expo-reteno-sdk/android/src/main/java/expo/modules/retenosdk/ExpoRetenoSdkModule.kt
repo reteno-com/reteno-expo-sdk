@@ -114,17 +114,17 @@ class ExpoRetenoSdkModule : Module() {
     Name("ExpoRetenoSdk")
 
     Events(
-        "onPushNotificationReceived",
-        "onPushNotificationClicked",
-        "onPushButtonClicked",
-        "inAppCustomDataReceived",
-        "beforeInAppDisplay",
-        "onInAppDisplay",
-        "beforeInAppClose",
-        "afterInAppClose",
-        "onInAppError",
-        "unreadMessagesCount",
-        "unreadMessagesCountError"
+        "reteno-push-received",
+        "reteno-push-clicked",
+        "reteno-push-button-clicked",
+        "reteno-in-app-custom-data-received",
+        "reteno-before-in-app-display",
+        "reteno-on-in-app-display",
+        "reteno-before-in-app-close",
+        "reteno-after-in-app-close",
+        "reteno-on-in-app-error",
+        "reteno-unread-messages-count",
+        "reteno-unread-messages-error"
     )
 
     OnActivityResult { _, payload ->
@@ -526,21 +526,21 @@ class ExpoRetenoSdkModule : Module() {
 
               inAppLifecycleCallback = object : InAppLifecycleCallback {
                   override fun beforeDisplay(inAppData: InAppData) {
-                      sendEvent("beforeInAppDisplay", mapOf(
+                      sendEvent("reteno-before-in-app-display", mapOf(
                           "source" to inAppData.source.toString(),
                           "id" to inAppData.id
                       ))
                   }
 
                   override fun onDisplay(inAppData: InAppData) {
-                      sendEvent("onInAppDisplay", mapOf(
+                      sendEvent("reteno-on-in-app-display", mapOf(
                           "source" to inAppData.source.toString(),
                           "id" to inAppData.id
                       ))
                   }
 
                   override fun beforeClose(closeData: InAppCloseData) {
-                      sendEvent("beforeInAppClose", mapOf(
+                      sendEvent("reteno-before-in-app-close", mapOf(
                           "source" to closeData.source.toString(),
                           "id" to closeData.id,
                           "closeAction" to closeData.closeAction.toString()
@@ -548,7 +548,7 @@ class ExpoRetenoSdkModule : Module() {
                   }
 
                   override fun afterClose(closeData: InAppCloseData) {
-                      sendEvent("afterInAppClose", mapOf(
+                      sendEvent("reteno-after-in-app-close", mapOf(
                           "source" to closeData.source.toString(),
                           "id" to closeData.id,
                           "closeAction" to closeData.closeAction.toString()
@@ -556,7 +556,7 @@ class ExpoRetenoSdkModule : Module() {
                   }
 
                   override fun onError(errorData: InAppErrorData) {
-                      sendEvent("onInAppError", mapOf(
+                      sendEvent("reteno-on-in-app-error", mapOf(
                           "source" to errorData.source.toString(),
                           "id" to errorData.id,
                           "errorMessage" to errorData.errorMessage
@@ -687,6 +687,7 @@ class ExpoRetenoSdkModule : Module() {
                   return@AsyncFunction
               }
 
+
               Reteno.instance.appInbox.markAsOpened(messageId)
 
               promise.resolve(true)
@@ -732,16 +733,16 @@ class ExpoRetenoSdkModule : Module() {
         }
       }
 
-      AsyncFunction("onUnreadMessagesCountChanged") { promise: Promise ->
+      AsyncFunction("startListeningForUnreadMessages") { promise: Promise ->
           messagesCountChangedCallback = object : RetenoResultCallback<Int> {
               override fun onSuccess(count: Int) {
-                  sendEvent("unreadMessagesCount", mapOf(
+                  sendEvent("reteno-unread-messages-count", mapOf(
                       "count" to count
                   ))
               }
 
               override fun onFailure(statusCode: Int?, response: String?, throwable: Throwable?) {
-                  sendEvent("unreadMessagesCountError", mapOf(
+                  sendEvent("reteno-unread-messages-error", mapOf(
                       "statusCode" to statusCode,
                       "response" to response,
                       "error" to throwable
@@ -1000,7 +1001,7 @@ class ExpoRetenoSdkModule : Module() {
   }
 
   private fun handleIncomingNotification(payload: Map<String, Any?>) {
-    sendEvent("onPushNotificationReceived", mapOf(
+    sendEvent("reteno-push-received", mapOf(
       "type" to "reteno-push-received",
       "data" to payload,
       "timestamp" to System.currentTimeMillis()
@@ -1009,7 +1010,7 @@ class ExpoRetenoSdkModule : Module() {
   }
 
     private fun handleClickOnIncomingNotification(payload: Map<String, Any?>) {
-        sendEvent("onPushNotificationClicked", mapOf(
+        sendEvent("reteno-push-clicked", mapOf(
             "type" to "reteno-push-clicked",
             "data" to payload,
             "timestamp" to System.currentTimeMillis()
@@ -1071,5 +1072,6 @@ class ExpoRetenoSdkModule : Module() {
         return list
     }
 }
+
 
 

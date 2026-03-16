@@ -12,7 +12,7 @@
               <string>ImageGif</string>
           </array>
           <key>UNNotificationExtensionInitialContentSizeRatio</key>
-          <real>1</real>
+          <real>0.5</real>
           <key>UNNotificationExtensionUserInteractionEnabled</key>
           <true/>
       </dict>

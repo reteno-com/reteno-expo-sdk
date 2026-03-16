@@ -439,7 +439,8 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 		
-		Function("addUnreadMessagesListener") { () -> Void in
+		Function("startListeningForUnreadMessages") { () -> Void in
+      print("@@@ onUnreadMessagesCountChanged()")
 			Reteno.inbox().onUnreadMessagesCountChanged = { count in
 				self.sendEvent(
 					RetenoExpoEvent.unreadMessagesCount.value,

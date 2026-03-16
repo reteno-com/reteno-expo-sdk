@@ -3,7 +3,6 @@ const SDK_VERSION = "2.6.1";
 export const iosConfig = {
   nse: {
     files: [
-      // "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
     ],
@@ -14,7 +13,6 @@ export const iosConfig = {
   },
   nce: {
     files: [
-      // "Info.plist",
       "NotificationContentExtension-Info.plist",
       "NotificationContentExtension.entitlements",
     ],
