@@ -536,6 +536,7 @@ export function addNotificationServiceExtensionTarget(
       // Force the correct prefixed Bundle Identifier
       buildSettings.PRODUCT_BUNDLE_IDENTIFIER = `"${config.ios?.bundleIdentifier}.${target}"`;
       buildSettings.GENERATE_INFOPLIST_FILE = "YES";
+      buildSettings.INFOPLIST_KEY_CFBundleDisplayName = `"${target}"`;
     }
   }
 
