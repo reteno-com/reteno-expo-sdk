@@ -86,6 +86,16 @@ export const InAppMessagesView = () => {
             text={didStop ? "Start messages" : "Stop messages"}
             onPress={() => handleInAppMessagesStatus(didStop)}
           />
+
+          <Button
+            text={"Skip messages"}
+            onPress={() => Reteno.setInAppMessagesPauseBehaviour("skip")}
+          />
+
+          <Button
+            text={"Postpone messages"}
+            onPress={() => Reteno.setInAppMessagesPauseBehaviour("postpone")}
+          />
         </Block>
       </ScrollView>
     </ScreenContainer>

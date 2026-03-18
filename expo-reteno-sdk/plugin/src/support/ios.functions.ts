@@ -273,6 +273,7 @@ export function addRetenoInit(
   const retenoConfigKeys = [
     "isAutomaticPushSubsriptionReportingEnabled",
     "isAutomaticSessionReportingEnabled",
+    "isPausedInAppMessages",
     "isDebugMode",
   ];
 

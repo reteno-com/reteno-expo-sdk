@@ -76,6 +76,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   // In-App Listeners
   pauseInAppMessages(state: boolean): Promise<void>;
   setInAppLifecycleCallback(): void;
+  setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void;
 
   // In-App Listeners
   beforeInAppDisplayHandler(
@@ -229,6 +230,10 @@ export const Reteno = {
   },
   setInAppLifecycleCallback() {
     ModuleInstance.setInAppLifecycleCallback();
+  },
+
+  setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void {
+    ModuleInstance.setInAppMessagesPauseBehaviour(state);
   },
 
   // In-App Listeners

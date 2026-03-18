@@ -222,7 +222,9 @@ const withFirebasePodfileUpdate: ConfigPlugin = (config) => {
 
 const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   if (!props.sdkAccessToken) {
-    throw new Error("SDK token is not defined, cancelling installation...");
+    throw new Error(
+      "[Reteno] SDK token is not defined, cancelling installation...",
+    );
   }
 
   return withAppDelegate(config, (config) => {
@@ -243,9 +245,7 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
     config.modResults.contents = addRetenoInit(
       config.modResults.contents,
       props.sdkAccessToken,
-      {
-        isDebugMode: props.debug,
-      },
+      props.config,
     ).contents;
 
     return config;

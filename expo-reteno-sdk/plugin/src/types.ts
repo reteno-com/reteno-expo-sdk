@@ -6,10 +6,10 @@ export type MergeResults = {
 
 export type RetenoIOSProps = {
   sdkAccessToken: string;
-  debug: boolean;
   notificationService: "firebase" | "apns";
   devTeam: string;
   appGroups: string[];
+  config: RetenoInitConfig;
 };
 
 export type RetenoExtensionProps = {
@@ -23,12 +23,13 @@ export type RetenoExtensionTarget = RetenoIOSProps & RetenoExtensionProps;
 
 export type RetenoAndroidProps = {
   sdkAccessToken: string;
-  debug: boolean;
+  config: RetenoInitConfig;
 };
 
 export type RetenoProps = {
   ios: RetenoIOSProps;
   android: RetenoAndroidProps;
+  config: RetenoInitConfig;
 };
 
 export const RetenoIOSAutogenComments = {
@@ -43,7 +44,8 @@ export const RetenoIOSAutogenComments = {
 export type RetenoInitConfigKeys =
   | "isDebugMode"
   | "isAutomaticSessionReportingEnabled"
-  | "isAutomaticPushSubsriptionReportingEnabled";
+  | "isAutomaticPushSubsriptionReportingEnabled"
+  | "isPausedInAppMessages";
 
 export type RetenoInitConfig = Partial<{
   [key in RetenoInitConfigKeys]: boolean;

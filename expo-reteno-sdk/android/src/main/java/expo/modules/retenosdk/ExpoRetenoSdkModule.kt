@@ -580,6 +580,19 @@ class ExpoRetenoSdkModule : Module() {
           }
       }
 
+
+      Function("setInAppMessagesPauseBehaviour") { state: String -> Void in
+        if(state.lowercased() == "skip") {
+          Reteno.instance.setInAppMessagesPauseBehaviour(pauseBehaviour: .skipInApps )
+          return
+        }
+        
+        if(state.lowercased() == "postpone") {
+          Reteno.instance.setInAppMessagesPauseBehaviour(pauseBehaviour: .postponeInApps )
+          return
+        }
+      }
+
       // App inbox messages
       AsyncFunction("getAppInboxMessages") { payload: ReadableMap, promise: Promise ->
           try {
