@@ -206,7 +206,9 @@ export const Reteno = {
   getRecommendations(payload: RecommendationPayload): Promise<any> {
     return ModuleInstance.getRecommendations(payload);
   },
+
   logRecommendationEvent(payload: RecommendationEventPayload): Promise<void> {
+    console.log("[JS]", payload);
     return ModuleInstance.logRecommendationEvent(payload);
   },
 

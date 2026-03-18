@@ -455,6 +455,7 @@ class ExpoRetenoSdkModule : Module() {
 
       AsyncFunction("logRecommendationEvent") { payload: ReadableMap, promise: Promise ->
           try {
+              print("[DEBUG] LOG_RECOM_EVENT")
               val activity = appContext.currentActivity
               if (activity == null) {
                   promise.reject("LogRecommendationEventError", "Current activity is null", null)
@@ -470,6 +471,8 @@ class ExpoRetenoSdkModule : Module() {
               val impressionsArray =
                   if (payload.hasKey("impressions")) payload.getArray("impressions") else null
               val clicksArray = if (payload.hasKey("clicks")) payload.getArray("clicks") else null
+
+              print("[DEBUG] $recomVariantId $impressionsArray $clicksArray")
 
               if (recomVariantId == null || impressionsArray == null || clicksArray == null) {
                   promise.reject("LogRecommendationEventError", "Required fields are missing in the payload", null);
@@ -493,6 +496,7 @@ class ExpoRetenoSdkModule : Module() {
               }
 
               val recomEvents = RecomEvents(recomVariantId, events)
+              print("[DEBUG] $recomEvents")
 
               // 4. Fire the event
               val retenoInstance = Reteno.instance
@@ -581,15 +585,13 @@ class ExpoRetenoSdkModule : Module() {
       }
 
 
-      Function("setInAppMessagesPauseBehaviour") { state: String -> Void in
-        if(state.lowercased() == "skip") {
-          Reteno.instance.setInAppMessagesPauseBehaviour(pauseBehaviour: .skipInApps )
-          return
+      Function("setInAppMessagesPauseBehaviour") { state: String -> 
+        if(state.lowercase() == "skip") {
+          Reteno.instance.setInAppMessagesPauseBehaviour(InAppPauseBehaviour.SKIP_IN_APPS)
         }
         
-        if(state.lowercased() == "postpone") {
-          Reteno.instance.setInAppMessagesPauseBehaviour(pauseBehaviour: .postponeInApps )
-          return
+        if(state.lowercase() == "postpone") {
+          Reteno.instance.setInAppMessagesPauseBehaviour(InAppPauseBehaviour.SKIP_IN_APPS)
         }
       }
 

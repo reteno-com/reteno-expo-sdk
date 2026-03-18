@@ -21,7 +21,7 @@ const USER_DATA = {
     address: "25 Random st.",
     postcode: "01001",
   },
-  fields: [{ key: "288126", value: "21.12.2012" }],
+  fields: [{ key: "272604", value: "UA" }],
 };
 
 export const UserInformationView = () => {
@@ -72,14 +72,14 @@ export const UserInformationView = () => {
     }
   };
 
-  const handleSetAnonymousAttribute = () => {
+  const handleSetAnonymousAttribute = (disableFields = true) => {
     const data = {
       firstName: user.firstName,
       lastName: user.lastName,
       languageCode: USER_DATA.languageCode,
       timeZone: USER_DATA.timeZone,
       address: user.address,
-      fields: user.fields.length ? user.fields : [],
+      fields: disableFields ? [] : user.fields,
     };
 
     // If you want to update anonymous:
@@ -152,9 +152,15 @@ export const UserInformationView = () => {
             text="Default User Attributes (with `fields`)"
             onPress={() => handleSetAttributes(false)}
           />
+
           <Button
             text="Anonymous User Attributes"
             onPress={handleSetAnonymousAttribute}
+          />
+
+          <Button
+            text="Anonymous User Attributes (with `fields`)"
+            onPress={() => handleSetAnonymousAttribute(false)}
           />
         </Block>
       </ScrollView>
