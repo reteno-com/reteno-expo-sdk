@@ -1,6 +1,6 @@
 import Reteno from "expo-reteno-sdk";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView } from "react-native";
+import { Alert, Platform, ScrollView } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
 export const InAppMessagesView = () => {
@@ -50,7 +50,9 @@ export const InAppMessagesView = () => {
       onInAppErrorListener.remove();
 
       // Remove the in-app lifecycle callback if it exists (only for Android)
-      // Reteno.removeInAppLifecycleCallback();
+      if (Platform.OS === "android") {
+        Reteno.removeInAppLifecycleCallback();
+      }
     };
   }, []);
 
@@ -78,6 +80,10 @@ export const InAppMessagesView = () => {
     }
   };
 
+  const handleLogEcomEventOrderDelivered = async () => {
+    await Reteno.logEcomEventOrderDelivered({ externalOrderId: "ORDER-999" });
+  };
+
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: 8 }}>
@@ -95,6 +101,11 @@ export const InAppMessagesView = () => {
           <Button
             text={"Postpone messages"}
             onPress={() => Reteno.setInAppMessagesPauseBehaviour("postpone")}
+          />
+
+          <Button
+            text="LogEcomEventOrderDelivered()"
+            onPress={handleLogEcomEventOrderDelivered}
           />
         </Block>
       </ScrollView>

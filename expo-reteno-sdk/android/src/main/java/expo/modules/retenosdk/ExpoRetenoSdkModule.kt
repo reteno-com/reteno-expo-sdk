@@ -47,7 +47,7 @@ import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.time.ZonedDateTime
 import androidx.core.content.edit
-
+import com.reteno.core.features.iam.InAppPauseBehaviour
 
 class InitResult : Record {
     @Field val success: Boolean = false
@@ -455,7 +455,6 @@ class ExpoRetenoSdkModule : Module() {
 
       AsyncFunction("logRecommendationEvent") { payload: ReadableMap, promise: Promise ->
           try {
-              print("[DEBUG] LOG_RECOM_EVENT")
               val activity = appContext.currentActivity
               if (activity == null) {
                   promise.reject("LogRecommendationEventError", "Current activity is null", null)
@@ -471,8 +470,6 @@ class ExpoRetenoSdkModule : Module() {
               val impressionsArray =
                   if (payload.hasKey("impressions")) payload.getArray("impressions") else null
               val clicksArray = if (payload.hasKey("clicks")) payload.getArray("clicks") else null
-
-              print("[DEBUG] $recomVariantId $impressionsArray $clicksArray")
 
               if (recomVariantId == null || impressionsArray == null || clicksArray == null) {
                   promise.reject("LogRecommendationEventError", "Required fields are missing in the payload", null);
@@ -496,9 +493,7 @@ class ExpoRetenoSdkModule : Module() {
               }
 
               val recomEvents = RecomEvents(recomVariantId, events)
-              print("[DEBUG] $recomEvents")
 
-              // 4. Fire the event
               val retenoInstance = Reteno.instance
               retenoInstance.recommendation.logRecommendations(recomEvents)
 

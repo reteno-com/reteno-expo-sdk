@@ -2,11 +2,11 @@ import Reteno from "expo-reteno-sdk";
 import { useState } from "react";
 import { Platform, ScrollView } from "react-native";
 import { Block, Button, Input, ScreenContainer } from "src/components";
+import uuid from "react-native-uuid";
 
-const USER_TOKEN = Platform.select({
-  ios: "a81fbb6e-f1d4-4c5b-a06f-fcff840aa0ae",
-  android: "2b5a1816-a8c0-40f9-a858-86a39901c920",
-});
+const USER_TOKEN = uuid.v4();
+
+console.log("USER_TOKEN", USER_TOKEN);
 
 const USER_DATA = {
   phone: "+380990000000",
@@ -21,7 +21,7 @@ const USER_DATA = {
     address: "25 Random st.",
     postcode: "01001",
   },
-  fields: [{ key: "272604", value: "UA" }],
+  fields: [{ key: "PERSONAL.COUNTRYCODE", value: "UA" }],
 };
 
 export const UserInformationView = () => {

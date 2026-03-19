@@ -43,7 +43,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   ): RetenoSubscription;
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
-  ): RetenoSubscription | undefined;
+  ): RetenoSubscription;
 
   // User attributes
   updateUserAttributes(payload: UserInformationPayload): Promise<void>;
@@ -72,6 +72,8 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   markAllAsOpened: () => Promise<boolean>;
   getAppInboxMessagesCount: () => Promise<number>;
   startListeningForUnreadMessages: () => void;
+  unsubscribeMessagesCountChanged: () => Promise<void>;
+  unsubscribeAllMessagesCountChanged: () => Promise<void>;
 
   // In-App Listeners
   pauseInAppMessages(state: boolean): Promise<void>;
@@ -100,6 +102,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   onUnreadMessagesCountChanged(
     callback?: (data: UnreadMessagesCountData) => void,
   ): RetenoSubscription;
+  removeInAppLifecycleCallback: () => void;
 
   // Ecommerce Events
   logEcomEventProductViewed: (
@@ -157,24 +160,25 @@ export const Reteno = {
       listener,
     );
   },
+
+  // Android
   setOnRetenoPushClickedListener(
     listener: (event: any) => void,
-  ): RetenoSubscription {
+  ): RetenoSubscription | undefined {
     return emitter.addListener(
       PushNotificationEvents.OnPushNotificationClicked,
       listener,
     );
   },
+
+  // iOS
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {
-    if (Platform.OS === "ios") {
-      return emitter.addListener(
-        PushNotificationEvents.OnPushButtonClicked,
-        listener,
-      );
-    }
-    return undefined;
+    return emitter.addListener(
+      PushNotificationEvents.OnPushButtonClicked,
+      listener,
+    );
   },
 
   // User attributes
@@ -208,7 +212,6 @@ export const Reteno = {
   },
 
   logRecommendationEvent(payload: RecommendationEventPayload): Promise<void> {
-    console.log("[JS]", payload);
     return ModuleInstance.logRecommendationEvent(payload);
   },
 
@@ -233,9 +236,14 @@ export const Reteno = {
   setInAppLifecycleCallback() {
     ModuleInstance.setInAppLifecycleCallback();
   },
-
   setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void {
     ModuleInstance.setInAppMessagesPauseBehaviour(state);
+  },
+  unsubscribeMessagesCountChanged(): void {
+    ModuleInstance.unsubscribeMessagesCountChanged();
+  },
+  unsubscribeAllMessagesCountChanged(): void {
+    ModuleInstance.unsubscribeAllMessagesCountChanged();
   },
 
   // In-App Listeners
@@ -306,6 +314,9 @@ export const Reteno = {
         }
       },
     );
+  },
+  removeInAppLifecycleCallback() {
+    ModuleInstance.removeInAppLifecycleCallback();
   },
 
   // Ecommerce Events

@@ -29,7 +29,6 @@ export const AppInboxMessagesView = () => {
 
   const handleReadLastInboxMessage = async (ids: string | string[]) => {
     try {
-      console.log(">>>", ids);
       // TODO: should be parsed inside module
       const data = await Reteno.markAsOpened(ids);
 

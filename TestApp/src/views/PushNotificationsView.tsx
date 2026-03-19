@@ -1,5 +1,5 @@
 import Reteno from "expo-reteno-sdk";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
@@ -40,15 +40,32 @@ export const PushNotificationsView = () => {
   }, []);
 
   useEffect(() => {
-    const pushListener =
-      Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
-    return () => pushListener.remove();
+    if (Platform.OS === "android") {
+      const pushListener =
+        Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
+
+      return () => pushListener.remove();
+    }
   }, [onRetenoPushReceived]);
 
+  // Android
   useEffect(() => {
-    const pushClickListener =
-      Reteno.setOnRetenoPushClickedListener(onRetenoPushClicked);
-    return () => pushClickListener.remove();
+    if (Platform.OS === "ios") {
+      const pushClickListener =
+        Reteno.setOnRetenoPushClickedListener(onRetenoPushClicked);
+
+      return () => pushClickListener.remove();
+    }
+  }, [onRetenoPushClicked]);
+
+  // iOS
+  useEffect(() => {
+    if (Platform.OS === "ios") {
+      const pushClickListener =
+        Reteno.setOnRetenoPushButtonClickedListener(onRetenoPushClicked);
+
+      return () => pushClickListener.remove();
+    }
   }, [onRetenoPushClicked]);
 
   return (
