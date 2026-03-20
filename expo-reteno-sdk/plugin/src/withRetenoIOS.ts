@@ -372,9 +372,9 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
 
   config = withNotificationContentExtensionPodfileUpdate(config);
 
-  // if (props.notificationService === "firebase") {
-  //   config = withFirebasePodfileUpdate(config);
-  // }
+  if (props.notificationService === "firebase") {
+    config = withFirebasePodfileUpdate(config);
+  }
 
   config = withAppDelegateConfiguration(config, props);
 
