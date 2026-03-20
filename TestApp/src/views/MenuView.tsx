@@ -8,10 +8,12 @@ export const MenuView = () => {
     <ScreenContainer>
       <View style={{ flex: 1, justifyContent: "center" }}>
         <Block title="Reteno SDK Example">
-          <Button
-            text="Installation SDK"
-            onPress={() => navigate("Installation")}
-          />
+          {Platform.OS === "ios" && (
+            <Button
+              text="Installation SDK"
+              onPress={() => navigate("Installation")}
+            />
+          )}
 
           <Button
             text="User information"

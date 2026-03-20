@@ -3,22 +3,23 @@ export type RetenoSubscription = {
 };
 
 export const InAppEvents = {
-  BeforeInAppDisplay: "beforeInAppDisplay",
-  OnInAppDisplay: "onInAppDisplay",
-  BeforeInAppClose: "beforeInAppClose",
-  AfterInAppClose: "afterInAppClose",
-  OnInAppError: "onInAppError",
-  OnInAppMessageCustomData: "onInAppMessageCustomData",
+  BeforeInAppDisplay: "reteno-before-in-app-display",
+  OnInAppDisplay: "reteno-on-in-app-display",
+  BeforeInAppClose: "reteno-before-in-app-close",
+  AfterInAppClose: "reteno-after-in-app-close",
+  OnInAppError: "reteno-on-in-app-error",
+  OnInAppMessageCustomData: "reteno-in-app-custom-data-received",
 } as const;
 
 export const PushNotificationEvents = {
-  OnPushNotificationReceived: "onPushNotificationReceived",
-  OnPushNotificationClicked: "onPushNotificationClicked",
-  OnPushButtonClicked: "onPushButtonClicked",
+  OnPushNotificationReceived: "reteno-push-received",
+  OnPushNotificationClicked: "reteno-push-clicked",
+  OnPushButtonClicked: "reteno-push-button-clicked",
 } as const;
 
 export const AppInboxEvents = {
-  OnUnreadMessagesCountChanged: "onUnreadMessagesCountChanged",
+  OnUnreadMessagesCountChanged: "reteno-unread-messages-count",
+  OnUnreadMessagesCountError: "reteno-unread-messages-error",
   UnreadMessagesCount: "unreadMessagesCount",
 } as const;
 
@@ -41,7 +42,12 @@ export type RetenoSubscriptionEvents = {
   [InAppEvents.AfterInAppClose]: (callback: InAppDisplayData) => void;
   [InAppEvents.OnInAppError]: (callback: InAppErrorData) => void;
   [InAppEvents.OnInAppMessageCustomData]: (callback: InAppCustomData) => void;
-  [AppInboxEvents.OnUnreadMessagesCountChanged]: () => void;
+  [AppInboxEvents.OnUnreadMessagesCountChanged]: (
+    callback: UnreadMessagesCountData,
+  ) => void;
+  [AppInboxEvents.OnUnreadMessagesCountError]: (
+    callback: UnreadMessagesCountData,
+  ) => void;
   [AppInboxEvents.UnreadMessagesCount]: (
     callback: UnreadMessagesCountData,
   ) => void;
@@ -76,16 +82,12 @@ export type User = {
 
 export type UserInformationPayload = {
   externalUserId: string;
-  user: UserAttributes;
+  user: User;
 };
 
 export type UserInformationMultiAccountPayload = {
   externalUserId: string;
-  user: {
-    attributes?: UserAttributes;
-    subscriptionKeys?: string[];
-    groupNamesInclude?: string[];
-    groupNamesExclude?: string[];
+  user: User & {
     accountSuffix?: string;
   };
 };

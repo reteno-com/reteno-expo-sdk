@@ -1,14 +1,25 @@
+const SDK_VERSION = "2.6.1";
+
 export const iosConfig = {
   nse: {
     files: [
-      "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
     ],
     source: "NotificationService.swift",
     target: "NotificationServiceExtension",
     entitlements: "NotificationServiceExtension.entitlements",
-    infoPlist: "Info.plist",
+    infoPlist: "NotificationServiceExtension-Info.plist",
+  },
+  nce: {
+    files: [
+      "NotificationContentExtension-Info.plist",
+      "NotificationContentExtension.entitlements",
+    ],
+    source: "NotificationViewController.swift",
+    target: "NotificationContentExtension",
+    entitlements: "NotificationContentExtension.entitlements",
+    infoPlist: "NotificationContentExtension-Info.plist",
   },
   targetedDeviceFamily: `"1,2"`,
   deploymentTarget: "15.1",
@@ -44,9 +55,18 @@ target 'NotificationServiceExtension' do
 use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
-  pod 'Reteno', '2.6.1'
+  pod 'Reteno', '${SDK_VERSION}'
 end
       `,
+
+    nce: `
+target 'NotificationContentExtension' do
+use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+  pod 'Reteno', '${SDK_VERSION}'
+  end
+  `,
   },
   defaultBundleVersions: {
     shortVersion: "1.0.0",

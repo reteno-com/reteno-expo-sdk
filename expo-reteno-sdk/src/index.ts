@@ -43,7 +43,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   ): RetenoSubscription;
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
-  ): RetenoSubscription | undefined;
+  ): RetenoSubscription;
 
   // User attributes
   updateUserAttributes(payload: UserInformationPayload): Promise<void>;
@@ -67,14 +67,18 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   // App Inbox messages
   getAppInboxMessages(
     payload: AppInboxPayload,
-  ): Promise<InboxMessage[] | Error>;
+  ): Promise<{ messages: InboxMessage[]; totalPages: null | number } | Error>;
   markAsOpened: (messageIds: string[]) => Promise<boolean>;
   markAllAsOpened: () => Promise<boolean>;
   getAppInboxMessagesCount: () => Promise<number>;
+  startListeningForUnreadMessages: () => void;
+  unsubscribeMessagesCountChanged: () => Promise<void>;
+  unsubscribeAllMessagesCountChanged: () => Promise<void>;
 
   // In-App Listeners
   pauseInAppMessages(state: boolean): Promise<void>;
   setInAppLifecycleCallback(): void;
+  setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void;
 
   // In-App Listeners
   beforeInAppDisplayHandler(
@@ -95,10 +99,10 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   onInAppMessageCustomDataHandler(
     callback: (data: InAppCustomData) => void,
   ): RetenoSubscription;
-  unreadMessagesCountHandler(
-    callback: (data: UnreadMessagesCountData) => void,
+  onUnreadMessagesCountChanged(
+    callback?: (data: UnreadMessagesCountData) => void,
   ): RetenoSubscription;
-  onUnreadMessagesCountChanged(): RetenoSubscription;
+  removeInAppLifecycleCallback: () => void;
 
   // Ecommerce Events
   logEcomEventProductViewed: (
@@ -156,24 +160,25 @@ export const Reteno = {
       listener,
     );
   },
+
+  // Android
   setOnRetenoPushClickedListener(
     listener: (event: any) => void,
-  ): RetenoSubscription {
+  ): RetenoSubscription | undefined {
     return emitter.addListener(
       PushNotificationEvents.OnPushNotificationClicked,
       listener,
     );
   },
+
+  // iOS
   setOnRetenoPushButtonClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {
-    if (Platform.OS === "ios") {
-      return emitter.addListener(
-        PushNotificationEvents.OnPushButtonClicked,
-        listener,
-      );
-    }
-    return undefined;
+    return emitter.addListener(
+      PushNotificationEvents.OnPushButtonClicked,
+      listener,
+    );
   },
 
   // User attributes
@@ -205,6 +210,7 @@ export const Reteno = {
   getRecommendations(payload: RecommendationPayload): Promise<any> {
     return ModuleInstance.getRecommendations(payload);
   },
+
   logRecommendationEvent(payload: RecommendationEventPayload): Promise<void> {
     return ModuleInstance.logRecommendationEvent(payload);
   },
@@ -229,6 +235,15 @@ export const Reteno = {
   },
   setInAppLifecycleCallback() {
     ModuleInstance.setInAppLifecycleCallback();
+  },
+  setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void {
+    ModuleInstance.setInAppMessagesPauseBehaviour(state);
+  },
+  unsubscribeMessagesCountChanged(): void {
+    ModuleInstance.unsubscribeMessagesCountChanged();
+  },
+  unsubscribeAllMessagesCountChanged(): void {
+    ModuleInstance.unsubscribeAllMessagesCountChanged();
   },
 
   // In-App Listeners
@@ -286,20 +301,22 @@ export const Reteno = {
       }
     });
   },
-  unreadMessagesCountHandler(
+  onUnreadMessagesCountChanged(
     callback: (data: UnreadMessagesCountData) => void,
-  ) {
-    return emitter.addListener(AppInboxEvents.UnreadMessagesCount, (data) => {
-      if (callback && typeof callback === "function") {
-        callback(data);
-      }
-    });
-  },
-  onUnreadMessagesCountChanged(): RetenoSubscription {
+  ): RetenoSubscription {
+    ModuleInstance.startListeningForUnreadMessages();
+
     return emitter.addListener(
       AppInboxEvents.OnUnreadMessagesCountChanged,
-      () => {},
+      (data) => {
+        if (callback && typeof callback === "function") {
+          callback(data);
+        }
+      },
     );
+  },
+  removeInAppLifecycleCallback() {
+    ModuleInstance.removeInAppLifecycleCallback();
   },
 
   // Ecommerce Events

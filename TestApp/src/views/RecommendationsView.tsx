@@ -1,8 +1,11 @@
 import Reteno from "expo-reteno-sdk";
-import { ScrollView } from "react-native";
+import { useState } from "react";
+import { ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
 export const RecommendationsView = () => {
+  const [recommendations, setRecommendations] = useState([]);
+
   const handleGetRecommendations = async () => {
     const recommendationsPayload = {
       recomVariantId: "r1107v1482",
@@ -16,7 +19,9 @@ export const RecommendationsView = () => {
       const data = await Reteno.getRecommendations(recommendationsPayload);
 
       if (data) {
-        alert(JSON.stringify({ data }));
+        console.log("@@@", data);
+        setRecommendations(data);
+        // alert(JSON.stringify({ data }));
       }
     } catch (error) {
       alert(JSON.stringify({ error }));
@@ -38,7 +43,7 @@ export const RecommendationsView = () => {
       })
       .catch((error) => {
         // Handle error
-        alert(`Error logging recommendation event: ${error}`);
+        alert(error);
       });
   };
 
@@ -55,6 +60,12 @@ export const RecommendationsView = () => {
             onPress={handleLogRecommendationEvent}
           />
         </Block>
+
+        {recommendations && (
+          <Block title="Recommendations">
+            <Text>{JSON.stringify(recommendations)}</Text>
+          </Block>
+        )}
       </ScrollView>
     </ScreenContainer>
   );

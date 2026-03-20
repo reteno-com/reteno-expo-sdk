@@ -9,7 +9,8 @@ import {
 import {
   RetenoIOSAutogenComments,
   RetenoIOSProps,
-  RetenoNSEProps,
+  RetenoExtensionProps,
+  RetenoExtensionTarget,
 } from "./types";
 import {
   addRetenoImport,
@@ -19,12 +20,12 @@ import {
   addDependenciesToPodfile,
   removeContents,
   addRetenoInit,
-  updateNSEEntitlements,
-  updateNSEBundleVersions,
   addTargetToPodfile,
+  copyExtensionFiles,
+  addNotificationServiceExtensionTarget,
+  addNotificationContentExtensionTarget,
 } from "./support/ios.functions";
 import path from "path";
-import { FileService } from "./support/FileService";
 import { iosConfig } from "./support/constants";
 
 const withDevelopmentTeam: ConfigPlugin<RetenoIOSProps> = (config, props) => {
@@ -58,7 +59,10 @@ const withDevelopmentTeam: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   });
 };
 
-const withAppEnvironment: ConfigPlugin<RetenoNSEProps> = (config, props) => {
+const withAppEnvironment: ConfigPlugin<RetenoExtensionProps> = (
+  config,
+  props,
+) => {
   return withEntitlementsPlist(config, (cfg: any) => {
     if (props?.mode == null) {
       throw new Error(`
@@ -218,7 +222,9 @@ const withFirebasePodfileUpdate: ConfigPlugin = (config) => {
 
 const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   if (!props.sdkAccessToken) {
-    throw new Error("SDK token is not defined, cancelling installation...");
+    throw new Error(
+      "[Reteno] SDK token is not defined, cancelling installation...",
+    );
   }
 
   return withAppDelegate(config, (config) => {
@@ -239,9 +245,7 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
     config.modResults.contents = addRetenoInit(
       config.modResults.contents,
       props.sdkAccessToken,
-      {
-        isDebugMode: props.debug,
-      },
+      props.config,
     ).contents;
 
     return config;
@@ -251,203 +255,122 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
 /**
  * Add Notification Service Extension
  */
-const withRetenoNSE: ConfigPlugin<RetenoNSEProps> = (config, props) => {
+const withNotificationServiceExtension: ConfigPlugin<RetenoExtensionProps> = (
+  config,
+  props,
+) => {
   const pluginDir = require.resolve("expo-reteno-sdk/package.json");
   const sourceDir = path.join(pluginDir, "../plugin/src/support/nse");
 
   return withDangerousMod(config, [
     "ios",
     async (config) => {
-      const iosPath = path.join(config.modRequest.projectRoot, "ios");
-
-      const { defaultBundleVersions, nse: nseConfig } = iosConfig;
-      const { target, files, source, entitlements, infoPlist } = nseConfig;
-
-      const destPath = `${iosPath}/${target}`;
-
-      FileService.createFolder(`${iosPath}/${target}`, {
-        recursive: true,
-      });
-
-      // Copy Plists and Entitlements
-      for (let i = 0; i < files.length; i++) {
-        const extFile = files[i];
-        const targetFile = `${destPath}/${extFile}`;
-
-        await FileService.copy(`${sourceDir}/${extFile}`, targetFile);
-      }
-
-      // Copy NotificationServiceExtension.swift
-      const sourcePath = props.nseFilepath ?? `${sourceDir}/${source}`;
-      const targetFile = `${destPath}/${source}`;
-      await FileService.copy(`${sourcePath}`, targetFile);
-
-      await updateNSEEntitlements(
-        `${destPath}/${entitlements}`,
-        String(config.ios?.bundleIdentifier),
+      config = await copyExtensionFiles(
+        config,
+        iosConfig,
+        sourceDir,
+        "nse",
+        props.nseFilepath,
       );
-
-      await updateNSEBundleVersions(`${destPath}/${infoPlist}`, {
-        shortVersion:
-          config.ios?.buildNumber ?? defaultBundleVersions.shortVersion,
-        version: config.ios?.version ?? defaultBundleVersions.version,
-      });
 
       return config;
     },
   ]);
 };
 
-const withRetenoNSEProject: ConfigPlugin<RetenoIOSProps & RetenoNSEProps> = (
-  config,
-  props,
-) => {
+const withNotificationServiceExtensionTarget: ConfigPlugin<
+  RetenoExtensionTarget
+> = (config, props) => {
   return withXcodeProject(config, (newConfig) => {
-    const xcodeProject = newConfig.modResults;
-    const { targetedDeviceFamily, deploymentTarget } = iosConfig;
-    const { target, files, source } = iosConfig.nse;
-
-    if (!!xcodeProject.pbxTargetByName(target)) {
-      console.warn(`${target} already exists in project. Skipping...`);
-      return newConfig;
-    }
-
-    // Create new PBXGroup for the extension
-    const extGroup = xcodeProject.addPbxGroup(
-      [...files, source],
-      target,
-      target,
-    );
-
-    // Add the new PBXGroup to the top level group. This makes the
-    // files / folder appear in the file explorer in Xcode.
-    const groups = xcodeProject.hash.project.objects["PBXGroup"];
-    Object.keys(groups).forEach(function (key) {
-      if (
-        typeof groups[key] === "object" &&
-        groups[key].name === undefined &&
-        groups[key].path === undefined
-      ) {
-        xcodeProject.addToPbxGroup(extGroup.uuid, key);
-      }
-    });
-
-    // WORK AROUND for codeProject.addTarget BUG
-    // Xcode projects don't contain these if there is only one target
-    // An upstream fix should be made to the code referenced in this link:
-    //   - https://github.com/apache/cordova-node-xcode/blob/8b98cabc5978359db88dc9ff2d4c015cba40f150/lib/pbxProject.js#L860
-    const projObjects = xcodeProject.hash.project.objects;
-    projObjects["PBXTargetDependency"] =
-      projObjects["PBXTargetDependency"] || {};
-    projObjects["PBXContainerItemProxy"] =
-      projObjects["PBXTargetDependency"] || {};
-
-    // Add the NSE target
-    // This adds PBXTargetDependency and PBXContainerItemProxy
-    const nseTarget = xcodeProject.addTarget(
-      target,
-      "app_extension",
-      target,
-      `${config.ios?.bundleIdentifier}.${target}`,
-    );
-
-    // Link NSE file to target
-    xcodeProject.addBuildPhase(
-      [source],
-      "PBXSourcesBuildPhase",
-      "Sources",
-      nseTarget.uuid,
-    );
-
-    // Add build phases to the new target
-    xcodeProject.addBuildPhase(
-      [],
-      "PBXResourcesBuildPhase",
-      "Resources",
-      nseTarget.uuid,
-    );
-
-    xcodeProject.addBuildPhase(
-      [],
-      "PBXFrameworksBuildPhase",
-      "Frameworks",
-      nseTarget.uuid,
-    );
-
-    // Edit the Deployment info of the new Target, only IphoneOS and Targeted Device Family
-    // However, can be more
-    const configurations = xcodeProject.pbxXCBuildConfigurationSection();
-    for (const key in configurations) {
-      if (
-        typeof configurations[key].buildSettings !== "undefined" &&
-        configurations[key].buildSettings.PRODUCT_NAME == `"${target}"` &&
-        configurations[key].buildSettings
-      ) {
-        const { buildSettings } = configurations[key];
-
-        buildSettings.INFOPLIST_FILE = `"NotificationServiceExtension/Info.plist"`;
-        buildSettings.DEVELOPMENT_TEAM = props?.devTeam;
-        buildSettings.IPHONEOS_DEPLOYMENT_TARGET =
-          props?.deploymentTarget ?? deploymentTarget;
-        buildSettings.TARGETED_DEVICE_FAMILY = targetedDeviceFamily;
-        buildSettings.CODE_SIGN_ENTITLEMENTS = `${target}/${target}.entitlements`;
-        buildSettings.CODE_SIGN_STYLE = "Automatic";
-        buildSettings.SWIFT_VERSION = "5.0";
-
-        // Optional: Ensure it's treated as an extension
-        buildSettings.APPLICATION_EXTENSION_API_ONLY = "YES";
-        buildSettings.SKIP_INSTALL = "YES";
-
-        if (config.version) {
-          buildSettings.MARKETING_VERSION = `"${config.version}"`;
-        }
-        if (config.ios?.buildNumber) {
-          buildSettings.CURRENT_PROJECT_VERSION = `"${config.ios.buildNumber}"`;
-        }
-
-        // Force the correct prefixed Bundle Identifier
-        // buildSettings.PRODUCT_BUNDLE_IDENTIFIER = `"${config.ios?.bundleIdentifier}.NotificationServiceExtension`;
-      }
-    }
-
-    // Add development teams to both your target and the original project
-    xcodeProject.addTargetAttribute(
-      "DevelopmentTeam",
-      props?.devTeam,
-      nseTarget,
-    );
-    xcodeProject.addTargetAttribute("DevelopmentTeam", props?.devTeam);
-
-    return newConfig;
+    return addNotificationServiceExtensionTarget(config, newConfig, props);
   });
 };
 
-const withNSEPodfileUpdate: ConfigPlugin = (config) => {
+const withNotificationServiceExtensionPodfileUpdate: ConfigPlugin = (
+  config,
+) => {
   return withDangerousMod(config, [
     "ios",
     async (config) => {
       const root = path.join(config.modRequest.projectRoot, "ios");
-
-      await addTargetToPodfile(root, iosConfig.nse.source);
+      await addTargetToPodfile(root, iosConfig.nse.source, "service");
 
       return config;
     },
   ]);
 };
 
+const withNotificationContentExtensionPodfileUpdate: ConfigPlugin = (
+  config,
+) => {
+  return withDangerousMod(config, [
+    "ios",
+    async (config) => {
+      const root = path.join(config.modRequest.projectRoot, "ios");
+      await addTargetToPodfile(root, iosConfig.nce.source, "content");
+
+      return config;
+    },
+  ]);
+};
+
+/**
+ * Add Notification Content Extension
+ */
+const withNotificationContentExtension: ConfigPlugin<RetenoExtensionProps> = (
+  config,
+) => {
+  const pluginDir = require.resolve("expo-reteno-sdk/package.json");
+  const sourceDir = path.join(pluginDir, "../plugin/src/support/nce");
+
+  return withDangerousMod(config, [
+    "ios",
+    async (config) => {
+      config = await copyExtensionFiles(config, iosConfig, sourceDir, "nce");
+
+      return config;
+    },
+  ]);
+};
+
+const withNotificationContentExtensionTarget: ConfigPlugin = (config) => {
+  return withXcodeProject(config, (newConfig) => {
+    return addNotificationContentExtensionTarget(config, newConfig);
+  });
+};
+
 export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   config = withDevelopmentTeam(config, props);
-  config = withAppEnvironment(config, props as RetenoIOSProps & RetenoNSEProps);
+  config = withAppEnvironment(
+    config,
+    props as RetenoIOSProps & RetenoExtensionProps,
+  );
   config = withRemoteNotificationsPermissions(config);
   config = withAppGroups(config, props.appGroups);
-
   config = withRetenoInit(config, props);
-  config = withRetenoNSE(config, props as RetenoIOSProps & RetenoNSEProps);
-  config = withRetenoNSEProject(
+
+  // Notification Service Extension
+  config = withNotificationServiceExtension(
     config,
-    props as RetenoIOSProps & RetenoNSEProps,
+    props as RetenoIOSProps & RetenoExtensionProps,
   );
-  config = withNSEPodfileUpdate(config);
+
+  config = withNotificationServiceExtensionTarget(
+    config,
+    props as RetenoIOSProps & RetenoExtensionProps,
+  );
+
+  config = withNotificationServiceExtensionPodfileUpdate(config);
+
+  // Notification Content Extensions
+  config = withNotificationContentExtension(
+    config,
+    props as RetenoIOSProps & RetenoExtensionProps,
+  );
+
+  config = withNotificationContentExtensionTarget(config);
+
+  config = withNotificationContentExtensionPodfileUpdate(config);
 
   if (props.notificationService === "firebase") {
     config = withFirebasePodfileUpdate(config);

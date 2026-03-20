@@ -398,6 +398,18 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 
+    Function("setInAppMessagesPauseBehaviour") { (state: String) -> Void in
+			if(state.lowercased() == "skip") {
+				Reteno.setInAppMessagesPauseBehaviour(pauseBehaviour: .skipInApps )
+				return
+			}
+			
+			if(state.lowercased() == "postpone") {
+				Reteno.setInAppMessagesPauseBehaviour(pauseBehaviour: .postponeInApps )
+				return
+			}
+    }
+
     // App inbox messages
 		
 		AsyncFunction("getAppInboxMessages") { (payload: [String: Any?], promise: Promise) -> Void in
@@ -439,7 +451,7 @@ public class ExpoRetenoSdkModule: Module {
 			}
 		}
 		
-		Function("addUnreadMessagesListener") { () -> Void in
+		Function("startListeningForUnreadMessages") { () -> Void in
 			Reteno.inbox().onUnreadMessagesCountChanged = { count in
 				self.sendEvent(
 					RetenoExpoEvent.unreadMessagesCount.value,
