@@ -1,6 +1,6 @@
 {
   "name": "reteno-expo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "workspaces": [
     "expo-reteno-sdk",
@@ -23,7 +23,7 @@
     "release-it": "^15.1.0",
     "@release-it/conventional-changelog": "^5.0.0"
   },
-    "release-it": {
+  "release-it": {
     "git": {
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}",
