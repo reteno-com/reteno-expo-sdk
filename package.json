@@ -1,6 +1,6 @@
 {
   "name": "reteno-expo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "workspaces": [
     "expo-reteno-sdk",
@@ -9,11 +9,36 @@
   "scripts": {
     "install-all": "yarn install",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "prepack": "bob build",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor"
   },
   "dependencies": {
     "expo": "~54.0.33",
     "react": "19.1.0",
     "react-native": "0.81.5"
+  },
+  "devDependencies": {
+    "release-it": "^15.1.0",
+    "@release-it/conventional-changelog": "^5.0.0"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}",
+      "pushRepo": "https://github.com/reteno-com/reteno-expo-sdk"
+    },
+    "npm": {
+      "publish": true
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular"
+      }
+    }
   }
 }
