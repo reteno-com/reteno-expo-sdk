@@ -10,7 +10,6 @@
     "install-all": "yarn install",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "prepack": "bob build",
     "release:patch": "release-it patch",
     "release:minor": "release-it minor"
   },
@@ -30,7 +29,11 @@
       "pushRepo": "https://github.com/reteno-com/reteno-expo-sdk"
     },
     "npm": {
-      "publish": true
+      "publish": true,
+      "publishPath": "./expo-reteno-sdk"
+    },
+    "hooks": {
+      "after:bump": "npm version ${version} --prefix ./expo-reteno-sdk --no-git-tag-version"
     },
     "github": {
       "release": true

@@ -1,6 +1,6 @@
 {
   "name": "expo-reteno-sdk",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Expo wrapper for Reteno SDK",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -23,13 +23,19 @@
     "expo-reteno-sdk",
     "ExpoRetenoSdk"
   ],
-  "repository": "https://github.com/monkeedev/expo-reteno-sdk",
-  "bugs": {
-    "url": "https://github.com/monkeedev/expo-reteno-sdk/issues"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reteno-com/reteno-expo-sdk.git"
   },
-  "author": "Serhii Zakharov <sergeyzakharov.dev@gmail.com> (https://github.com/monkeedev)",
+  "bugs": {
+    "url": "https://github.com/reteno-com/reteno-expo-sdk/issues"
+  },
+  "author": "mobile-sdk@reteno.com",
   "license": "MIT",
-  "homepage": "https://github.com/monkeedev/expo-reteno-sdk#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "homepage": "https://github.com/reteno-com/reteno-expo-sdk#readme",
   "dependencies": {
     "expo": "~54.0.33",
     "react": "19.1.0",
@@ -41,6 +47,17 @@
     "expo": "^54.0.27",
     "react-native": "0.81.5"
   },
+  "files": [
+    "build",
+    "android",
+    "ios",
+    "plugin/build",
+    "plugin/src/support/nse",
+    "plugin/src/support/nce",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "docs"
+  ],
   "plugins": "./app.plugin.js",
   "peerDependencies": {
     "expo": "*",

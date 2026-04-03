@@ -66,7 +66,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
 
   // App Inbox messages
   getAppInboxMessages(
-    payload: AppInboxPayload,
+    payload?: AppInboxPayload,
   ): Promise<{ messages: InboxMessage[]; totalPages: null | number } | Error>;
   markAsOpened: (messageIds: string[]) => Promise<boolean>;
   markAllAsOpened: () => Promise<boolean>;
@@ -216,7 +216,7 @@ export const Reteno = {
   },
 
   // App Inbox Messages
-  getAppInboxMessages(payload: AppInboxPayload) {
+  getAppInboxMessages(payload: AppInboxPayload = {}) {
     return ModuleInstance.getAppInboxMessages(payload);
   },
   markAsOpened(messageIds: string[]) {
