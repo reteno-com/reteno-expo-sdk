@@ -1,146 +1,76 @@
-import { StatusBar } from "expo-status-bar";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+  ActionButtonsView,
+  AppInboxMessagesView,
+  InAppMessagesView,
+  InstallationView,
+  MenuView,
+  PushNotificationsView,
+  RecommendationsView,
+  UserBehaviourView,
+  UserInformationView,
+} from "src/views";
+import { NavigationContainer } from "@react-navigation/native";
+import { EcommerceView } from "src/views/EcommerceView";
 
-import Reteno from "expo-reteno-sdk";
-import { FC, useCallback, useEffect, useState } from "react";
-// import messaging from "@react-native-firebase/messaging";
+const Stack = createNativeStackNavigator();
 
-const USER_TOKEN = Platform.select({
-  ios: "b17cf99f-6bc8-449a-9da3-4aae73121cab",
-  android: "2b5a1816-a8c0-40f9-a858-86a39901c920",
-});
-
-const user = {
-  phone: "+380990000003",
-  email: "emailtest3@gmail.com",
-  timeZone: "Europe/Kyiv",
-  languageCode: "en-UA",
-  firstName: "Ted",
-  lastName: "Mosby",
-  address: {
-    region: "Ukraine",
-    town: "Kyiv",
-    address: "42 Random st.",
-    postcode: "4815162342",
-  },
-  fields: [{ key: "custom_field", value: "Custom Value" }],
-};
-
-type ButtonProps = {
-  text: string;
-  onPress: () => void;
-};
-
-const Button: FC<ButtonProps> = (props) => {
+function RootStack() {
   return (
-    <TouchableOpacity
-      onPress={props.onPress}
-      activeOpacity={0.75}
-      style={{
-        alignItems: "center",
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: "#ededed",
-      }}
-    >
-      <Text>{props.text}</Text>
-    </TouchableOpacity>
-  );
-};
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Menu"
+          component={MenuView}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Installation" component={InstallationView} />
+        <Stack.Screen
+          name="UserInformation"
+          component={UserInformationView}
+          options={{ headerTitle: "User Information" }}
+        />
 
-export default function App() {
-  const [state, setState] = useState({});
+        <Stack.Screen
+          name="UserBehaviour"
+          component={UserBehaviourView}
+          options={{ headerTitle: "User Behaviour" }}
+        />
 
-  const onRetenoPushReceived = useCallback((event: any) => {
-    Alert.alert(
-      "onPushNotificationReceived",
-      event ? JSON.stringify(event) : event,
-    );
-  }, []);
+        <Stack.Screen
+          name="PushNotifications"
+          component={PushNotificationsView}
+          options={{ headerTitle: "Push Notifications" }}
+        />
 
-  const handleStart = () => {
-    Reteno.registerForRemoteNotifications();
-  };
+        <Stack.Screen name="Recommendations" component={RecommendationsView} />
+        <Stack.Screen
+          name="InAppMessages"
+          component={InAppMessagesView}
+          options={{ headerTitle: "In-App Messages" }}
+        />
+        <Stack.Screen
+          name="AppInboxMessages"
+          component={AppInboxMessagesView}
+          options={{ headerTitle: "App Inbox Messages" }}
+        />
 
-  const handleSetAttribute = () => {
-    // Reteno.updateUserAttributes(USER_TOKEN ?? "", user);
+        <Stack.Screen
+          name="ActionButtons"
+          component={ActionButtonsView}
+          options={{ headerTitle: "Action Buttons" }}
+        />
 
-    // If you want to update anonymous:
-    Reteno.updateAnonymousUserAttributes({
-      firstName: "Ted",
-      lastName: "Mosby",
-    });
-
-    if (Platform.OS === "ios") {
-      async function getTokenOnIos() {
-        // const token = await messaging().getToken();
-        // Reteno.setDeviceToken(token);
-
-        setState((prev) => ({
-          ...prev,
-          // deviceToken: token,
-          userToken: USER_TOKEN,
-          userAttributes: user,
-        }));
-      }
-
-      getTokenOnIos();
-    } else {
-      setState((prev) => ({
-        ...prev,
-        userToken: USER_TOKEN,
-        userAttributes: user,
-      }));
-    }
-  };
-
-  useEffect(() => {
-    const l = Reteno.addPushNotificationListener(onRetenoPushReceived);
-
-    return () => {
-      l.remove();
-    };
-  }, []);
-
-  return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <View style={{ alignItems: "center", gap: 8 }}>
-        <Text>Reteno installation SDK</Text>
-        <Button text="Request push permissions" onPress={handleStart} />
-
-        <Button text="Set UserID" onPress={handleSetAttribute} />
-        {!Object.keys(state).length ? (
-          <Text>Press `Start SDK` button to initialize Reteno SDK</Text>
-        ) : (
-          <View style={{ gap: 8 }}>
-            {Object.keys(state).map((s: string, key: number) => (
-              <View key={`State-${key}`}>
-                <Text style={{ fontWeight: "900" }}>{s}:</Text>
-                <Text>{JSON.stringify(state[s])}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    </View>
+        <Stack.Screen
+          name="Ecommerce"
+          component={EcommerceView}
+          options={{ headerTitle: "Ecommerce Events" }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-});
+export default function App() {
+  return <RootStack />;
+}

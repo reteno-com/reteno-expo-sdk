@@ -1,14 +1,25 @@
+const SDK_VERSION = "2.6.1";
+
 export const iosConfig = {
   nse: {
     files: [
-      "Info.plist",
       "NotificationServiceExtension-Info.plist",
       "NotificationServiceExtension.entitlements",
     ],
     source: "NotificationService.swift",
     target: "NotificationServiceExtension",
     entitlements: "NotificationServiceExtension.entitlements",
-    infoPlist: "Info.plist",
+    infoPlist: "NotificationServiceExtension-Info.plist",
+  },
+  nce: {
+    files: [
+      "NotificationContentExtension-Info.plist",
+      "NotificationContentExtension.entitlements",
+    ],
+    source: "NotificationViewController.swift",
+    target: "NotificationContentExtension",
+    entitlements: "NotificationContentExtension.entitlements",
+    infoPlist: "NotificationContentExtension-Info.plist",
   },
   targetedDeviceFamily: `"1,2"`,
   deploymentTarget: "15.1",
@@ -44,9 +55,18 @@ target 'NotificationServiceExtension' do
 use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
-  pod 'Reteno', '2.6.1'
+  pod 'Reteno', '${SDK_VERSION}'
 end
       `,
+
+    nce: `
+target 'NotificationContentExtension' do
+use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+  pod 'Reteno', '${SDK_VERSION}'
+  end
+  `,
   },
   defaultBundleVersions: {
     shortVersion: "1.0.0",
@@ -58,19 +78,16 @@ export const androidConfig = {
   sdk: {
     project: {
       anchor: "dependencies {",
-      deps: ["classpath 'com.google.gms:google-services:4.3.2'"],
+      deps: ["classpath 'com.google.gms:google-services:4.4.4'"],
     },
     module: {
       anchor: 'implementation("com.facebook.react:react-android")',
       deps: [
-        "implementation 'com.reteno:core:2.8.9'",
-        "implementation 'com.reteno:push:2.8.9'",
-        "implementation 'com.reteno:fcm:2.8.9'",
+        "implementation 'com.reteno:core:2.9.1'",
+        "implementation 'com.reteno:push:2.9.1'",
+        "implementation 'com.reteno:fcm:2.9.1'",
         "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
         "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
-        // "implementation 'com.google.firebase:firebase-core:9.6.1'",
-        // "implementation 'com.reteno:fcm:2.8.9'",
-        // "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
       ],
     },
     properties: {

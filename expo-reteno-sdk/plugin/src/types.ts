@@ -6,26 +6,30 @@ export type MergeResults = {
 
 export type RetenoIOSProps = {
   sdkAccessToken: string;
-  debug: boolean;
   notificationService: "firebase" | "apns";
   devTeam: string;
   appGroups: string[];
+  config: RetenoInitConfig;
 };
 
-export type RetenoNSEProps = {
+export type RetenoExtensionProps = {
   mode: "development" | "production";
   nseFilepath: string;
+  nceFilepath: string;
   deploymentTarget?: string;
 };
 
+export type RetenoExtensionTarget = RetenoIOSProps & RetenoExtensionProps;
+
 export type RetenoAndroidProps = {
   sdkAccessToken: string;
-  debug: boolean;
+  config: RetenoInitConfig;
 };
 
 export type RetenoProps = {
   ios: RetenoIOSProps;
   android: RetenoAndroidProps;
+  config: RetenoInitConfig;
 };
 
 export const RetenoIOSAutogenComments = {
@@ -36,3 +40,13 @@ export const RetenoIOSAutogenComments = {
   FIREBASE_IMPORT: "@react-native-firebase/app - import",
   RETENO_APNS: "expo-reteno-sdk - APNs",
 } as const;
+
+export type RetenoInitConfigKeys =
+  | "isDebugMode"
+  | "isAutomaticSessionReportingEnabled"
+  | "isAutomaticPushSubsriptionReportingEnabled"
+  | "isPausedInAppMessages";
+
+export type RetenoInitConfig = Partial<{
+  [key in RetenoInitConfigKeys]: boolean;
+}>;

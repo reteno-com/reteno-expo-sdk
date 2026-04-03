@@ -87,7 +87,6 @@ export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
-  // config = withCopyGoogleServiceFile(config, props);
   config = withProjectGradleDependencies(config);
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
