@@ -14,6 +14,7 @@ import {
   EcomEventProductPayload,
   EcomEventSearchRequestPayload,
   InAppCustomData,
+  InAppCloseData,
   InAppDisplayData,
   InAppErrorData,
   InAppEvents,
@@ -42,6 +43,13 @@ declare class ExpoRetenoSdkModule extends NativeModule {
     listener: (event: any) => void,
   ): RetenoSubscription;
   setOnRetenoPushButtonClickedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription;
+  // Android only
+  setOnRetenoPushDismissedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription;
+  setOnRetenoCustomPushDataListener(
     listener: (event: any) => void,
   ): RetenoSubscription;
 
@@ -79,6 +87,12 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   pauseInAppMessages(state: boolean): Promise<void>;
   setInAppLifecycleCallback(): void;
   setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void;
+  // Android only - push-triggered in-app (SDK 2.9.0)
+  pausePushInAppMessages(isPaused: boolean): Promise<boolean>;
+  setPushInAppMessagesPauseBehaviour(state: "skip" | "postpone"): Promise<boolean>;
+  // Android only - notification permission (SDK 2.9.0)
+  requestNotificationPermission(): Promise<boolean>;
+  getNotificationPermissionStatus(): Promise<'ALLOWED' | 'DENIED' | 'PERMANENTLY_DENIED' | null>;
 
   // In-App Listeners
   beforeInAppDisplayHandler(
@@ -88,10 +102,10 @@ declare class ExpoRetenoSdkModule extends NativeModule {
     callback: (data: InAppDisplayData) => void,
   ): RetenoSubscription;
   beforeInAppCloseHandler(
-    callback: (data: InAppDisplayData) => void,
+    callback: (data: InAppCloseData) => void,
   ): RetenoSubscription;
   afterInAppCloseHandler(
-    callback: (data: InAppDisplayData) => void,
+    callback: (data: InAppCloseData) => void,
   ): RetenoSubscription;
   onInAppErrorHandler(
     callback: (data: InAppErrorData) => void,
@@ -161,7 +175,7 @@ export const Reteno = {
     );
   },
 
-  // Android
+  // Android only
   setOnRetenoPushClickedListener(
     listener: (event: any) => void,
   ): RetenoSubscription | undefined {
@@ -179,6 +193,26 @@ export const Reteno = {
       PushNotificationEvents.OnPushButtonClicked,
       listener,
     );
+  },
+
+  // Android only - push dismissed
+  setOnRetenoPushDismissedListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription | undefined {
+    if (Platform.OS === "android") {
+      return emitter.addListener(PushNotificationEvents.OnPushDismissed, listener);
+    }
+    return undefined;
+  },
+
+  // Android only - custom/silent push data
+  setOnRetenoCustomPushDataListener(
+    listener: (event: any) => void,
+  ): RetenoSubscription | undefined {
+    if (Platform.OS === "android") {
+      return emitter.addListener(PushNotificationEvents.OnCustomPushReceived, listener);
+    }
+    return undefined;
   },
 
   // User attributes
@@ -239,6 +273,32 @@ export const Reteno = {
   setInAppMessagesPauseBehaviour(state: "skip" | "postpone"): void {
     ModuleInstance.setInAppMessagesPauseBehaviour(state);
   },
+  // Android only - push-triggered in-app (SDK 2.9.0)
+  pausePushInAppMessages(isPaused: boolean): Promise<boolean> {
+    if (Platform.OS === "android") {
+      return ModuleInstance.pausePushInAppMessages(isPaused);
+    }
+    return Promise.resolve(false);
+  },
+  setPushInAppMessagesPauseBehaviour(state: "skip" | "postpone"): Promise<boolean> {
+    if (Platform.OS === "android") {
+      return ModuleInstance.setPushInAppMessagesPauseBehaviour(state);
+    }
+    return Promise.resolve(false);
+  },
+  // Android only - notification permission (SDK 2.9.0)
+  requestNotificationPermission(): Promise<boolean> {
+    if (Platform.OS === "android") {
+      return ModuleInstance.requestNotificationPermission();
+    }
+    return Promise.resolve(false);
+  },
+  getNotificationPermissionStatus(): Promise<'ALLOWED' | 'DENIED' | 'PERMANENTLY_DENIED' | null> {
+    if (Platform.OS === "android") {
+      return ModuleInstance.getNotificationPermissionStatus();
+    }
+    return Promise.resolve(null);
+  },
   unsubscribeMessagesCountChanged(): void {
     ModuleInstance.unsubscribeMessagesCountChanged();
   },
@@ -266,7 +326,7 @@ export const Reteno = {
     });
   },
   beforeInAppCloseHandler(
-    callback: (data: InAppDisplayData) => void,
+    callback: (data: InAppCloseData) => void,
   ): RetenoSubscription {
     return emitter.addListener(InAppEvents.BeforeInAppClose, (data) => {
       if (callback && typeof callback === "function") {
@@ -275,7 +335,7 @@ export const Reteno = {
     });
   },
   afterInAppCloseHandler(
-    callback: (data: InAppDisplayData) => void,
+    callback: (data: InAppCloseData) => void,
   ): RetenoSubscription {
     return emitter.addListener(InAppEvents.AfterInAppClose, (data) => {
       if (callback && typeof callback === "function") {

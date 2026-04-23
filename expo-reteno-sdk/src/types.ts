@@ -15,6 +15,8 @@ export const PushNotificationEvents = {
   OnPushNotificationReceived: "reteno-push-received",
   OnPushNotificationClicked: "reteno-push-clicked",
   OnPushButtonClicked: "reteno-push-button-clicked",
+  OnPushDismissed: "reteno-push-dismissed",
+  OnCustomPushReceived: "reteno-custom-push-received",
 } as const;
 
 export const AppInboxEvents = {
@@ -36,10 +38,12 @@ export type RetenoSubscriptionEvents = {
     body: string;
     [key: string]: any;
   }) => void;
+  [PushNotificationEvents.OnPushDismissed]: (event: Record<string, any>) => void;
+  [PushNotificationEvents.OnCustomPushReceived]: (event: Record<string, any>) => void;
   [InAppEvents.BeforeInAppDisplay]: (callback: InAppDisplayData) => void;
   [InAppEvents.OnInAppDisplay]: (callback: InAppDisplayData) => void;
-  [InAppEvents.BeforeInAppClose]: (callback: InAppDisplayData) => void;
-  [InAppEvents.AfterInAppClose]: (callback: InAppDisplayData) => void;
+  [InAppEvents.BeforeInAppClose]: (callback: InAppCloseData) => void;
+  [InAppEvents.AfterInAppClose]: (callback: InAppCloseData) => void;
   [InAppEvents.OnInAppError]: (callback: InAppErrorData) => void;
   [InAppEvents.OnInAppMessageCustomData]: (callback: InAppCustomData) => void;
   [AppInboxEvents.OnUnreadMessagesCountChanged]: (
@@ -154,7 +158,10 @@ type InAppSource = "DISPLAY_RULES" | "PUSH_NOTIFICATION";
 export type InAppCloseData = {
   id?: string;
   source?: InAppSource;
-  closeAction?: "OPEN_URL" | "BUTTON" | "CLOSE_BUTTON";
+  closeAction?: "OPEN_URL" | "BUTTON" | "CLOSE_BUTTON" | "DISMISSED" | "UNKNOWN";
+  isCloseButtonClicked?: boolean;
+  isButtonClicked?: boolean;
+  isOpenUrlClicked?: boolean;
 };
 
 export type InAppErrorData = {

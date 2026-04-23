@@ -53,9 +53,9 @@ dependencies {
   implementation "androidx.activity:activity-ktx:1.8.2" 
   implementation "androidx.fragment:fragment-ktx:1.6.2"
   implementation "com.facebook.react:react-android"
-  implementation 'com.reteno:core:2.8.9'
-  implementation 'com.reteno:push:2.8.9'
-  implementation 'com.reteno:fcm:2.8.9'
+  implementation 'com.reteno:core:2.9.2'
+  implementation 'com.reteno:push:2.9.2'
+  implementation 'com.reteno:fcm:2.9.2'
   implementation 'com.google.firebase:firebase-messaging:23.1.0'
   // implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'
   // implementation 'com.google.firebase:firebase-core:9.6.1'
