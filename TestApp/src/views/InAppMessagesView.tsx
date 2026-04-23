@@ -75,8 +75,18 @@ export const InAppMessagesView = () => {
       await Reteno.pauseInAppMessages(isPaused);
       Alert.alert("Success", "Pause state changed");
       setDidStop((prev) => !prev);
-    } catch (error) {
-      Alert.alert("Error", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert("Error", message);
+    }
+  };
+
+  const handlePushInAppPause = async (isPaused: boolean) => {
+    try {
+      await Reteno.pausePushInAppMessages(isPaused);
+      Alert.alert("Success", `Push-triggered in-app ${isPaused ? "paused" : "resumed"}`);
+    } catch (e: any) {
+      Alert.alert("Error", String(e?.message ?? e));
     }
   };
 
@@ -108,6 +118,39 @@ export const InAppMessagesView = () => {
             onPress={handleLogEcomEventOrderDelivered}
           />
         </Block>
+
+        {Platform.OS === "android" && (
+          <Block title="Push-triggered In-App (Android)">
+            <Button
+              text="Pause push-triggered in-app"
+              onPress={() => handlePushInAppPause(true)}
+            />
+            <Button
+              text="Resume push-triggered in-app"
+              onPress={() => handlePushInAppPause(false)}
+            />
+            <Button
+              text="Behaviour: Skip"
+              onPress={async () => {
+                try {
+                  await Reteno.setPushInAppMessagesPauseBehaviour("skip");
+                } catch (e: any) {
+                  Alert.alert("Error", String(e?.message ?? e));
+                }
+              }}
+            />
+            <Button
+              text="Behaviour: Postpone"
+              onPress={async () => {
+                try {
+                  await Reteno.setPushInAppMessagesPauseBehaviour("postpone");
+                } catch (e: any) {
+                  Alert.alert("Error", String(e?.message ?? e));
+                }
+              }}
+            />
+          </Block>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
