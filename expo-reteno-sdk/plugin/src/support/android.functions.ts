@@ -1,4 +1,5 @@
 import { androidConfig } from "./constants";
+import { RetenoAndroidProps } from "../types";
 
 /*
  * Add dependencies to application's Gradle
@@ -181,9 +182,9 @@ export function addSdkAndFirebaseImports(
 
 export function initializeSdk(
   content: string,
-  config: { sdkAccessToken: string; config?: { debug?: boolean } },
+  config: RetenoAndroidProps,
 ) {
-  const isDebugMode = config.config?.debug ?? false;
+  const isDebugMode = config.config?.isDebugMode ?? false;
   content = content.replace(
     "super.onCreate()",
     `super.onCreate()
