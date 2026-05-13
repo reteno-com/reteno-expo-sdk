@@ -13,6 +13,7 @@ import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.firebase.FirebaseApp
@@ -246,20 +247,29 @@ class ExpoRetenoSdkModule : Module() {
     // User information
     AsyncFunction("updateUserAttributes") { payload: RetenoUserAttributesPayload, promise: Promise ->
       try {
+          val externalUserId = getStringOrNull(payload.externalUserId)
+          if (externalUserId == null) {
+              promise.reject("400", "externalUserId is required for updateUserAttributes", null)
+              return@AsyncFunction
+          }
+
+          val userPayload = payload.user
+          val userAttributesPayload = userPayload?.userAttributes ?: payload.userAttributes
+
           // Map the custom fields
-          val fields = payload.userAttributes?.fields?.map { f ->
+          val fields = userAttributesPayload?.fields?.map { f ->
               UserCustomField(key = f.key, value = f.value)
           } ?: emptyList()
 
           // Map the user attributes
           val userAttributes = UserAttributes(
-              phone = getStringOrNull(payload.userAttributes?.phone),
-              email = getStringOrNull(payload.userAttributes?.email),
-              firstName = getStringOrNull(payload.userAttributes?.firstName),
-              lastName = getStringOrNull(payload.userAttributes?.lastName),
-              languageCode = getStringOrNull(payload.userAttributes?.languageCode),
-              timeZone = getStringOrNull(payload.userAttributes?.timeZone),
-              address = payload.userAttributes?.address?.let { addr ->
+              phone = getStringOrNull(userAttributesPayload?.phone),
+              email = getStringOrNull(userAttributesPayload?.email),
+              firstName = getStringOrNull(userAttributesPayload?.firstName),
+              lastName = getStringOrNull(userAttributesPayload?.lastName),
+              languageCode = getStringOrNull(userAttributesPayload?.languageCode),
+              timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
                       town = getStringOrNull(addr.town),
@@ -272,12 +282,12 @@ class ExpoRetenoSdkModule : Module() {
 
           // Call the native Reteno SDK
           Reteno.instance.setUserAttributes(
-              externalUserId = payload.externalUserId,
+              externalUserId = externalUserId,
               user = User(
                   userAttributes = userAttributes,
-                  subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
-                  groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
-                  groupNamesExclude = payload.groupNamesExclude ?: emptyList()
+                  subscriptionKeys = userPayload?.subscriptionKeys ?: payload.subscriptionKeys ?: emptyList(),
+                  groupNamesInclude = userPayload?.groupNamesInclude ?: payload.groupNamesInclude ?: emptyList(),
+                  groupNamesExclude = userPayload?.groupNamesExclude ?: payload.groupNamesExclude ?: emptyList()
               ),
           )
 
@@ -322,20 +332,29 @@ class ExpoRetenoSdkModule : Module() {
 
     AsyncFunction("updateMultiAccountUserAttributes") { payload: RetenoMultiAccountUserAttributesPayload, promise: Promise ->
       try {
+          val externalUserId = getStringOrNull(payload.externalUserId)
+          if (externalUserId == null) {
+              promise.reject("400", "externalUserId is required for updateMultiAccountUserAttributes", null)
+              return@AsyncFunction
+          }
+
+          val userPayload = payload.user
+          val userAttributesPayload = userPayload?.userAttributes ?: payload.userAttributes
+
           // Map the custom fields
-          val fields = payload.userAttributes?.fields?.map { f ->
+          val fields = userAttributesPayload?.fields?.map { f ->
               UserCustomField(key = f.key, value = f.value)
           } ?: emptyList()
 
           // Map the user attributes
           val userAttributes = UserAttributes(
-              phone = getStringOrNull(payload.userAttributes?.phone),
-              email = getStringOrNull(payload.userAttributes?.email),
-              firstName = getStringOrNull(payload.userAttributes?.firstName),
-              lastName = getStringOrNull(payload.userAttributes?.lastName),
-              languageCode = getStringOrNull(payload.userAttributes?.languageCode),
-              timeZone = getStringOrNull(payload.userAttributes?.timeZone),
-              address = payload.userAttributes?.address?.let { addr ->
+              phone = getStringOrNull(userAttributesPayload?.phone),
+              email = getStringOrNull(userAttributesPayload?.email),
+              firstName = getStringOrNull(userAttributesPayload?.firstName),
+              lastName = getStringOrNull(userAttributesPayload?.lastName),
+              languageCode = getStringOrNull(userAttributesPayload?.languageCode),
+              timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
                       town = getStringOrNull(addr.town),
@@ -348,12 +367,12 @@ class ExpoRetenoSdkModule : Module() {
 
           // Call the native Reteno SDK
           Reteno.instance.setMultiAccountUserAttributes(
-              externalUserId = payload.externalUserId,
+              externalUserId = externalUserId,
               user = User(
                   userAttributes = userAttributes,
-                  subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
-                  groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
-                  groupNamesExclude = payload.groupNamesExclude ?: emptyList(),
+                  subscriptionKeys = userPayload?.subscriptionKeys ?: payload.subscriptionKeys ?: emptyList(),
+                  groupNamesInclude = userPayload?.groupNamesInclude ?: payload.groupNamesInclude ?: emptyList(),
+                  groupNamesExclude = userPayload?.groupNamesExclude ?: payload.groupNamesExclude ?: emptyList(),
               ),
           )
 
@@ -1181,12 +1200,20 @@ class ExpoRetenoSdkModule : Module() {
     private fun convertReadableArrayToStringList(array: ReadableArray): List<String> {
         val list: MutableList<String> = ArrayList()
         for (i in 0..<array.size()) {
-            array.getString(i)?.let { list.add(it) }
+            when (array.getType(i)) {
+                ReadableType.String -> {
+                    array.getString(i)?.let { list.add(it) }
+                }
+                ReadableType.Map -> {
+                    val map = array.getMap(i)
+                    map?.getString("productId")?.let { list.add(it) }
+                }
+                else -> {
+                    // Ignore unsupported items to avoid crashing on mixed payloads.
+                }
+            }
         }
 
         return list
     }
 }
-
-
-

@@ -6,7 +6,7 @@ export type MergeResults = {
 
 export type RetenoIOSProps = {
   sdkAccessToken: string;
-  notificationService: "firebase" | "apns";
+  notificationService?: "firebase" | "apns";
   devTeam: string;
   appGroups: string[];
   config: RetenoInitConfig;

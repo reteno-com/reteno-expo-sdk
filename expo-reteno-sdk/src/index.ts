@@ -64,8 +64,8 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   ): Promise<void>;
 
   // Log events
-  logEvent(payload: LogEventPayload): Promise<boolean | string>;
-  logScreenView(payload: LogScreenViewPayload): Promise<boolean | string>;
+  logEvent(payload: LogEventPayload): Promise<{ success: boolean }>;
+  logScreenView(payload: LogScreenViewPayload): Promise<{ success: boolean }>;
   forcePushData(): Promise<void>;
 
   // Recommendations
@@ -152,6 +152,13 @@ const ModuleInstance =
   requireNativeModule<ExpoRetenoSdkModule>("ExpoRetenoSdk");
 const emitter = new EventEmitter<RetenoSubscriptionEvents>(ModuleInstance);
 
+function requireExternalUserId(payload: UserInformationPayload) {
+  const externalUserId = payload?.externalUserId?.trim();
+  if (!externalUserId) {
+    throw new Error('[Reteno] Missing argument: "externalUserId"');
+  }
+}
+
 export const Reteno = {
   // Push notifications
   registerForRemoteNotifications() {
@@ -217,12 +224,14 @@ export const Reteno = {
 
   // User attributes
   updateUserAttributes(payload) {
+    requireExternalUserId(payload);
     return ModuleInstance.updateUserAttributes(payload);
   },
   updateAnonymousUserAttributes(payload: AnonymousUserAttributes) {
     return ModuleInstance.updateAnonymousUserAttributes(payload);
   },
   updateMultiAccountUserAttributes(payload, accountSuffix) {
+    requireExternalUserId(payload);
     return ModuleInstance.updateMultiAccountUserAttributes(
       payload,
       accountSuffix,
@@ -230,10 +239,10 @@ export const Reteno = {
   },
 
   // Log events
-  logEvent(payload: LogEventPayload): Promise<boolean | string> {
+  logEvent(payload: LogEventPayload): Promise<{ success: boolean }> {
     return ModuleInstance.logEvent(payload);
   },
-  logScreenView(screenName: LogScreenViewPayload): Promise<boolean | string> {
+  logScreenView(screenName: LogScreenViewPayload): Promise<{ success: boolean }> {
     return ModuleInstance.logScreenView(screenName);
   },
   forcePushData(): Promise<void> {

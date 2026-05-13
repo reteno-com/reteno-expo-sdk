@@ -92,6 +92,7 @@ public class ExpoRetenoSdkModule: Module {
 			RetenoExpoEvent.onPushNotificationReceived.value,
 			RetenoExpoEvent.onPushNotificationClicked.value,
 			RetenoExpoEvent.onPushButtonClicked.value,
+			RetenoExpoEvent.inAppCustomDataReceived.value,
 			RetenoExpoEvent.beforeInAppDisplay.value,
 			RetenoExpoEvent.onInAppDisplay.value,
 			RetenoExpoEvent.beforeInAppClose.value,
@@ -468,6 +469,16 @@ public class ExpoRetenoSdkModule: Module {
 					["count": count]
 				)
 			}
+		}
+
+		AsyncFunction("unsubscribeMessagesCountChanged") { (promise: Promise) -> Void in
+			Reteno.inbox().onUnreadMessagesCountChanged = nil
+			promise.resolve(nil)
+		}
+
+		AsyncFunction("unsubscribeAllMessagesCountChanged") { (promise: Promise) -> Void in
+			Reteno.inbox().onUnreadMessagesCountChanged = nil
+			promise.resolve(nil)
 		}
 		
 		AsyncFunction("markAsOpened") { (messageIds: [String], promise: Promise) -> Void in

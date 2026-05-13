@@ -158,7 +158,7 @@ type InAppSource = "DISPLAY_RULES" | "PUSH_NOTIFICATION";
 export type InAppCloseData = {
   id?: string;
   source?: InAppSource;
-  closeAction?: "OPEN_URL" | "BUTTON" | "CLOSE_BUTTON" | "DISMISSED" | "UNKNOWN";
+  closeAction?: "OPEN_URL" | "BUTTON" | "CLOSE_BUTTON" | "UNKNOWN";
   isCloseButtonClicked?: boolean;
   isButtonClicked?: boolean;
   isOpenUrlClicked?: boolean;

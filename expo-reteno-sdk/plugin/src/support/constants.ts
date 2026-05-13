@@ -1,4 +1,4 @@
-const SDK_VERSION = "2.6.1";
+const SDK_VERSION = "2.6.2";
 
 export const iosConfig = {
   nse: {
@@ -38,7 +38,9 @@ export const iosConfig = {
         application: [
           "\tpublic override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {",
           '\t\tlet tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()',
+          "\t\tReteno.userNotificationService.processRemoteNotificationsToken(tokenString)",
           "\t\tMessaging.messaging().setAPNSToken(deviceToken, type: .unknown)",
+          "\t\tsuper.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)",
           "\t}",
         ],
       },
@@ -47,6 +49,7 @@ export const iosConfig = {
         '\t\tprint("[APNS] Successfully registered for Push Notifications")',
         '\t\tlet tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()',
         "\t\tReteno.userNotificationService.processRemoteNotificationsToken(tokenString)",
+        "\t\tsuper.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)",
         "\t}",
       ],
     },
@@ -83,9 +86,9 @@ export const androidConfig = {
     module: {
       anchor: 'implementation("com.facebook.react:react-android")',
       deps: [
-        "implementation 'com.reteno:core:2.9.1'",
-        "implementation 'com.reteno:push:2.9.1'",
-        "implementation 'com.reteno:fcm:2.9.1'",
+        "implementation 'com.reteno:core:2.9.2'",
+        "implementation 'com.reteno:push:2.9.2'",
+        "implementation 'com.reteno:fcm:2.9.2'",
         "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
         "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
       ],

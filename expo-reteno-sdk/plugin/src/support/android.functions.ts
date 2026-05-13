@@ -41,9 +41,24 @@ export function addModuleGradleDependencies(content: string) {
 \t${deps.join("\n  ")}`,
   );
 
-  // updated = updated.concat("apply plugin: 'com.google.gms.google-services'");
-
   return updated;
+}
+
+/*
+ * Apply Google Services plugin for Firebase resource generation.
+ */
+export function addGoogleServicesPlugin(content: string) {
+  const pluginLineDouble = 'apply plugin: "com.google.gms.google-services"';
+  const pluginLineSingle = "apply plugin: 'com.google.gms.google-services'";
+
+  if (
+    content.includes(pluginLineDouble) ||
+    content.includes(pluginLineSingle)
+  ) {
+    return content;
+  }
+
+  return `${content}\n${pluginLineDouble}\n`;
 }
 
 /*
@@ -166,15 +181,16 @@ export function addSdkAndFirebaseImports(
 
 export function initializeSdk(
   content: string,
-  config: { sdkAccessToken: string; debug?: boolean },
+  config: { sdkAccessToken: string; config?: { debug?: boolean } },
 ) {
+  const isDebugMode = config.config?.debug ?? false;
   content = content.replace(
     "super.onCreate()",
     `super.onCreate()
 \t\ttry {
 \t\t\tval config = RetenoConfig.Builder()
 \t\t\t\t.accessKey("${config.sdkAccessToken}")
-\t\t\t\t.setDebug(${config.debug ?? false})
+\t\t\t\t.setDebug(${isDebugMode})
 \t\t\t\t.build()
   
 \t\t\tReteno.initWithConfig(config)      
