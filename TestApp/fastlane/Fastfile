@@ -1,0 +1,217 @@
+require 'tmpdir'
+
+default_platform(:ios)
+
+platform :ios do
+  project_root     = File.expand_path('..', __dir__)
+  match_readonly   = (ENV['MATCH_READONLY'] || 'true') == 'true'
+
+  # ---------------------------------------------------------------------------
+  # Helpers
+  # ---------------------------------------------------------------------------
+
+  private_lane :openssl_supports_match_v2_encryption do
+    begin
+      c = OpenSSL::Cipher.new('aes-256-gcm')
+      c.encrypt
+      c.key      = "\0" * 32
+      c.iv       = "\0" * 12
+      c.auth_data = "\0" * 24
+      true
+    rescue StandardError
+      false
+    end
+  end
+
+  # Resolves a path relative to project_root unless it's already absolute.
+  private_lane :resolve_path do |options|
+    path = options.fetch(:path).to_s
+    next path if path.start_with?('/')
+    File.expand_path(path, project_root)
+  end
+
+  # Loads the App Store Connect API key from:
+  #   1. APP_STORE_CONNECT_API_KEY_PATH  (local .p8 file)
+  #   2. APP_STORE_CONNECT_API_KEY_GIT_REPO_URL  (git repo containing the .p8)
+  private_lane :load_api_key do
+    key_id    = ENV.fetch('APP_STORE_CONNECT_API_KEY_KEY_ID').strip
+    issuer_id = ENV.fetch('APP_STORE_CONNECT_API_KEY_ISSUER_ID').strip
+    in_house  = (ENV['APP_STORE_CONNECT_API_KEY_IN_HOUSE'] || 'false') == 'true'
+
+    key_path = ENV['APP_STORE_CONNECT_API_KEY_PATH'].to_s.strip
+    key_path = nil if key_path.empty?
+
+    # Resolve relative path against fastlane/ dir (that's where .env is loaded from).
+    if key_path && !key_path.start_with?('/')
+      key_path = File.expand_path(key_path, File.dirname(__FILE__))
+    end
+
+    if key_path.nil? || !File.exist?(key_path.to_s)
+      repo_url    = ENV['APP_STORE_CONNECT_API_KEY_GIT_REPO_URL'].to_s.strip
+      repo_branch = (ENV['APP_STORE_CONNECT_API_KEY_GIT_REPO_BRANCH'] || 'main').strip
+      UI.user_error!('Set APP_STORE_CONNECT_API_KEY_PATH or APP_STORE_CONNECT_API_KEY_GIT_REPO_URL') if repo_url.empty?
+
+      tmp_dir = File.join(Dir.tmpdir, "fl_api_key_#{Process.pid}")
+      sh("rm -rf \"#{tmp_dir}\"")
+      sh("git clone --depth 1 --branch \"#{repo_branch}\" \"#{repo_url}\" \"#{tmp_dir}\"")
+
+      candidates = [
+        File.join(tmp_dir, "AuthKey_#{key_id}.p8"),
+        File.join(tmp_dir, "#{key_id}.p8")
+      ]
+      key_path = candidates.find { |p| File.exist?(p) }
+      if key_path.nil?
+        p8s = Dir.glob(File.join(tmp_dir, '**', '*.p8'))
+        UI.user_error!("Couldn't find .p8 for key #{key_id} in #{repo_url}") if p8s.empty?
+        key_path = p8s.first
+        UI.important("Using first .p8 found: #{key_path}")
+      end
+    end
+
+    app_store_connect_api_key(
+      key_id:       key_id,
+      issuer_id:    issuer_id,
+      key_filepath: key_path,
+      in_house:     in_house
+    )
+  end
+
+  # ---------------------------------------------------------------------------
+  # Public lanes
+  # ---------------------------------------------------------------------------
+
+  desc 'Sync signing certificates and provisioning profiles (read-only)'
+  lane :sync_certs do
+    api_key = load_api_key
+    ['development', 'appstore'].each do |t|
+      match(
+        api_key:    api_key,
+        type:       t,
+        readonly:   true,
+        git_url:    ENV.fetch('MATCH_GIT_URL'),
+        git_branch: ENV.fetch('MATCH_GIT_BRANCH', 'main'),
+        app_identifier: ENV.fetch('MATCH_APP_IDENTIFIER').split(',').map(&:strip)
+      )
+    end
+  end
+
+  desc 'Build and upload to TestFlight'
+  lane :beta do
+    setup_ci
+
+    api_key         = load_api_key
+    app_identifiers = ENV.fetch('MATCH_APP_IDENTIFIER').split(',').map(&:strip)
+    main_bundle_id  = app_identifiers.first
+    match_type      = 'appstore'
+    team_id         = ENV['FASTLANE_TEAM_ID'].to_s.strip
+
+    force_legacy = (ENV['MATCH_FORCE_LEGACY_ENCRYPTION'] || 'false') == 'true'
+    unless force_legacy || openssl_supports_match_v2_encryption
+      UI.important('OpenSSL does not support Match v2 encryption; falling back to legacy. Set MATCH_FORCE_LEGACY_ENCRYPTION=true to silence this.')
+      force_legacy = true
+    end
+
+    match(
+      api_key:                  api_key,
+      type:                     match_type,
+      readonly:                 match_readonly,
+      git_url:                  ENV.fetch('MATCH_GIT_URL'),
+      git_branch:               ENV.fetch('MATCH_GIT_BRANCH', 'main'),
+      app_identifier:           app_identifiers,
+      team_id:                  (team_id.empty? ? nil : team_id),
+      force_legacy_encryption:  force_legacy
+    )
+
+    cocoapods(
+      podfile:                  'ios/Podfile',
+      try_repo_update_on_error: true
+    )
+
+    next_build = latest_testflight_build_number(
+      api_key:              api_key,
+      app_identifier:       main_bundle_id,
+      initial_build_number: 0
+    ).to_i + 1
+
+    increment_build_number(
+      xcodeproj:    resolve_path(path: ENV.fetch('XC_PROJECT', 'ios/testapp.xcodeproj')),
+      build_number: next_build
+    )
+
+    # Build profile mapping from env vars set by match (sigh_<bundle_id>_<type>_profile-name).
+    profile_mapping = {}
+    app_identifiers.each do |bundle_id|
+      env_key      = "sigh_#{bundle_id}_#{match_type}_profile-name"
+      profile_name = ENV[env_key].to_s.strip
+      UI.user_error!("No profile name for #{bundle_id} (env: #{env_key})") if profile_name.empty?
+      profile_mapping[bundle_id] = profile_name
+    end
+
+    # Apply per-target manual signing.
+    xc_project = resolve_path(path: ENV.fetch('XC_PROJECT', 'ios/testapp.xcodeproj'))
+    app_identifiers.each do |bundle_id|
+      target_name = if bundle_id == main_bundle_id
+                      ENV.fetch('GYM_SCHEME', 'testapp')
+                    else
+                      bundle_id.sub("#{main_bundle_id}.", '')
+                    end
+      begin
+        update_code_signing_settings(
+          use_automatic_signing: false,
+          path:                  xc_project,
+          team_id:               (team_id.empty? ? nil : team_id),
+          targets:               [target_name],
+          profile_name:          profile_mapping[bundle_id],
+          code_sign_identity:    'Apple Distribution'
+        )
+      rescue StandardError => e
+        UI.important("Skipping signing update for '#{target_name}': #{e.message}")
+      end
+    end
+
+    # Write ExportOptions.plist to avoid gym mis-detecting profiles.
+    export_method    = ENV.fetch('GYM_EXPORT_METHOD', 'app-store')
+    profiles_xml     = profile_mapping.map { |bid, pn| "    <key>#{bid}</key>\n    <string>#{pn}</string>" }.join("\n")
+    export_plist     = File.join(Dir.tmpdir, "ExportOptions-#{Process.pid}.plist")
+    File.write(export_plist, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key>
+        <string>#{export_method}</string>
+        <key>teamID</key>
+        <string>#{team_id}</string>
+        <key>signingStyle</key>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+      #{profiles_xml}
+        </dict>
+      </dict>
+      </plist>
+    PLIST
+
+    xcargs = []
+    xcargs << "DEVELOPMENT_TEAM=#{team_id}" unless team_id.empty?
+
+    build_app(
+      workspace:          resolve_path(path: ENV.fetch('GYM_WORKSPACE', 'ios/testapp.xcworkspace')),
+      scheme:             ENV.fetch('GYM_SCHEME', 'testapp'),
+      configuration:      ENV.fetch('GYM_CONFIGURATION', 'Release'),
+      export_options:     export_plist,
+      xcargs:             xcargs.join(' '),
+      output_directory:   resolve_path(path: ENV.fetch('CI_OUTPUT_DIRECTORY', './build')),
+      derived_data_path:  resolve_path(path: ENV.fetch('CI_DERIVED_DATA_PATH', './build/DerivedData')),
+      clean:              true,
+      xcodebuild_formatter: nil
+    )
+
+    upload_to_testflight(
+      api_key:                         api_key,
+      app_identifier:                  main_bundle_id,
+      skip_waiting_for_build_processing: true,
+      skip_submission:                 true
+    )
+  end
+end

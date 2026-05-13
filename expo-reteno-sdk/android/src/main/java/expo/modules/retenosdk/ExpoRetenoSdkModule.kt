@@ -13,6 +13,7 @@ import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.firebase.FirebaseApp
@@ -48,6 +49,10 @@ import java.lang.ref.WeakReference
 import java.time.ZonedDateTime
 import androidx.core.content.edit
 import com.reteno.core.features.iam.InAppPauseBehaviour
+import com.reteno.push.permission.NotificationStatus
+import java.util.concurrent.CompletableFuture
+import android.os.Bundle
+import com.reteno.core.util.Procedure
 
 class InitResult : Record {
     @Field val success: Boolean = false
@@ -65,6 +70,8 @@ class ExpoRetenoSdkModule : Module() {
 
   private var inAppLifecycleCallback: InAppLifecycleCallback? = null
   private var messagesCountChangedCallback: RetenoResultCallback<Int>? = null
+  private var pushDismissedListener: Procedure<Bundle>? = null
+  private var customPushListener: Procedure<Bundle>? = null
 
   init {
     currentInstance = WeakReference(this)
@@ -124,7 +131,9 @@ class ExpoRetenoSdkModule : Module() {
         "reteno-after-in-app-close",
         "reteno-on-in-app-error",
         "reteno-unread-messages-count",
-        "reteno-unread-messages-error"
+        "reteno-unread-messages-error",
+        "reteno-push-dismissed",
+        "reteno-custom-push-received"
     )
 
     OnActivityResult { _, payload ->
@@ -135,6 +144,17 @@ class ExpoRetenoSdkModule : Module() {
           }
         }
       }
+    }
+
+    OnDestroy {
+      pushDismissedListener?.let {
+        try { RetenoNotifications.close.removeListener(it) } catch (_: Exception) {}
+      }
+      pushDismissedListener = null
+      customPushListener?.let {
+        try { RetenoNotifications.custom.removeListener(it) } catch (_: Exception) {}
+      }
+      customPushListener = null
     }
 
     OnCreate {
@@ -149,6 +169,30 @@ class ExpoRetenoSdkModule : Module() {
             print("Cannot initialize Firebase")
 
           }
+      }
+
+      if (pushDismissedListener == null) {
+        try {
+          pushDismissedListener = Procedure { bundle ->
+            sendEvent("reteno-push-dismissed", normalizeBundle(bundle))
+          }
+          RetenoNotifications.close.addListener(pushDismissedListener!!)
+        } catch (e: Exception) {
+          Log.w("ExpoRetenoSdk", "Could not register push dismissed listener: ${e.message}")
+          pushDismissedListener = null
+        }
+      }
+
+      if (customPushListener == null) {
+        try {
+          customPushListener = Procedure { bundle ->
+            sendEvent("reteno-custom-push-received", normalizeBundle(bundle))
+          }
+          RetenoNotifications.custom.addListener(customPushListener!!)
+        } catch (e: Exception) {
+          Log.w("ExpoRetenoSdk", "Could not register custom push listener: ${e.message}")
+          customPushListener = null
+        }
       }
     }
 
@@ -203,20 +247,29 @@ class ExpoRetenoSdkModule : Module() {
     // User information
     AsyncFunction("updateUserAttributes") { payload: RetenoUserAttributesPayload, promise: Promise ->
       try {
+          val externalUserId = getStringOrNull(payload.externalUserId)
+          if (externalUserId == null) {
+              promise.reject("400", "externalUserId is required for updateUserAttributes", null)
+              return@AsyncFunction
+          }
+
+          val userPayload = payload.user
+          val userAttributesPayload = userPayload?.userAttributes ?: payload.userAttributes
+
           // Map the custom fields
-          val fields = payload.userAttributes?.fields?.map { f ->
+          val fields = userAttributesPayload?.fields?.map { f ->
               UserCustomField(key = f.key, value = f.value)
           } ?: emptyList()
 
           // Map the user attributes
           val userAttributes = UserAttributes(
-              phone = getStringOrNull(payload.userAttributes?.phone),
-              email = getStringOrNull(payload.userAttributes?.email),
-              firstName = getStringOrNull(payload.userAttributes?.firstName),
-              lastName = getStringOrNull(payload.userAttributes?.lastName),
-              languageCode = getStringOrNull(payload.userAttributes?.languageCode),
-              timeZone = getStringOrNull(payload.userAttributes?.timeZone),
-              address = payload.userAttributes?.address?.let { addr ->
+              phone = getStringOrNull(userAttributesPayload?.phone),
+              email = getStringOrNull(userAttributesPayload?.email),
+              firstName = getStringOrNull(userAttributesPayload?.firstName),
+              lastName = getStringOrNull(userAttributesPayload?.lastName),
+              languageCode = getStringOrNull(userAttributesPayload?.languageCode),
+              timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
                       town = getStringOrNull(addr.town),
@@ -229,12 +282,12 @@ class ExpoRetenoSdkModule : Module() {
 
           // Call the native Reteno SDK
           Reteno.instance.setUserAttributes(
-              externalUserId = payload.externalUserId,
+              externalUserId = externalUserId,
               user = User(
                   userAttributes = userAttributes,
-                  subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
-                  groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
-                  groupNamesExclude = payload.groupNamesExclude ?: emptyList()
+                  subscriptionKeys = userPayload?.subscriptionKeys ?: payload.subscriptionKeys ?: emptyList(),
+                  groupNamesInclude = userPayload?.groupNamesInclude ?: payload.groupNamesInclude ?: emptyList(),
+                  groupNamesExclude = userPayload?.groupNamesExclude ?: payload.groupNamesExclude ?: emptyList()
               ),
           )
 
@@ -279,20 +332,29 @@ class ExpoRetenoSdkModule : Module() {
 
     AsyncFunction("updateMultiAccountUserAttributes") { payload: RetenoMultiAccountUserAttributesPayload, promise: Promise ->
       try {
+          val externalUserId = getStringOrNull(payload.externalUserId)
+          if (externalUserId == null) {
+              promise.reject("400", "externalUserId is required for updateMultiAccountUserAttributes", null)
+              return@AsyncFunction
+          }
+
+          val userPayload = payload.user
+          val userAttributesPayload = userPayload?.userAttributes ?: payload.userAttributes
+
           // Map the custom fields
-          val fields = payload.userAttributes?.fields?.map { f ->
+          val fields = userAttributesPayload?.fields?.map { f ->
               UserCustomField(key = f.key, value = f.value)
           } ?: emptyList()
 
           // Map the user attributes
           val userAttributes = UserAttributes(
-              phone = getStringOrNull(payload.userAttributes?.phone),
-              email = getStringOrNull(payload.userAttributes?.email),
-              firstName = getStringOrNull(payload.userAttributes?.firstName),
-              lastName = getStringOrNull(payload.userAttributes?.lastName),
-              languageCode = getStringOrNull(payload.userAttributes?.languageCode),
-              timeZone = getStringOrNull(payload.userAttributes?.timeZone),
-              address = payload.userAttributes?.address?.let { addr ->
+              phone = getStringOrNull(userAttributesPayload?.phone),
+              email = getStringOrNull(userAttributesPayload?.email),
+              firstName = getStringOrNull(userAttributesPayload?.firstName),
+              lastName = getStringOrNull(userAttributesPayload?.lastName),
+              languageCode = getStringOrNull(userAttributesPayload?.languageCode),
+              timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
                       town = getStringOrNull(addr.town),
@@ -305,12 +367,12 @@ class ExpoRetenoSdkModule : Module() {
 
           // Call the native Reteno SDK
           Reteno.instance.setMultiAccountUserAttributes(
-              externalUserId = payload.externalUserId,
+              externalUserId = externalUserId,
               user = User(
                   userAttributes = userAttributes,
-                  subscriptionKeys = payload.subscriptionKeys ?: emptyList(),
-                  groupNamesInclude = payload.groupNamesInclude ?: emptyList(),
-                  groupNamesExclude = payload.groupNamesExclude ?: emptyList(),
+                  subscriptionKeys = userPayload?.subscriptionKeys ?: payload.subscriptionKeys ?: emptyList(),
+                  groupNamesInclude = userPayload?.groupNamesInclude ?: payload.groupNamesInclude ?: emptyList(),
+                  groupNamesExclude = userPayload?.groupNamesExclude ?: payload.groupNamesExclude ?: emptyList(),
               ),
           )
 
@@ -586,7 +648,57 @@ class ExpoRetenoSdkModule : Module() {
         }
         
         if(state.lowercase() == "postpone") {
-          Reteno.instance.setInAppMessagesPauseBehaviour(InAppPauseBehaviour.SKIP_IN_APPS)
+          Reteno.instance.setInAppMessagesPauseBehaviour(InAppPauseBehaviour.POSTPONE_IN_APPS)
+        }
+      }
+
+      AsyncFunction("pausePushInAppMessages") { isPaused: Boolean, promise: Promise ->
+        try {
+          Reteno.instance.pausePushInAppMessages(isPaused)
+          promise.resolve(true)
+        } catch (e: Exception) {
+          promise.reject("500", "Reteno pausePushInAppMessages Error", e)
+        }
+      }
+
+      AsyncFunction("setPushInAppMessagesPauseBehaviour") { state: String, promise: Promise ->
+        val behaviour = when (state.lowercase()) {
+          "skip" -> InAppPauseBehaviour.SKIP_IN_APPS
+          "postpone" -> InAppPauseBehaviour.POSTPONE_IN_APPS
+          else -> {
+            promise.reject("InvalidArgument", "state must be 'skip' or 'postpone'", null)
+            return@AsyncFunction
+          }
+        }
+        try {
+          Reteno.instance.setPushInAppMessagesPauseBehaviour(behaviour)
+          promise.resolve(true)
+        } catch (e: Exception) {
+          promise.reject("500", "Reteno setPushInAppMessagesPauseBehaviour Error", e)
+        }
+      }
+
+      AsyncFunction("requestNotificationPermission") { promise: Promise ->
+        CoroutineScope(Dispatchers.Main).launch {
+          try {
+            val isGranted = RetenoNotifications.requestNotificationPermission()
+            promise.resolve(isGranted)
+          } catch (e: Exception) {
+            promise.reject("500", "Reteno requestNotificationPermission Error", e)
+          }
+        }
+      }
+
+      AsyncFunction("getNotificationPermissionStatus") { promise: Promise ->
+        try {
+          val future: CompletableFuture<NotificationStatus> = RetenoNotifications.getNotificationPermissionStatusFuture()
+          future.thenAccept { status -> promise.resolve(status.name) }
+                .exceptionally { throwable ->
+                  promise.reject("500", throwable.message ?: "getNotificationPermissionStatus Error", throwable)
+                  null
+                }
+        } catch (e: Exception) {
+          promise.reject("500", "Reteno getNotificationPermissionStatus Error", e)
         }
       }
 
@@ -1010,6 +1122,18 @@ class ExpoRetenoSdkModule : Module() {
     }
   }
 
+  private fun normalizeBundle(bundle: Bundle?): Map<String, Any?> {
+    if (bundle == null) return emptyMap()
+    return bundle.keySet().associateWith { key ->
+      when (val v = bundle.get(key)) {
+        is Bundle -> normalizeBundle(v)
+        is android.os.Parcelable -> v.toString()
+        is Array<*> -> v.map { item -> if (item is android.os.Parcelable) item.toString() else item }
+        else -> v
+      }
+    }
+  }
+
   private fun handleIncomingNotification(payload: Map<String, Any?>) {
     sendEvent("reteno-push-received", mapOf(
       "type" to "reteno-push-received",
@@ -1076,12 +1200,20 @@ class ExpoRetenoSdkModule : Module() {
     private fun convertReadableArrayToStringList(array: ReadableArray): List<String> {
         val list: MutableList<String> = ArrayList()
         for (i in 0..<array.size()) {
-            array.getString(i)?.let { list.add(it) }
+            when (array.getType(i)) {
+                ReadableType.String -> {
+                    array.getString(i)?.let { list.add(it) }
+                }
+                ReadableType.Map -> {
+                    val map = array.getMap(i)
+                    map?.getString("productId")?.let { list.add(it) }
+                }
+                else -> {
+                    // Ignore unsupported items to avoid crashing on mixed payloads.
+                }
+            }
         }
 
         return list
     }
 }
-
-
-

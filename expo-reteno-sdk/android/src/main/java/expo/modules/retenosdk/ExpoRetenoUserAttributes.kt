@@ -25,8 +25,16 @@ class RetenoUserAttributes : Record {
     @Field val fields: List<RetenoUserAttributesField>? = null
 }
 
+class RetenoUser : Record {
+    @Field val userAttributes: RetenoUserAttributes? = null
+    @Field val subscriptionKeys: List<String>? = null
+    @Field val groupNamesInclude: List<String>? = null
+    @Field val groupNamesExclude: List<String>? = null
+}
+
 class RetenoUserAttributesPayload : Record {
-    @Field val externalUserId: String = ""
+    @Field val externalUserId: String? = null
+    @Field val user: RetenoUser? = null
     @Field val userAttributes: RetenoUserAttributes? = null
     @Field val subscriptionKeys: List<String>? = null
     @Field val groupNamesInclude: List<String>? = null
@@ -43,7 +51,8 @@ class RetenoAnonymousUserAttributes: Record {
 }
 
 class RetenoMultiAccountUserAttributesPayload : Record {
-    @Field val externalUserId: String = ""
+    @Field val externalUserId: String? = null
+    @Field val user: RetenoUser? = null
     @Field val userAttributes: RetenoUserAttributes? = null
     @Field val subscriptionKeys: List<String>? = null
     @Field val groupNamesInclude: List<String>? = null

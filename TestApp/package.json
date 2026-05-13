@@ -10,12 +10,17 @@
     "purge:ios": "rm -Rf node_modules ./package-lock.json ios",
     "purge:android": "rm -Rf node_modules ./package-lock.json android",
     "restart:ios": "npx expo prebuild -p ios --clean && npx expo run:ios --device",
-    "restart:android": "npx expo prebuild -p android --clean && npx expo run:android"
+    "restart:android": "ANDROID_VERSION=${ANDROID_VERSION:-1.0.8} npx expo prebuild -p android --clean && npx expo run:android",
+    "android:apk": "ANDROID_VERSION=${ANDROID_VERSION:-1.0.8} npx expo prebuild -p android --clean && cd android && ./gradlew assembleRelease",
+    "preios:testflight": "bundle check || bundle install && npx expo prebuild -p ios --clean",
+    "ios:certs": "bundle exec fastlane sync_certs",
+    "ios:testflight": "bundle exec fastlane beta"
   },
   "dependencies": {
     "@react-navigation/native": "^7.1.31",
     "@react-navigation/native-stack": "^7.14.2",
     "expo": "~54.0.33",
+    "expo-application": "~7.0.8",
     "expo-reteno-sdk": "file:../expo-reteno-sdk",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",

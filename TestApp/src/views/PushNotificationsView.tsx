@@ -3,22 +3,27 @@ import { useCallback, useEffect } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
+const showEvent = (title: string, event: any) =>
+  Alert.alert(title, event ? JSON.stringify(event) : "No data");
+
 export const PushNotificationsView = () => {
   const onRetenoPushReceived = useCallback((event: any) => {
-    Alert.alert(
-      "onPushNotificationReceived",
-      event ? JSON.stringify(event) : event,
-    );
+    showEvent("onPushNotificationReceived", event);
   }, []);
 
   const onRetenoPushClicked = useCallback((event: any) => {
-    Alert.alert(
-      "onPushNotificationClicked",
-      event ? JSON.stringify(event) : event,
-    );
+    showEvent("onPushNotificationClicked", event);
   }, []);
 
-  const requestPermissions = () => {
+  const requestPermissions = async () => {
+    if (Platform.OS === "android") {
+      const granted = await Reteno.requestNotificationPermission();
+      if (!granted) {
+        Alert.alert("Notification Permission", "Denied");
+        return;
+      }
+    }
+
     Reteno.registerForRemoteNotifications();
   };
 
@@ -40,33 +45,65 @@ export const PushNotificationsView = () => {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === "android") {
-      const pushListener =
-        Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
+    const pushListener =
+      Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
 
-      return () => pushListener.remove();
-    }
+    return () => pushListener.remove();
   }, [onRetenoPushReceived]);
 
-  // Android
   useEffect(() => {
-    if (Platform.OS === "ios") {
-      const pushClickListener =
-        Reteno.setOnRetenoPushClickedListener(onRetenoPushClicked);
+    const pushClickListener =
+      Reteno.setOnRetenoPushClickedListener(onRetenoPushClicked);
 
-      return () => pushClickListener.remove();
-    }
+    return () => pushClickListener?.remove();
   }, [onRetenoPushClicked]);
 
-  // iOS
+  // iOS only
   useEffect(() => {
     if (Platform.OS === "ios") {
-      const pushClickListener =
+      const pushButtonClickListener =
         Reteno.setOnRetenoPushButtonClickedListener(onRetenoPushClicked);
 
-      return () => pushClickListener.remove();
+      return () => pushButtonClickListener?.remove();
     }
   }, [onRetenoPushClicked]);
+
+  // Android only — push dismissed
+  useEffect(() => {
+    const listener = Reteno.setOnRetenoPushDismissedListener((event) =>
+      showEvent("onPushDismissed", event),
+    );
+    return () => listener?.remove();
+  }, []);
+
+  // Android only — custom/silent push
+  useEffect(() => {
+    const listener = Reteno.setOnRetenoCustomPushDataListener((event) =>
+      showEvent("onCustomPushReceived", event),
+    );
+    return () => listener?.remove();
+  }, []);
+
+  const handleRequestNotificationPermission = async () => {
+    try {
+      const granted = await Reteno.requestNotificationPermission();
+      Alert.alert(
+        "Notification Permission",
+        granted ? "Granted" : "Denied",
+      );
+    } catch (e: any) {
+      Alert.alert("Error", String(e?.message ?? e));
+    }
+  };
+
+  const handleGetNotificationPermissionStatus = async () => {
+    try {
+      const status = await Reteno.getNotificationPermissionStatus();
+      Alert.alert("Permission Status", status ?? "null (iOS)");
+    } catch (e: any) {
+      Alert.alert("Error", String(e?.message ?? e));
+    }
+  };
 
   return (
     <ScreenContainer>
@@ -78,6 +115,19 @@ export const PushNotificationsView = () => {
           </Text>
           <Button text="Request permissions" onPress={requestPermissions} />
         </Block>
+
+        {Platform.OS === "android" && (
+          <Block title="Notification Permission (Android)">
+            <Button
+              text="Request notification permission"
+              onPress={handleRequestNotificationPermission}
+            />
+            <Button
+              text="Get permission status"
+              onPress={handleGetNotificationPermissionStatus}
+            />
+          </Block>
+        )}
       </ScrollView>
     </ScreenContainer>
   );

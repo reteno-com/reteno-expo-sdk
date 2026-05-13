@@ -112,11 +112,12 @@ dependencies {
 And to `android/app/build.gradle`:
 
 ```groovy
-implementation 'com.reteno:core:2.9.1'
-implementation 'com.reteno:push:2.9.1'
-implementation 'com.reteno:fcm:2.9.1'
+implementation 'com.reteno:core:2.9.2'
+implementation 'com.reteno:push:2.9.2'
+implementation 'com.reteno:fcm:2.9.2'
 implementation 'com.google.firebase:firebase-messaging:23.1.0'
 implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'
+apply plugin: 'com.google.gms.google-services'
 ```
 
 ### Build fails: `minSdkVersion` too low

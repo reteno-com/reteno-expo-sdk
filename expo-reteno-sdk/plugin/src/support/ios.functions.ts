@@ -201,7 +201,18 @@ export function addFirebaseAppDelegateImport(src: string): MergeResults {
 export function addFirebaseAppDelegateInit(src: string): MergeResults {
   const newSrc = [
     "#if canImport(Firebase)",
-    "\tFirebaseApp.configure()",
+    '\tif Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") == nil {',
+    '\t\tprint("[Reteno] GoogleService-Info.plist is missing. Firebase push is disabled.")',
+    "\t} else {",
+    "\t\tif FirebaseApp.app() == nil {",
+    "\t\t\tFirebaseApp.configure()",
+    "\t\t}",
+    "\t\tMessaging.messaging().delegate = self",
+    "\t\tMessaging.messaging().token { token, _ in",
+    "\t\t\tguard let token = token else { return }",
+    "\t\t\tReteno.userNotificationService.processRemoteNotificationsToken(token)",
+    "\t\t}",
+    "\t}",
     "#endif",
   ];
 
@@ -413,7 +424,7 @@ export async function copyExtensionFiles(
   }
 
   // Copy NotificationServiceExtension.swift
-  const sourcePath = filepathFromProps ?? `${sourceDir}/${source}`;
+  const sourcePath = filepathFromProps || `${sourceDir}/${source}`;
   const targetFile = `${destPath}/${source}`;
   await FileService.copy(`${sourcePath}`, targetFile);
 

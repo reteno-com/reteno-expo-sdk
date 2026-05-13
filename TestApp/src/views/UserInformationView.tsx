@@ -1,31 +1,10 @@
 import Reteno from "expo-reteno-sdk";
-import { useState } from "react";
 import { Platform, ScrollView } from "react-native";
 import { Block, Button, Input, ScreenContainer } from "src/components";
-import uuid from "react-native-uuid";
-
-const USER_TOKEN = uuid.v4();
-
-console.log("USER_TOKEN", USER_TOKEN);
-
-const USER_DATA = {
-  phone: "+380990000000",
-  email: "test@mail.com",
-  timeZone: "Europe/Kyiv",
-  languageCode: "en-UA",
-  firstName: "Barney",
-  lastName: "Stinson",
-  address: {
-    region: "Ukraine",
-    town: "Kyiv",
-    address: "25 Random st.",
-    postcode: "01001",
-  },
-  fields: [{ key: "PERSONAL.COUNTRYCODE", value: "UA" }],
-};
+import { USER_TOKEN, useUser } from "src/UserContext";
 
 export const UserInformationView = () => {
-  const [user, setUser] = useState(USER_DATA);
+  const { user, setUser } = useUser();
 
   const changeField = (key: string, value: string) => {
     setUser((prev) => ({ ...prev, [key]: value }));
@@ -41,24 +20,29 @@ export const UserInformationView = () => {
     }));
   };
 
-  const handleSetAttributes = (disableFields = true) => {
+  const handleSetAttributes = async (disableFields = true) => {
     const data = {
       userAttributes: {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
         email: user.email,
-        languageCode: USER_DATA.languageCode,
-        timeZone: USER_DATA.timeZone,
+        languageCode: user.languageCode,
+        timeZone: user.timeZone,
         address: user.address,
         fields: disableFields ? [] : user.fields,
       },
     };
 
-    Reteno.updateUserAttributes({
-      externalUserId: USER_TOKEN ?? "",
-      user: data,
-    });
+    try {
+      await Reteno.updateUserAttributes({
+        externalUserId: USER_TOKEN,
+        user: data,
+      });
+      console.log("[Reteno] updateUserAttributes: success");
+    } catch (error) {
+      console.error("[Reteno] updateUserAttributes: error", error);
+    }
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {
@@ -72,18 +56,23 @@ export const UserInformationView = () => {
     }
   };
 
-  const handleSetAnonymousAttribute = (disableFields = true) => {
+  const handleSetAnonymousAttribute = async (disableFields = true) => {
     const data = {
       firstName: user.firstName,
       lastName: user.lastName,
-      languageCode: USER_DATA.languageCode,
-      timeZone: USER_DATA.timeZone,
+      languageCode: user.languageCode,
+      timeZone: user.timeZone,
       address: user.address,
       fields: disableFields ? [] : user.fields,
     };
 
     // If you want to update anonymous:
-    Reteno.updateAnonymousUserAttributes(data);
+    try {
+      await Reteno.updateAnonymousUserAttributes(data);
+      console.log("[Reteno] updateAnonymousUserAttributes: success");
+    } catch (error) {
+      console.error("[Reteno] updateAnonymousUserAttributes: error", error);
+    }
 
     if (Platform.OS === "ios") {
       async function getTokenOnIos() {
@@ -94,6 +83,32 @@ export const UserInformationView = () => {
       getTokenOnIos();
     } else {
       // ...
+    }
+  };
+
+  const handleSetMultiAccountAttributes = async () => {
+    try {
+      await Reteno.updateMultiAccountUserAttributes(
+        {
+          externalUserId: USER_TOKEN,
+          user: {
+            userAttributes: {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              phone: user.phone,
+              email: user.email,
+              languageCode: user.languageCode,
+              timeZone: user.timeZone,
+              address: user.address,
+              fields: user.fields,
+            },
+          },
+        },
+        "account_suffix_demo",
+      );
+      console.log("[Reteno] updateMultiAccountUserAttributes: success");
+    } catch (error) {
+      console.error("[Reteno] updateMultiAccountUserAttributes: error", error);
     }
   };
 
@@ -105,37 +120,45 @@ export const UserInformationView = () => {
       >
         <Block title="User data">
           <Input
+            value={user.firstName}
             onChangeText={(s: string) => changeField("firstName", s)}
             placeholder="First name"
           />
           <Input
+            value={user.lastName}
             onChangeText={(s: string) => changeField("lastName", s)}
             placeholder="Last name"
           />
           <Input
+            value={user.phone}
             onChangeText={(s: string) => changeField("phone", s)}
             placeholder="Phone"
             keyboardType="phone-pad"
           />
           <Input
+            value={user.email}
             onChangeText={(s: string) => changeField("email", s)}
             placeholder="Email"
             keyboardType="email-address"
           />
           <Input
+            value={user.address.region}
             onChangeText={(s: string) => changeAddressField("region", s)}
             placeholder="Region"
           />
           <Input
+            value={user.address.town}
             onChangeText={(s: string) => changeAddressField("town", s)}
             placeholder="Town"
             keyboardType="email-address"
           />
           <Input
+            value={user.address.address}
             onChangeText={(s: string) => changeAddressField("address", s)}
             placeholder="Address"
           />
           <Input
+            value={user.address.postcode}
             onChangeText={(s: string) => changeAddressField("postcode", s)}
             placeholder="Postcode"
             keyboardType="phone-pad"
@@ -161,6 +184,11 @@ export const UserInformationView = () => {
           <Button
             text="Anonymous User Attributes (with `fields`)"
             onPress={() => handleSetAnonymousAttribute(false)}
+          />
+
+          <Button
+            text="Multi-Account User Attributes"
+            onPress={handleSetMultiAccountAttributes}
           />
         </Block>
       </ScrollView>

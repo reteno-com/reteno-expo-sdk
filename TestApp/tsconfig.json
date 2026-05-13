@@ -2,6 +2,7 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "lib": ["ESNext", "DOM"],
     "baseUrl": ".",
     "paths": {
       "expo-reteno-sdk": ["../expo-reteno-sdk/src/index"]

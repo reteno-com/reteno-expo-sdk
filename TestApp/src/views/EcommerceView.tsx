@@ -88,7 +88,13 @@ export const EcommerceView = () => {
   };
 
   const handleLogEcomEventOrderCancelled = async () => {
-    await Reteno.logEcomEventOrderCancelled({ externalOrderId: "ORDER-999" });
+    try {
+      await Reteno.logEcomEventOrderCancelled({ externalOrderId: "ORDER-999" });
+      await Reteno.forcePushData();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert("Error", message);
+    }
   };
 
   const handleLogEcomEventSearchRequest = async () => {

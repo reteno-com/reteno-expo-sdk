@@ -92,6 +92,7 @@ public class ExpoRetenoSdkModule: Module {
 			RetenoExpoEvent.onPushNotificationReceived.value,
 			RetenoExpoEvent.onPushNotificationClicked.value,
 			RetenoExpoEvent.onPushButtonClicked.value,
+			RetenoExpoEvent.inAppCustomDataReceived.value,
 			RetenoExpoEvent.beforeInAppDisplay.value,
 			RetenoExpoEvent.onInAppDisplay.value,
 			RetenoExpoEvent.beforeInAppClose.value,
@@ -388,12 +389,22 @@ public class ExpoRetenoSdkModule: Module {
 					self.sendEvent(RetenoExpoEvent.beforeInAppDisplay.value, [:])
 				case .inAppIsDisplayed:
 					self.sendEvent(RetenoExpoEvent.onInAppDisplay.value, [:])
-				case .inAppShouldBeClosed(let action):
-					self.sendEvent(RetenoExpoEvent.beforeInAppClose.value, [ "action": action ] )
+			case .inAppShouldBeClosed(let action):
+				self.sendEvent(RetenoExpoEvent.beforeInAppClose.value, [
+					"closeAction": ExpoRetenoSdkModule.closeActionName(action),
+					"isCloseButtonClicked": action.isCloseButtonClicked,
+					"isButtonClicked": action.isButtonClicked,
+					"isOpenUrlClicked": action.isOpenUrlClicked
+				])
 				case .inAppIsClosed(let action):
-					self.sendEvent(RetenoExpoEvent.afterInAppClose.value, [ "action": action ] )
+				self.sendEvent(RetenoExpoEvent.afterInAppClose.value, [
+					"closeAction": ExpoRetenoSdkModule.closeActionName(action),
+					"isCloseButtonClicked": action.isCloseButtonClicked,
+					"isButtonClicked": action.isButtonClicked,
+					"isOpenUrlClicked": action.isOpenUrlClicked
+				])
 				case .inAppReceivedError(let error):
-					self.sendEvent(RetenoExpoEvent.onInAppError.value, [ "error": error ] )
+				self.sendEvent(RetenoExpoEvent.onInAppError.value, ["errorMessage": error])
 				}
 			}
 		}
@@ -458,6 +469,16 @@ public class ExpoRetenoSdkModule: Module {
 					["count": count]
 				)
 			}
+		}
+
+		AsyncFunction("unsubscribeMessagesCountChanged") { (promise: Promise) -> Void in
+			Reteno.inbox().onUnreadMessagesCountChanged = nil
+			promise.resolve(nil)
+		}
+
+		AsyncFunction("unsubscribeAllMessagesCountChanged") { (promise: Promise) -> Void in
+			Reteno.inbox().onUnreadMessagesCountChanged = nil
+			promise.resolve(nil)
 		}
 		
 		AsyncFunction("markAsOpened") { (messageIds: [String], promise: Promise) -> Void in
@@ -663,7 +684,14 @@ public class ExpoRetenoSdkModule: Module {
 		)
 	}
 	
-		@objc
+private static func closeActionName(_ action: InAppMessageAction) -> String {
+		if action.isCloseButtonClicked { return "CLOSE_BUTTON" }
+		if action.isButtonClicked { return "BUTTON" }
+		if action.isOpenUrlClicked { return "OPEN_URL" }
+		return "UNKNOWN"
+	}
+
+	@objc
 		func getStringOrNil(input userInput: String?) -> String {
 			let value = (userInput ?? "").isEmpty ? "" : String(userInput ?? "")
 			return String(value)

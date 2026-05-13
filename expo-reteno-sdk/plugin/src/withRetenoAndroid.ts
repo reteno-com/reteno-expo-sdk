@@ -7,6 +7,7 @@ import {
 } from "expo/config-plugins";
 import {
   addCompileOptions,
+  addGoogleServicesPlugin,
   addModuleGradleDependencies,
   addGradleProperties,
   addProjectGradleDependencies,
@@ -37,6 +38,7 @@ const withModuleGradleDependencies: ConfigPlugin = (config) => {
       cfg.modResults.contents = addModuleGradleDependencies(
         cfg.modResults.contents,
       );
+      cfg.modResults.contents = addGoogleServicesPlugin(cfg.modResults.contents);
     } else {
       console.warn(
         "[android.googleServicesFile] Cannot automatically configure app build.gradle if it's not groovy",
