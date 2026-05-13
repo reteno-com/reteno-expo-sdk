@@ -4,9 +4,10 @@ import { Alert, Platform, ScrollView } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
 export const InAppMessagesView = () => {
-  const [didStop, setDidStop] = useState(true);
+  const [didStop, setDidStop] = useState(false);
 
   useEffect(() => {
+    Reteno.pauseInAppMessages(false);
     Reteno.setInAppLifecycleCallback();
 
     const beforeInAppDisplayListener = Reteno.beforeInAppDisplayHandler(
@@ -100,7 +101,7 @@ export const InAppMessagesView = () => {
         <Block title="Available options">
           <Button
             text={didStop ? "Start messages" : "Stop messages"}
-            onPress={() => handleInAppMessagesStatus(didStop)}
+            onPress={() => handleInAppMessagesStatus(!didStop)}
           />
 
           <Button

@@ -1,0 +1,9 @@
+git_url(ENV.fetch('MATCH_GIT_URL'))
+git_branch(ENV.fetch('MATCH_GIT_BRANCH', 'master'))
+storage_mode('git')
+
+app_identifier(ENV.fetch('MATCH_APP_IDENTIFIER').split(',').map(&:strip))
+username(ENV['MATCH_USERNAME']) if ENV['MATCH_USERNAME']
+team_id(ENV['FASTLANE_TEAM_ID']) if ENV['FASTLANE_TEAM_ID']
+
+readonly(true)

@@ -45,6 +45,14 @@ example/ios/Pods
 
 # Ruby
 example/vendor/
+TestApp/vendor/
+
+# Fastlane
+TestApp/fastlane/.env
+TestApp/fastlane/.env.*
+!TestApp/fastlane/.env.example
+TestApp/fastlane/*.p8
+TestApp/fastlane/report.xml
 
 # node.js
 #

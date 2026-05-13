@@ -15,7 +15,15 @@ export const PushNotificationsView = () => {
     showEvent("onPushNotificationClicked", event);
   }, []);
 
-  const requestPermissions = () => {
+  const requestPermissions = async () => {
+    if (Platform.OS === "android") {
+      const granted = await Reteno.requestNotificationPermission();
+      if (!granted) {
+        Alert.alert("Notification Permission", "Denied");
+        return;
+      }
+    }
+
     Reteno.registerForRemoteNotifications();
   };
 
@@ -37,12 +45,10 @@ export const PushNotificationsView = () => {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === "android") {
-      const pushListener =
-        Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
+    const pushListener =
+      Reteno.setOnRetenoPushReceivedListener(onRetenoPushReceived);
 
-      return () => pushListener.remove();
-    }
+    return () => pushListener.remove();
   }, [onRetenoPushReceived]);
 
   useEffect(() => {

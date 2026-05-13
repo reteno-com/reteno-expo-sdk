@@ -1,6 +1,9 @@
+import { UserProvider } from "src/UserContext";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Application from "expo-application";
+import Reteno from "expo-reteno-sdk";
+import { useEffect } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import {
   SafeAreaProvider,
@@ -124,9 +127,26 @@ const styles = StyleSheet.create({
 });
 
 export default function App() {
+  useEffect(() => {
+    async function requestPushPermissions() {
+      if (Platform.OS === "android") {
+        const status = await Reteno.getNotificationPermissionStatus();
+        if (status !== "ALLOWED") {
+          await Reteno.requestNotificationPermission();
+        }
+      } else {
+        Reteno.registerForRemoteNotifications();
+      }
+    }
+
+    requestPushPermissions();
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <RootStack />
+      <UserProvider>
+        <RootStack />
+      </UserProvider>
     </SafeAreaProvider>
   );
 }
