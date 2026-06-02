@@ -1,5 +1,5 @@
 import Reteno from "expo-reteno-sdk";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
@@ -7,11 +7,14 @@ const showEvent = (title: string, event: any) =>
   Alert.alert(title, event ? JSON.stringify(event) : "No data");
 
 export const PushNotificationsView = () => {
+  const [pushClickedEvents, setPushClickedEvents] = useState<any[]>([]);
+
   const onRetenoPushReceived = useCallback((event: any) => {
     showEvent("onPushNotificationReceived", event);
   }, []);
 
   const onRetenoPushClicked = useCallback((event: any) => {
+    setPushClickedEvents((prev) => [...prev, event ?? null]);
     showEvent("onPushNotificationClicked", event);
   }, []);
 
@@ -114,6 +117,13 @@ export const PushNotificationsView = () => {
             foreground
           </Text>
           <Button text="Request permissions" onPress={requestPermissions} />
+        </Block>
+        <Block title="Push Click Events">
+          {pushClickedEvents.length ? (
+            <Text>{JSON.stringify(pushClickedEvents, null, 2)}</Text>
+          ) : (
+            <Text>No click events yet</Text>
+          )}
         </Block>
 
         {Platform.OS === "android" && (

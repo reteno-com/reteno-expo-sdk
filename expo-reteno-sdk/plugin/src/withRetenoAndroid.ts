@@ -1,6 +1,8 @@
 import {
+  AndroidConfig,
   ConfigPlugin,
   withAppBuildGradle,
+  withAndroidManifest,
   withGradleProperties,
   withMainApplication,
   withProjectBuildGradle,
@@ -15,6 +17,84 @@ import {
   initializeSdk,
 } from "./support/android.functions";
 import { RetenoAndroidProps } from "./types";
+
+const CLICKED_METADATA_NAME = "com.reteno.Receiver.NotificationClicked";
+const PUSH_RECEIVED_METADATA_NAME = "com.reteno.Receiver.PushReceived";
+const CLICK_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoClickReceiver";
+const PUSH_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoPushReceiver";
+
+const addRetenoMetaData = (
+  mainApplication: AndroidConfig.Manifest.ManifestApplication,
+  name: string,
+  value: string,
+) => {
+  // Remove first to clear any stale attributes (e.g. android:resource instead of android:value)
+  AndroidConfig.Manifest.removeMetaDataItemFromMainApplication(
+    mainApplication,
+    name,
+  );
+  AndroidConfig.Manifest.addMetaDataItemToMainApplication(
+    mainApplication,
+    name,
+    value,
+  );
+  const metaData = mainApplication["meta-data"] ?? [];
+  const targetItem = metaData.find((item) => item.$["android:name"] === name);
+
+  if (targetItem) {
+    targetItem.$["tools:node"] = "replace";
+  }
+};
+
+const withRetenoAndroidManifest: ConfigPlugin = (config) => {
+  return withAndroidManifest(config, (cfg) => {
+    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(
+      cfg.modResults,
+    );
+
+    addRetenoMetaData(
+      mainApplication,
+      CLICKED_METADATA_NAME,
+      CLICK_RECEIVER_NAME,
+    );
+    addRetenoMetaData(
+      mainApplication,
+      PUSH_RECEIVED_METADATA_NAME,
+      PUSH_RECEIVER_NAME,
+    );
+    AndroidConfig.Manifest.ensureToolsAvailable(cfg.modResults);
+
+    const appReceivers = mainApplication.receiver ?? [];
+    const hasClickReceiver = appReceivers.some(
+      (receiver) => receiver.$["android:name"] === CLICK_RECEIVER_NAME,
+    );
+    const hasPushReceiver = appReceivers.some(
+      (receiver) => receiver.$["android:name"] === PUSH_RECEIVER_NAME,
+    );
+
+    if (!hasClickReceiver) {
+      appReceivers.push({
+        $: {
+          "android:name": CLICK_RECEIVER_NAME,
+          "android:exported": "false",
+        },
+      });
+    }
+
+    if (!hasPushReceiver) {
+      appReceivers.push({
+        $: {
+          "android:name": PUSH_RECEIVER_NAME,
+          "android:exported": "false",
+        },
+      });
+    }
+
+    mainApplication.receiver = appReceivers;
+
+    return cfg;
+  });
+};
 
 const withProjectGradleDependencies: ConfigPlugin = (config) => {
   return withProjectBuildGradle(config, (cfg: any) => {
@@ -89,6 +169,7 @@ export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
+  config = withRetenoAndroidManifest(config);
   config = withProjectGradleDependencies(config);
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
