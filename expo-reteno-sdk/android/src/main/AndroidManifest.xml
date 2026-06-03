@@ -1,2 +1,17 @@
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+  <application>
+    <service
+      android:name="expo.modules.retenosdk.RetenoMessagingService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+
+    <!-- Remove the base-class service so only our subclass handles FCM messages. -->
+    <service
+      android:name="com.reteno.fcm.RetenoFirebaseMessagingService"
+      tools:node="remove" />
+  </application>
 </manifest>

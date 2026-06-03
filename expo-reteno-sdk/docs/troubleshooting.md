@@ -10,8 +10,8 @@ The plugin requires a configuration object. You can configure only the platform 
 [
   "expo-reteno-sdk",
   {
-    "ios": { "sdkAccessToken": "...", "mode": "production" },
-    "android": { "sdkAccessToken": "..." }
+    "ios": { "mode": "production" },
+    "android": { "sdkAccessToken": "YOUR_SDK_ACCESS_KEY" }
   }
 ]
 ```
@@ -36,16 +36,21 @@ The `mode` prop is required for iOS. Add it to the `ios` config:
 
 ```json
 "ios": {
-  "sdkAccessToken": "...",
   "mode": "production"
 }
 ```
 
 Use `"development"` for debug/simulator builds and `"production"` for App Store/TestFlight builds.
 
-### Build fails: `SDK token is not defined`
+### Push notifications / in-app messages not working
 
-`sdkAccessToken` is missing in the `ios` config. This prop is required.
+Make sure `Reteno.initialize({ apiKey: '...' })` is called from JS at app startup. Push callbacks and in-app messages are registered inside `initialize()` — they will not function if it is never called.
+
+```ts
+import Reteno from 'expo-reteno-sdk';
+
+await Reteno.initialize({ apiKey: 'YOUR_SDK_ACCESS_KEY' });
+```
 
 ### Push notifications not received on device
 
@@ -77,16 +82,12 @@ If you use `notificationService: "firebase"` and get Clang/modular header errors
 cd ios && pod install --repo-update
 ```
 
-### `setDeviceToken` throws on Android
+### `setDeviceToken` on Android
 
-`setDeviceToken` is iOS-only. Wrap the call with a platform check:
+`setDeviceToken` is a no-op on Android. Token handling is performed by the native Firebase messaging service.
 
 ```ts
-import { Platform } from 'react-native';
-
-if (Platform.OS === 'ios') {
-  Reteno.setDeviceToken(token);
-}
+Reteno.setDeviceToken(token); // resolves on Android
 ```
 
 ---
@@ -112,9 +113,9 @@ dependencies {
 And to `android/app/build.gradle`:
 
 ```groovy
-implementation 'com.reteno:core:2.9.2'
-implementation 'com.reteno:push:2.9.2'
-implementation 'com.reteno:fcm:2.9.2'
+implementation 'com.reteno:core:2.9.4'
+implementation 'com.reteno:push:2.9.4'
+implementation 'com.reteno:fcm:2.9.4'
 implementation 'com.google.firebase:firebase-messaging:23.1.0'
 implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'
 apply plugin: 'com.google.gms.google-services'
@@ -138,4 +139,4 @@ Reteno Android SDK requires `minSdkVersion` 26. Set it in `app.json`:
 
 1. Verify `google-services.json` is placed at `android/app/google-services.json`.
 2. Make sure `registerForRemoteNotifications()` is called at app startup.
-3. Check that `sdkAccessToken` is correct.
+3. Check that the `apiKey` passed to `Reteno.initialize()` is correct.

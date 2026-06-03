@@ -68,6 +68,10 @@ public class ExpoRetenoSdkModule: Module {
 	// that describes the module's functionality and behavior.
 	// See https://docs.expo.dev/modules/module-api for more details about available components.
 	private static let autoOpenLinksKey = "RetenoAutoOpenLinks"
+	private static var sdkInitialized = false
+	private static var delayedStartCalled = false
+	private static var fcmBridgeInstalled = false
+	private static var fcmTokenObserver: NSObjectProtocol?
 	
 	private static var autoOpenLinks: Bool {
 			get {
@@ -79,6 +83,12 @@ public class ExpoRetenoSdkModule: Module {
 			set {
 					UserDefaults.standard.set(newValue, forKey: autoOpenLinksKey)
 			}
+	}
+
+	@objc public static func delayedStart() {
+		guard !sdkInitialized, !delayedStartCalled else { return }
+		Reteno.delayedStart()
+		delayedStartCalled = true
 	}
 	
 	public func definition() -> ModuleDefinition {
@@ -102,7 +112,8 @@ public class ExpoRetenoSdkModule: Module {
 		)
 		
 		OnCreate {
-			// Listen for link events from AppDelegate via NotificationCenter (cold start support)
+			// Legacy AppDelegate integration path: some host apps manually post RetenoLinkReceived
+			// via NotificationCenter from their own Reteno.addLinkHandler.
 			NotificationCenter.default.addObserver(
 					self,
 					selector: #selector(handleLinkReceived(_:)),
@@ -110,53 +121,36 @@ public class ExpoRetenoSdkModule: Module {
 					object: nil
 			)
 
-			// Fallback: set link handler for clients who don't add it in AppDelegate
-			// If AppDelegate already set a handler, this overrides it — which is fine,
-			// because cold start links were already handled by AppDelegate's handler
-			Reteno.addLinkHandler { linkInfo in
-				self.sendEvent(
-					RetenoExpoEvent.inAppCustomDataReceived.value,
-					["body": [
-						"customData": linkInfo.customData as Any,
-						"url": linkInfo.url?.absoluteString as Any
-					]]
+			// Config-plugin auto-init: if the plugin wrote RetenoSDKKey to Info.plist,
+			// initialize the SDK now so JS never needs to call Reteno.initialize() explicitly.
+			// setupRetenoCallbacks() is called here (instance context) so all push/in-app
+			// handlers are registered immediately after SDK start.
+			if let apiKey = Bundle.main.infoDictionary?["RetenoSDKKey"] as? String,
+			   !apiKey.isEmpty,
+			   !ExpoRetenoSdkModule.sdkInitialized {
+				let isDebugMode = Bundle.main.infoDictionary?["RetenoIsDebugMode"] as? Bool ?? false
+				let configuration = RetenoConfiguration(
+					isAutomaticScreenReportingEnabled: false,
+					isAutomaticAppLifecycleReportingEnabled: true,
+					isApplicationForegroundLifecycleReportingEnabled: false,
+					isAutomaticPushSubsriptionReportingEnabled: true,
+					sessionConfiguration: RetenoSessionConfiguration(
+						sessionDuration: RetenoSessionConfiguration.default.sessionDuration,
+						isSessionStartReportingEnabled: true,
+						isSessionEndReportingEnabled: false
+					),
+					isPausedInAppMessages: false,
+					inAppMessagesPauseBehaviour: .postponeInApps,
+					isDebugMode: isDebugMode,
+					deviceTokenHandlingMode: .automatic
 				)
-					
-					if ExpoRetenoSdkModule.autoOpenLinks, let url = linkInfo.url {
-							UIApplication.shared.open(url)
-					}
-			}
-			
-			print(RetenoExpoEvent.onPushNotificationReceived.value)
-			
-			Reteno.userNotificationService.didReceiveNotificationUserInfo = { userInfo in
-				self.sendEvent(
-					RetenoExpoEvent.onPushNotificationReceived.value,
-					userInfo as! [String : Any?]
-				)
-			}
-			
-			Reteno.userNotificationService.didReceiveNotificationResponseHandler = { response in
-				self.sendEvent(
-					RetenoExpoEvent.onPushNotificationClicked.value,
-					response.notification.request.content.userInfo as! [String : Any?]
-				)
-			}
-			
-			Reteno.userNotificationService.notificationActionHandler = { userInfo, action in
-				let actionId = action.actionId
-				let customData = action.customData
-				let actionLink = action.link
-				
-				self.sendEvent(
-					RetenoExpoEvent.onPushButtonClicked.value,
-					[
-						"userInfo": userInfo,
-						"actionId": actionId,
-						"customData": customData as Any,
-						"actionLink": actionLink as Any
-					]
-				)
+				if ExpoRetenoSdkModule.delayedStartCalled {
+					Reteno.delayedSetup(apiKey: apiKey, configuration: configuration)
+				} else {
+					Reteno.start(apiKey: apiKey, configuration: configuration)
+				}
+				setupRetenoCallbacks()
+				ExpoRetenoSdkModule.sdkInitialized = true
 			}
 		}
 		
@@ -169,11 +163,79 @@ public class ExpoRetenoSdkModule: Module {
 			//			)
 		// }
 		
+		AsyncFunction("initialize") { (payload: [String: Any], promise: Promise) -> Void in
+			if ExpoRetenoSdkModule.sdkInitialized {
+				promise.resolve(true)
+				return
+			}
+
+			guard let apiKey = (payload["apiKey"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+						!apiKey.isEmpty else {
+				promise.reject("100", "Missing argument: apiKey")
+				return
+			}
+
+			let lifecycleOptionsInput = payload["lifecycleTrackingOptions"]
+			let lifecycleOptions = ExpoRetenoSdkModule.parseLifecycleTrackingOptions(lifecycleOptionsInput)
+			if lifecycleOptionsInput != nil && lifecycleOptions == nil {
+				promise.reject(
+					"100",
+					"Invalid argument: lifecycleTrackingOptions. Expected 'ALL', 'NONE', or lifecycle options object."
+				)
+				return
+			}
+
+			let sessionDurationSeconds: TimeInterval = {
+				if let seconds = payload["sessionDurationSeconds"] as? Double, seconds > 0 {
+					return seconds
+				}
+				if let seconds = payload["sessionDurationSeconds"] as? Int, seconds > 0 {
+					return Double(seconds)
+				}
+				return RetenoSessionConfiguration.default.sessionDuration
+			}()
+
+			let deviceTokenMode: DeviceTokenHandlingMode = {
+				let raw = (payload["iosDeviceTokenHandlingMode"] as? String)?.lowercased()
+				return raw == "manual" ? .manual : .automatic
+			}()
+
+			let configuration = RetenoConfiguration(
+				isAutomaticScreenReportingEnabled: false,
+				isAutomaticAppLifecycleReportingEnabled: lifecycleOptions?.appLifecycleEnabled ?? true,
+				isApplicationForegroundLifecycleReportingEnabled: lifecycleOptions?.foregroundLifecycleEnabled ?? false,
+				isAutomaticPushSubsriptionReportingEnabled: lifecycleOptions?.pushSubscriptionEnabled ?? true,
+				sessionConfiguration: RetenoSessionConfiguration(
+					sessionDuration: sessionDurationSeconds,
+					isSessionStartReportingEnabled: lifecycleOptions?.sessionStartEventsEnabled ?? true,
+					isSessionEndReportingEnabled: lifecycleOptions?.sessionEndEventsEnabled ?? false
+				),
+				isPausedInAppMessages: (payload["pauseInAppMessages"] as? Bool) ?? false,
+				inAppMessagesPauseBehaviour: .postponeInApps,
+				isDebugMode: (payload["isDebugMode"] as? Bool) ?? false,
+				deviceTokenHandlingMode: deviceTokenMode
+			)
+
+			if ExpoRetenoSdkModule.delayedStartCalled {
+				Reteno.delayedSetup(apiKey: apiKey, configuration: configuration)
+			} else {
+				Reteno.start(apiKey: apiKey, configuration: configuration)
+			}
+
+			setupRetenoCallbacks()
+
+			if deviceTokenMode == .manual {
+				ExpoRetenoSdkModule.installFCMBridgeIfAvailable()
+			}
+
+			ExpoRetenoSdkModule.sdkInitialized = true
+			promise.resolve(true)
+		}
+
     // Push notifications
 		AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
-			promise.resolve(
-				Reteno.userNotificationService.processRemoteNotificationsToken(deviceToken)
-			);
+			Reteno.userNotificationService.processRemoteNotificationsToken(deviceToken)
+			promise.resolve(true)
 		}
 		
 		AsyncFunction("registerForRemoteNotifications") { () -> Void in
@@ -673,6 +735,124 @@ public class ExpoRetenoSdkModule: Module {
 			promise.resolve(ExpoRetenoSdkModule.autoOpenLinks)
 		}
 		// -------------------------------------------------------
+	}
+
+	private static func parseLifecycleTrackingOptions(_ value: Any?) -> (
+		appLifecycleEnabled: Bool,
+		foregroundLifecycleEnabled: Bool,
+		pushSubscriptionEnabled: Bool,
+		sessionStartEventsEnabled: Bool,
+		sessionEndEventsEnabled: Bool
+	)? {
+		guard let value else { return nil }
+
+		if let optionString = value as? String {
+			switch optionString.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+			case "ALL":
+				return (true, true, true, true, true)
+			case "NONE":
+				return (false, false, false, false, false)
+			default:
+				return nil
+			}
+		}
+
+		guard let payload = value as? [String: Any] else {
+			return nil
+		}
+
+		let legacySessionEventsEnabled = payload["sessionEventsEnabled"] as? Bool ?? true
+		let sessionEndEventsEnabled: Bool
+		if let explicit = payload["sessionEndEventsEnabled"] as? Bool {
+			sessionEndEventsEnabled = explicit
+		} else if payload["sessionEventsEnabled"] != nil {
+			sessionEndEventsEnabled = legacySessionEventsEnabled
+		} else {
+			sessionEndEventsEnabled = false
+		}
+
+		return (
+			payload["appLifecycleEnabled"] as? Bool ?? true,
+			payload["foregroundLifecycleEnabled"] as? Bool ?? false,
+			payload["pushSubscriptionEnabled"] as? Bool ?? true,
+			payload["sessionStartEventsEnabled"] as? Bool ?? legacySessionEventsEnabled,
+			sessionEndEventsEnabled
+		)
+	}
+
+	private static func installFCMBridgeIfAvailable() {
+		guard !fcmBridgeInstalled else { return }
+		guard NSClassFromString("FIRMessaging") != nil else {
+			NSLog("[Reteno] iosDeviceTokenHandlingMode='manual': FIRMessaging not found at runtime. Provide the push token via setDeviceToken().")
+			return
+		}
+		fcmBridgeInstalled = true
+		fcmTokenObserver = NotificationCenter.default.addObserver(
+			forName: Notification.Name("com.firebase.messaging.notif.fcm-token-refreshed"),
+			object: nil,
+			queue: .main
+		) { _ in
+			ExpoRetenoSdkModule.forwardFCMTokenToReteno()
+		}
+		forwardFCMTokenToReteno()
+	}
+
+	private static func forwardFCMTokenToReteno() {
+		guard
+			let fmClass = NSClassFromString("FIRMessaging") as? NSObject.Type,
+			let messaging = fmClass.perform(NSSelectorFromString("messaging"))?.takeUnretainedValue() as? NSObject,
+			let token = messaging.value(forKey: "FCMToken") as? String,
+			!token.isEmpty
+		else { return }
+		Reteno.userNotificationService.processRemoteNotificationsToken(token)
+	}
+
+	// Called from initialize() after Reteno.start() / Reteno.delayedSetup() to ensure
+	// handlers are registered on a fully-initialized SDK instance (mirrors setupRetenoCallbacks()
+	// in the React Native SDK).
+	private func setupRetenoCallbacks() {
+		Reteno.addLinkHandler { [weak self] linkInfo in
+			guard let self else { return }
+			self.sendEvent(
+				RetenoExpoEvent.inAppCustomDataReceived.value,
+				["body": [
+					"customData": linkInfo.customData as Any,
+					"url": linkInfo.url?.absoluteString as Any
+				]]
+			)
+			if ExpoRetenoSdkModule.autoOpenLinks, let url = linkInfo.url {
+				UIApplication.shared.open(url)
+			}
+		}
+
+		Reteno.userNotificationService.didReceiveNotificationUserInfo = { [weak self] userInfo in
+			guard let self else { return }
+			self.sendEvent(
+				RetenoExpoEvent.onPushNotificationReceived.value,
+				userInfo as! [String: Any?]
+			)
+		}
+
+		Reteno.userNotificationService.didReceiveNotificationResponseHandler = { [weak self] response in
+			guard let self else { return }
+			self.sendEvent(
+				RetenoExpoEvent.onPushNotificationClicked.value,
+				response.notification.request.content.userInfo as! [String: Any?]
+			)
+		}
+
+		Reteno.userNotificationService.notificationActionHandler = { [weak self] userInfo, action in
+			guard let self else { return }
+			self.sendEvent(
+				RetenoExpoEvent.onPushButtonClicked.value,
+				[
+					"userInfo": userInfo,
+					"actionId": action.actionId,
+					"customData": action.customData as Any,
+					"actionLink": action.link as Any
+				]
+			)
+		}
 	}
 
 	@objc

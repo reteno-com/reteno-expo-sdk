@@ -4,7 +4,6 @@ import {
   withAppBuildGradle,
   withAndroidManifest,
   withGradleProperties,
-  withMainApplication,
   withProjectBuildGradle,
 } from "expo/config-plugins";
 import {
@@ -13,8 +12,6 @@ import {
   addModuleGradleDependencies,
   addGradleProperties,
   addProjectGradleDependencies,
-  addSdkAndFirebaseImports,
-  initializeSdk,
 } from "./support/android.functions";
 import { RetenoAndroidProps } from "./types";
 
@@ -22,6 +19,8 @@ const CLICKED_METADATA_NAME = "com.reteno.Receiver.NotificationClicked";
 const PUSH_RECEIVED_METADATA_NAME = "com.reteno.Receiver.PushReceived";
 const CLICK_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoClickReceiver";
 const PUSH_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoPushReceiver";
+const SDK_ACCESS_KEY_METADATA = "com.reteno.SDK_ACCESS_KEY";
+const IS_DEBUG_MODE_METADATA = "com.reteno.IS_DEBUG_MODE";
 
 const addRetenoMetaData = (
   mainApplication: AndroidConfig.Manifest.ManifestApplication,
@@ -147,21 +146,23 @@ const withAppCompileOptions: ConfigPlugin = (config) => {
   });
 };
 
-const withAppMainActivity: ConfigPlugin<RetenoAndroidProps> = (
+const withRetenoAndroidSDKKey: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
-  return withMainApplication(config, (config) => {
-    config.modResults.contents = addSdkAndFirebaseImports(
-      config.modResults.contents,
-      config.modResults.language,
-    );
-    config.modResults.contents = initializeSdk(
-      config.modResults.contents,
-      props,
-    );
-
-    return config;
+  return withAndroidManifest(config, (cfg) => {
+    const mainApp = AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+    // Always remove both keys so removing sdkAccessToken from plugin config
+    // and re-running prebuild correctly disables auto-init (Path A → Path B).
+    AndroidConfig.Manifest.removeMetaDataItemFromMainApplication(mainApp, SDK_ACCESS_KEY_METADATA);
+    AndroidConfig.Manifest.removeMetaDataItemFromMainApplication(mainApp, IS_DEBUG_MODE_METADATA);
+    if (props.sdkAccessToken) {
+      AndroidConfig.Manifest.addMetaDataItemToMainApplication(mainApp, SDK_ACCESS_KEY_METADATA, props.sdkAccessToken);
+      if (props.config?.isDebugMode) {
+        AndroidConfig.Manifest.addMetaDataItemToMainApplication(mainApp, IS_DEBUG_MODE_METADATA, "true");
+      }
+    }
+    return cfg;
   });
 };
 
@@ -170,11 +171,11 @@ export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   props,
 ) => {
   config = withRetenoAndroidManifest(config);
+  config = withRetenoAndroidSDKKey(config, props);
   config = withProjectGradleDependencies(config);
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
   config = withAppCompileOptions(config);
-  config = withAppMainActivity(config, props);
 
   return config;
 };

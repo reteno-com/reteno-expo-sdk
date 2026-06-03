@@ -2,6 +2,29 @@ export type RetenoSubscription = {
   remove: () => void;
 };
 
+export type LifecycleTrackingOptions =
+  | "ALL"
+  | "NONE"
+  | {
+      appLifecycleEnabled?: boolean;
+      foregroundLifecycleEnabled?: boolean;
+      pushSubscriptionEnabled?: boolean;
+      sessionStartEventsEnabled?: boolean;
+      sessionEndEventsEnabled?: boolean;
+      sessionEventsEnabled?: boolean;
+    };
+
+export type DeviceTokenHandlingMode = "automatic" | "manual";
+
+export type InitializeOptions = {
+  apiKey: string;
+  isDebugMode?: boolean;
+  pauseInAppMessages?: boolean;
+  sessionDurationSeconds?: number;
+  lifecycleTrackingOptions?: LifecycleTrackingOptions;
+  iosDeviceTokenHandlingMode?: DeviceTokenHandlingMode;
+};
+
 export const InAppEvents = {
   BeforeInAppDisplay: "reteno-before-in-app-display",
   OnInAppDisplay: "reteno-on-in-app-display",

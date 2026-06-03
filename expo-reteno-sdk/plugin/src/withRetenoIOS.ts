@@ -220,13 +220,23 @@ const withFirebasePodfileUpdate: ConfigPlugin = (config) => {
   ]);
 };
 
-const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
-  if (!props.sdkAccessToken) {
-    throw new Error(
-      "[Reteno] SDK token is not defined, cancelling installation...",
-    );
-  }
+const withRetenoSDKKey: ConfigPlugin<RetenoIOSProps> = (config, props) => {
+  return withInfoPlist(config, (cfg) => {
+    // Always clean up both keys so removing sdkAccessToken from plugin config
+    // and re-running prebuild correctly disables auto-init (Path A → Path B).
+    delete cfg.modResults["RetenoSDKKey"];
+    delete cfg.modResults["RetenoIsDebugMode"];
+    if (props.sdkAccessToken) {
+      cfg.modResults["RetenoSDKKey"] = props.sdkAccessToken;
+      if (props.config?.isDebugMode) {
+        cfg.modResults["RetenoIsDebugMode"] = true;
+      }
+    }
+    return cfg;
+  });
+};
 
+const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   return withAppDelegate(config, (config) => {
     config.modResults.contents = removeContents({
       src: config.modResults.contents,
@@ -244,7 +254,7 @@ const withRetenoInit: ConfigPlugin<RetenoIOSProps> = (config, props) => {
 
     config.modResults.contents = addRetenoInit(
       config.modResults.contents,
-      props.sdkAccessToken,
+      props.sdkAccessToken ?? "",
       props.config,
     ).contents;
 
@@ -347,6 +357,7 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   );
   config = withRemoteNotificationsPermissions(config);
   config = withAppGroups(config, props.appGroups);
+  config = withRetenoSDKKey(config, props);
   config = withRetenoInit(config, props);
 
   // Notification Service Extension

@@ -10,8 +10,8 @@
     "purge:ios": "rm -Rf node_modules ./package-lock.json ios",
     "purge:android": "rm -Rf node_modules ./package-lock.json android",
     "restart:ios": "npx expo prebuild -p ios --clean && npx expo run:ios --device",
-    "restart:android": "ANDROID_VERSION=${ANDROID_VERSION:-1.0.10} npx expo prebuild -p android --clean && npx expo run:android",
-    "android:apk": "ANDROID_VERSION=${ANDROID_VERSION:-1.0.10} npx expo prebuild -p android --clean && cd android && ./gradlew assembleRelease",
+    "restart:android": "ANDROID_VERSION=${ANDROID_VERSION:-1.1.0} npx expo prebuild -p android --clean && npx expo run:android",
+    "android:apk": "ANDROID_VERSION=${ANDROID_VERSION:-1.1.0} npx expo prebuild -p android --clean && cd android && ./gradlew assembleRelease",
     "preios:testflight": "bundle check || bundle install && npx expo prebuild -p ios --clean",
     "ios:certs": "bundle exec fastlane sync_certs",
     "ios:testflight": "bundle exec fastlane beta"
