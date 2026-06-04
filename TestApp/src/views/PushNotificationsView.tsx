@@ -3,6 +3,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 import {
+  addPushClickEvent,
   getPushClickEventsSnapshot,
   subscribeToPushClickEvents,
 } from "src/pushClickEventsStore";
@@ -40,6 +41,7 @@ export const PushNotificationsView = () => {
       if (!data) {
         Alert.alert("getInitialNotification", "No data");
       } else {
+        addPushClickEvent(data);
         Alert.alert(
           "getInitialNotification",
           data ? JSON.stringify(data) : data,
