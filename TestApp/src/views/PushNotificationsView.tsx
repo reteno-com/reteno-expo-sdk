@@ -1,21 +1,24 @@
 import Reteno from "expo-reteno-sdk";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
+import {
+  getPushClickEventsSnapshot,
+  subscribeToPushClickEvents,
+} from "src/pushClickEventsStore";
 
 const showEvent = (title: string, event: any) =>
   Alert.alert(title, event ? JSON.stringify(event) : "No data");
 
 export const PushNotificationsView = () => {
-  const [pushClickedEvents, setPushClickedEvents] = useState<any[]>([]);
+  const pushClickedEvents = useSyncExternalStore(
+    subscribeToPushClickEvents,
+    getPushClickEventsSnapshot,
+    getPushClickEventsSnapshot,
+  );
 
   const onRetenoPushReceived = useCallback((event: any) => {
     showEvent("onPushNotificationReceived", event);
-  }, []);
-
-  const onRetenoPushClicked = useCallback((event: any) => {
-    setPushClickedEvents((prev) => [...prev, event ?? null]);
-    showEvent("onPushNotificationClicked", event);
   }, []);
 
   const requestPermissions = async () => {
@@ -53,23 +56,6 @@ export const PushNotificationsView = () => {
 
     return () => pushListener.remove();
   }, [onRetenoPushReceived]);
-
-  useEffect(() => {
-    const pushClickListener =
-      Reteno.setOnRetenoPushClickedListener(onRetenoPushClicked);
-
-    return () => pushClickListener?.remove();
-  }, [onRetenoPushClicked]);
-
-  // iOS only
-  useEffect(() => {
-    if (Platform.OS === "ios") {
-      const pushButtonClickListener =
-        Reteno.setOnRetenoPushButtonClickedListener(onRetenoPushClicked);
-
-      return () => pushButtonClickListener?.remove();
-    }
-  }, [onRetenoPushClicked]);
 
   // Android only — push dismissed
   useEffect(() => {
