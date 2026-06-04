@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { Alert, Platform, ScrollView } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 
+let isInAppMessagesPaused = false;
+
 export const InAppMessagesView = () => {
-  const [didStop, setDidStop] = useState(false);
+  const [didStop, setDidStop] = useState(isInAppMessagesPaused);
 
   useEffect(() => {
-    Reteno.pauseInAppMessages(false);
     Reteno.setInAppLifecycleCallback();
 
     const beforeInAppDisplayListener = Reteno.beforeInAppDisplayHandler(
@@ -74,8 +75,9 @@ export const InAppMessagesView = () => {
   const handleInAppMessagesStatus = async (isPaused: boolean) => {
     try {
       await Reteno.pauseInAppMessages(isPaused);
+      isInAppMessagesPaused = isPaused;
+      setDidStop(isPaused);
       Alert.alert("Success", "Pause state changed");
-      setDidStop((prev) => !prev);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       Alert.alert("Error", message);
