@@ -5,12 +5,14 @@ import RetenoMultiAccountUserAttributesPayload
 import RetenoUserAttributesPayload
 import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
@@ -18,8 +20,10 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.firebase.FirebaseApp
 import com.reteno.core.Reteno
+import com.reteno.core.RetenoConfig
 import com.reteno.core.data.remote.model.recommendation.get.Recoms
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback
+import com.reteno.core.domain.model.event.LifecycleTrackingOptions
 import com.reteno.core.domain.model.appinbox.AppInboxMessages
 import com.reteno.core.domain.model.recommendation.get.RecomRequest
 import com.reteno.core.domain.model.recommendation.post.RecomEvent
@@ -82,6 +86,7 @@ class ExpoRetenoSdkModule : Module() {
     private var currentInstance: WeakReference<ExpoRetenoSdkModule>? = null
     private const val PREFS_NAME = "RetenoPreferences"
     private const val AUTO_OPEN_LINKS_KEY = "auto_open_links"
+    private var sdkInitialized = false
 
     // Helper function (if you don't already have it defined elsewhere)
     fun isAutoOpenLinksEnabled(context: Context): Boolean {
@@ -167,8 +172,31 @@ class ExpoRetenoSdkModule : Module() {
               }
           } catch (t: Throwable) {
             print("Cannot initialize Firebase")
-
           }
+      }
+
+      // Auto-init from manifest meta-data when sdkAccessToken is set in the plugin config.
+      // Mirrors the Cordova plugin approach: key in meta-data → module calls initWithConfig().
+      // Application class injection (MainApplication.kt) may have already run — initWithConfig()
+      // is wrapped in try-catch to handle both cases gracefully.
+      if (!sdkInitialized) {
+        val autoApiKey = readSdkAccessKeyFromManifest()
+        if (!autoApiKey.isNullOrEmpty()) {
+          val autoDebug = readBoolMetaData("com.reteno.IS_DEBUG_MODE")
+          runOnMainThread {
+            try {
+              Reteno.initWithConfig(
+                RetenoConfig.Builder()
+                  .accessKey(autoApiKey)
+                  .setDebug(autoDebug)
+                  .build()
+              )
+            } catch (_: Exception) {
+              // Application injection already called initWithConfig() — safe to ignore.
+            }
+            sdkInitialized = true
+          }
+        }
       }
 
       if (pushDismissedListener == null) {
@@ -193,6 +221,74 @@ class ExpoRetenoSdkModule : Module() {
           Log.w("ExpoRetenoSdk", "Could not register custom push listener: ${e.message}")
           customPushListener = null
         }
+      }
+    }
+
+    AsyncFunction("initialize") { payload: ReadableMap, promise: Promise ->
+      if (sdkInitialized) {
+        promise.resolve(true)
+        return@AsyncFunction
+      }
+
+      val apiKey = if (payload.hasKey("apiKey") && !payload.isNull("apiKey")) {
+        payload.getString("apiKey")?.trim()
+      } else {
+        null
+      }
+
+      if (apiKey.isNullOrEmpty()) {
+        promise.reject("100", "Missing argument: apiKey", null)
+        return@AsyncFunction
+      }
+
+      try {
+        val builder = RetenoConfig.Builder()
+          .accessKey(apiKey)
+          .setDebug(payload.getOptionalBoolean("isDebugMode", false))
+
+        if (payload.getOptionalBoolean("pauseInAppMessages", false)) {
+          builder.pauseInAppMessages(true)
+        }
+
+        if (payload.hasKey("sessionDurationSeconds") && !payload.isNull("sessionDurationSeconds")) {
+          val sessionDurationSeconds = payload.getDouble("sessionDurationSeconds")
+          if (sessionDurationSeconds > 0) {
+            builder.sessionDuration((sessionDurationSeconds * 1000L).toLong())
+          }
+        }
+
+        var hasLifecycleOptions = false
+        val lifecycleOptions = if (payload.hasKey("lifecycleTrackingOptions") && !payload.isNull("lifecycleTrackingOptions")) {
+          hasLifecycleOptions = true
+          parseLifecycleTrackingOptions(payload.getDynamic("lifecycleTrackingOptions"))
+        } else {
+          null
+        }
+
+        if (hasLifecycleOptions && lifecycleOptions == null) {
+          promise.reject(
+            "InvalidArgument",
+            "Invalid argument: lifecycleTrackingOptions. Expected 'ALL', 'NONE', or lifecycle options object.",
+            null
+          )
+          return@AsyncFunction
+        }
+
+        lifecycleOptions?.let { builder.lifecycleTrackingOptions(it) }
+
+        sdkInitialized = true
+        runOnMainThread {
+          try {
+            Reteno.initWithConfig(builder.build())
+            promise.resolve(true)
+          } catch (e: Exception) {
+            sdkInitialized = false
+            promise.reject("Reteno Android SDK initialize Error", e.message, e)
+          }
+        }
+      } catch (e: Exception) {
+        sdkInitialized = false
+        promise.reject("Reteno Android SDK initialize Error", e.message, e)
       }
     }
 
@@ -1111,6 +1207,78 @@ class ExpoRetenoSdkModule : Module() {
       action()
     } else {
       Handler(Looper.getMainLooper()).post(action)
+    }
+  }
+
+  private fun readSdkAccessKeyFromManifest(): String? {
+    return try {
+      val ctx = appContext.reactContext ?: return null
+      val appInfo = ctx.packageManager.getApplicationInfo(
+        ctx.packageName,
+        android.content.pm.PackageManager.GET_META_DATA
+      )
+      appInfo.metaData?.getString("com.reteno.SDK_ACCESS_KEY")
+    } catch (_: Exception) { null }
+  }
+
+  private fun readBoolMetaData(key: String): Boolean {
+    return try {
+      val ctx = appContext.reactContext ?: return false
+      val appInfo = ctx.packageManager.getApplicationInfo(
+        ctx.packageName,
+        android.content.pm.PackageManager.GET_META_DATA
+      )
+      // android:value="true" in manifest is stored as Boolean in the Bundle,
+      // not as String — getString() would return null for boolean meta-data.
+      appInfo.metaData?.getBoolean(key, false) ?: false
+    } catch (_: Exception) { false }
+  }
+
+  private fun ReadableMap.getOptionalBoolean(key: String, fallback: Boolean): Boolean {
+    return if (hasKey(key) && !isNull(key) && getType(key) == ReadableType.Boolean) {
+      getBoolean(key)
+    } else {
+      fallback
+    }
+  }
+
+  private fun parseLifecycleTrackingOptions(value: Dynamic?): LifecycleTrackingOptions? {
+    if (value == null || value.isNull) {
+      return null
+    }
+
+    return when (value.type) {
+      ReadableType.String -> {
+        when (value.asString()?.trim()?.uppercase()) {
+          "ALL" -> LifecycleTrackingOptions(true, true, true, true, true)
+          "NONE" -> LifecycleTrackingOptions(false, false, false, false, false)
+          else -> null
+        }
+      }
+      ReadableType.Map -> {
+        val map = value.asMap() ?: return null
+        val legacySessionEventsEnabled = map.getOptionalBoolean("sessionEventsEnabled", true)
+        val sessionStartEventsEnabled = map.getOptionalBoolean(
+          "sessionStartEventsEnabled",
+          legacySessionEventsEnabled
+        )
+        val sessionEndEventsEnabled = if (map.hasKey("sessionEndEventsEnabled")) {
+          map.getOptionalBoolean("sessionEndEventsEnabled", false)
+        } else if (map.hasKey("sessionEventsEnabled")) {
+          legacySessionEventsEnabled
+        } else {
+          false
+        }
+
+        LifecycleTrackingOptions(
+          map.getOptionalBoolean("appLifecycleEnabled", true),
+          map.getOptionalBoolean("foregroundLifecycleEnabled", false),
+          map.getOptionalBoolean("pushSubscriptionEnabled", true),
+          sessionStartEventsEnabled,
+          sessionEndEventsEnabled
+        )
+      }
+      else -> null
     }
   }
 

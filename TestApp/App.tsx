@@ -5,6 +5,7 @@ import * as Application from "expo-application";
 import Reteno from "expo-reteno-sdk";
 import { useEffect } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { addPushClickEvent } from "src/pushClickEventsStore";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -140,6 +141,31 @@ export default function App() {
     }
 
     requestPushPermissions();
+  }, []);
+
+  useEffect(() => {
+    async function saveInitialNotification() {
+      const initialNotification = await Reteno.getInitialNotification();
+
+      if (initialNotification) {
+        addPushClickEvent(initialNotification);
+      }
+    }
+
+    saveInitialNotification();
+
+    const pushClickListener =
+      Reteno.setOnRetenoPushClickedListener(addPushClickEvent);
+
+    const pushButtonClickListener =
+      Platform.OS === "ios"
+        ? Reteno.setOnRetenoPushButtonClickedListener(addPushClickEvent)
+        : undefined;
+
+    return () => {
+      pushClickListener?.remove();
+      pushButtonClickListener?.remove();
+    };
   }, []);
 
   return (

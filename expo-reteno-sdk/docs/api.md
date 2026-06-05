@@ -4,9 +4,10 @@
 
 | Method | Platform | Description |
 |--------|----------|-------------|
+| [initialize](#initializeinput) | iOS, Android | Initialize Reteno SDK at runtime |
 | [registerForRemoteNotifications](#registerforremotenotifications) | iOS, Android | Request push notification permission and register device |
 | [getInitialNotification](#getinitialnotification) | iOS, Android | Get push notification that launched the app |
-| [setDeviceToken](#setdevicetoken) | iOS | Set FCM/APNs device token manually |
+| [setDeviceToken](#setdevicetoken) | iOS, Android | Set FCM/APNs device token manually on iOS; no-op on Android |
 | [setOnRetenoPushReceivedListener](#setonretenopushreceivedlistener) | iOS, Android | Listen for incoming push notifications |
 | [setOnRetenoPushClickedListener](#setonretenopushclickedlistener) | iOS, Android | Listen for push notification clicks |
 | [setOnRetenoPushButtonClickedListener](#setonretenopushbuttonclickedlistener) | iOS | Listen for push notification button clicks |
@@ -43,6 +44,31 @@
 
 ---
 
+## Initialization
+
+### `initialize(input)`
+
+Initializes the Reteno SDK at runtime.
+
+```ts
+Reteno.initialize(input: string | InitializeOptions): Promise<boolean>
+```
+
+**Example**
+
+```ts
+await Reteno.initialize({
+  apiKey: 'YOUR_SDK_ACCESS_KEY',
+  isDebugMode: false,
+  lifecycleTrackingOptions: 'ALL',
+  sessionDurationSeconds: 30,
+  pauseInAppMessages: false,
+  iosDeviceTokenHandlingMode: 'automatic',
+});
+```
+
+---
+
 ## Push Notifications
 
 ### `registerForRemoteNotifications()`
@@ -67,12 +93,12 @@ Reteno.getInitialNotification(): Promise<any | null>
 
 ### `setDeviceToken(token)`
 
-> **iOS only.** Throws an error on Android.
+> On Android this method is a no-op for React Native SDK compatibility.
 
 Manually passes an FCM or APNs token to the Reteno SDK. Use this when managing the token via `@react-native-firebase/messaging`.
 
 ```ts
-Reteno.setDeviceToken(token: string): void
+Reteno.setDeviceToken(token: string): Promise<boolean>
 ```
 
 ---

@@ -5,7 +5,15 @@ export type MergeResults = {
 };
 
 export type RetenoIOSProps = {
-  sdkAccessToken: string;
+  /**
+   * SDK access key for zero-config auto-init (Path A).
+   * When set, the plugin writes the key to Info.plist and the native module
+   * initializes the SDK automatically with default options — no JS `initialize()` needed.
+   * **If set, any subsequent `Reteno.initialize()` call is a no-op: runtime options
+   * (isDebugMode, lifecycleTrackingOptions, etc.) will not be applied.**
+   * Omit to use Path B: call `Reteno.initialize({ apiKey })` from JS for full option control.
+   */
+  sdkAccessToken?: string;
   notificationService?: "firebase" | "apns";
   devTeam: string;
   appGroups: string[];
@@ -22,7 +30,15 @@ export type RetenoExtensionProps = {
 export type RetenoExtensionTarget = RetenoIOSProps & RetenoExtensionProps;
 
 export type RetenoAndroidProps = {
-  sdkAccessToken: string;
+  /**
+   * SDK access key for zero-config auto-init (Path A).
+   * When set, the plugin writes the key to AndroidManifest meta-data and the native
+   * module initializes the SDK automatically with default options — no JS `initialize()` needed.
+   * **If set, any subsequent `Reteno.initialize()` call is a no-op: runtime options
+   * (isDebugMode, lifecycleTrackingOptions, etc.) will not be applied.**
+   * Omit to use Path B: call `Reteno.initialize({ apiKey })` from JS for full option control.
+   */
+  sdkAccessToken?: string;
   config: RetenoInitConfig;
 };
 

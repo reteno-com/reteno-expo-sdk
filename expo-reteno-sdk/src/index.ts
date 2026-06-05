@@ -18,6 +18,7 @@ import {
   InAppDisplayData,
   InAppErrorData,
   InAppEvents,
+  InitializeOptions,
   InboxMessage,
   LogEventPayload,
   LogScreenViewPayload,
@@ -32,10 +33,12 @@ import {
 import { Platform } from "react-native";
 
 declare class ExpoRetenoSdkModule extends NativeModule {
+  initialize(payload: InitializeOptions): Promise<boolean>;
+
   // Push Notifications
   registerForRemoteNotifications(): string;
   getInitialNotification: () => Promise<boolean>;
-  setDeviceToken(messagingToken: string): void;
+  setDeviceToken(messagingToken: string): Promise<boolean>;
   setOnRetenoPushReceivedListener(
     listener: (event: any) => void,
   ): RetenoSubscription;
@@ -152,6 +155,19 @@ const ModuleInstance =
   requireNativeModule<ExpoRetenoSdkModule>("ExpoRetenoSdk");
 const emitter = new EventEmitter<RetenoSubscriptionEvents>(ModuleInstance);
 
+function normalizeInitializeOptions(
+  input: string | InitializeOptions,
+): InitializeOptions {
+  const payload = typeof input === "string" ? { apiKey: input } : input;
+  const apiKey = payload?.apiKey?.trim();
+
+  if (!apiKey) {
+    throw new Error('[Reteno] Missing argument: "apiKey"');
+  }
+
+  return { ...payload, apiKey };
+}
+
 function requireExternalUserId(payload: UserInformationPayload) {
   const externalUserId = payload?.externalUserId?.trim();
   if (!externalUserId) {
@@ -160,6 +176,10 @@ function requireExternalUserId(payload: UserInformationPayload) {
 }
 
 export const Reteno = {
+  initialize(input: string | InitializeOptions): Promise<boolean> {
+    return ModuleInstance.initialize(normalizeInitializeOptions(input));
+  },
+
   // Push notifications
   registerForRemoteNotifications() {
     return ModuleInstance.registerForRemoteNotifications();
@@ -167,9 +187,10 @@ export const Reteno = {
   getInitialNotification() {
     return ModuleInstance.getInitialNotification();
   },
-  setDeviceToken(token: string) {
-    if (Platform.OS === "android")
-      throw new Error("[Reteno] `setDeviceToken` is iOS-only");
+  setDeviceToken(token: string): Promise<boolean> {
+    if (Platform.OS === "android") {
+      return Promise.resolve(true);
+    }
 
     return ModuleInstance.setDeviceToken(token);
   },

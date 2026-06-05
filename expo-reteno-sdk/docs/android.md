@@ -25,6 +25,11 @@ android/app/google-services.json
 
 ### 3. Configure the plugin in `app.json`
 
+There are two setup paths — choose one:
+
+**Path A — zero-config (no JS `initialize()` needed):**
+Set `android.sdkAccessToken` in the plugin config. The key is written to `AndroidManifest.xml` as meta-data; the native module reads it at startup and calls `Reteno.initWithConfig()` automatically with default options.
+
 ```json
 {
   "expo": {
@@ -33,14 +38,22 @@ android/app/google-services.json
         "expo-reteno-sdk",
         {
           "ios": { },
-          "android": {
-            "sdkAccessToken": "YOUR_SDK_ACCESS_KEY",
-            "debug": false
-          }
+          "android": { "sdkAccessToken": "YOUR_SDK_ACCESS_KEY" }
         }
       ]
     ]
   }
+}
+```
+
+> **Warning:** If `sdkAccessToken` is set, the SDK auto-inits with defaults before JS runs. Any subsequent call to `Reteno.initialize()` is a no-op — runtime options such as `isDebugMode` or `lifecycleTrackingOptions` **will not be applied**.
+
+**Path B — JS-controlled init (full options support):**
+Omit `android.sdkAccessToken`. Call `Reteno.initialize()` from JS with the API key and any desired options.
+
+```json
+{
+  "android": { }
 }
 ```
 
@@ -54,14 +67,27 @@ The plugin automatically configures:
 - `android/build.gradle` — Google Services classpath dependency
 - `android/app/build.gradle` — Reteno and Firebase dependencies
 - `gradle.properties` — `android.useAndroidX=true`
-- `MainApplication.kt` — Reteno SDK initialization with your access key
+- `AndroidManifest.xml` — `com.reteno.SDK_ACCESS_KEY` meta-data (Path A only), click/push receiver meta-data
+
+### 5. Initialize Reteno in your JS code (Path B only)
+
+Skip this step if you used Path A above.
+
+```tsx
+import Reteno from 'expo-reteno-sdk';
+
+await Reteno.initialize({
+  apiKey: 'YOUR_SDK_ACCESS_KEY',
+  isDebugMode: false,
+  lifecycleTrackingOptions: 'ALL',
+});
+```
 
 ## Plugin props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `sdkAccessToken` | `string` | Yes | Reteno SDK access key |
-| `debug` | `boolean` | No | Enable SDK debug logging. Default: `false` |
+| `sdkAccessToken` | `string` | No | SDK access key for **Path A** (zero-config auto-init). If set, auto-inits with defaults — `Reteno.initialize()` not needed but runtime JS options are ignored. Omit for **Path B**. |
 
 ## Usage examples
 

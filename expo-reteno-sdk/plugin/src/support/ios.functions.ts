@@ -2,7 +2,6 @@ import {
   MergeResults,
   RetenoExtensionProps,
   RetenoInitConfig,
-  RetenoInitConfigKeys,
   RetenoIOSAutogenComments,
   RetenoIOSProps,
 } from "../types";
@@ -264,7 +263,7 @@ export function addMessagingDelegate(
 }
 
 export function addRetenoImport(src: string): MergeResults {
-  const newSrc = ["import Reteno"];
+  const newSrc = ["import Reteno", "import ExpoRetenoSdk"];
 
   return mergeContents({
     tag: RetenoIOSAutogenComments.RETENO_IMPORT,
@@ -278,33 +277,18 @@ export function addRetenoImport(src: string): MergeResults {
 
 export function addRetenoInit(
   src: string,
-  apiKey: string,
-  config: RetenoInitConfig,
+  _apiKey: string,
+  _config: RetenoInitConfig,
 ): MergeResults {
-  const retenoConfigKeys = [
-    "isAutomaticPushSubsriptionReportingEnabled",
-    "isAutomaticSessionReportingEnabled",
-    "isPausedInAppMessages",
-    "isDebugMode",
-  ];
-
-  const configurationString = retenoConfigKeys
-    .map((key) => {
-      return `${key}: ${config[key as RetenoInitConfigKeys] ?? false}`;
-    })
-    .join(", ");
-
   const newSrc = [
-    `\tlet configuration = RetenoConfiguration(${configurationString})`,
-    `\tReteno.start(apiKey: "${apiKey}", configuration: configuration)`,
+    "\tExpoRetenoSdkModule.delayedStart()",
   ];
 
   return mergeContents({
     tag: RetenoIOSAutogenComments.RETENO_INIT,
     src,
     newSrc: newSrc.join("\n"),
-    anchor:
-      /\bsuper\.application\(\w+?, didFinishLaunchingWithOptions: \w+?\)/g,
+    anchor: /\bfactory\.startReactNative\(/g,
     offset: 0,
     comment: "//",
   });
