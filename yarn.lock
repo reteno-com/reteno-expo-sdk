@@ -5147,7 +5147,7 @@ expo-modules-core@3.0.29:
     invariant "^2.2.4"
 
 "expo-reteno-sdk@file:../expo-reteno-sdk", "expo-reteno-sdk@file:/Users/greenxscare/Documents/Code/expo-reteno-sdk/expo-reteno-sdk":
-  version "0.1.0"
+  version "2.1.0"
   resolved "file:expo-reteno-sdk"
   dependencies:
     expo "~54.0.33"

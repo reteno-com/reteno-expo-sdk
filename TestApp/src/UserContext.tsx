@@ -8,6 +8,7 @@ const USER_DATA = {
   email: "test@mail.com",
   timeZone: "Europe/Kyiv",
   languageCode: "en-UA",
+  marketId: "",
   firstName: "Barney",
   lastName: "Stinson",
   address: {

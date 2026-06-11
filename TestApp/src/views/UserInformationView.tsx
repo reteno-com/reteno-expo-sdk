@@ -29,6 +29,7 @@ export const UserInformationView = () => {
         email: user.email,
         languageCode: user.languageCode,
         timeZone: user.timeZone,
+        marketId: user.marketId,
         address: user.address,
         fields: disableFields ? [] : user.fields,
       },
@@ -62,6 +63,7 @@ export const UserInformationView = () => {
       lastName: user.lastName,
       languageCode: user.languageCode,
       timeZone: user.timeZone,
+      marketId: user.marketId,
       address: user.address,
       fields: disableFields ? [] : user.fields,
     };
@@ -99,6 +101,7 @@ export const UserInformationView = () => {
               email: user.email,
               languageCode: user.languageCode,
               timeZone: user.timeZone,
+              marketId: user.marketId,
               address: user.address,
               fields: user.fields,
             },
@@ -140,6 +143,11 @@ export const UserInformationView = () => {
             onChangeText={(s: string) => changeField("email", s)}
             placeholder="Email"
             keyboardType="email-address"
+          />
+          <Input
+            value={user.marketId}
+            onChangeText={(s: string) => changeField("marketId", s)}
+            placeholder="Market ID"
           />
           <Input
             value={user.address.region}

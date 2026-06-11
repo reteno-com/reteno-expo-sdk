@@ -365,6 +365,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(userAttributesPayload?.lastName),
               languageCode = getStringOrNull(userAttributesPayload?.languageCode),
               timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              marketId = getStringOrNull(userAttributesPayload?.marketId),
               address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
@@ -407,6 +408,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(payload.lastName),
               timeZone = getStringOrNull(payload.timeZone),
               languageCode = getStringOrNull(payload.languageCode),
+              marketId = getStringOrNull(payload.marketId),
               address = payload.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
@@ -450,6 +452,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(userAttributesPayload?.lastName),
               languageCode = getStringOrNull(userAttributesPayload?.languageCode),
               timeZone = getStringOrNull(userAttributesPayload?.timeZone),
+              marketId = getStringOrNull(userAttributesPayload?.marketId),
               address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),

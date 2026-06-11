@@ -21,6 +21,7 @@ class RetenoUserAttributes : Record {
     @Field val lastName: String? = null
     @Field val languageCode: String? = null
     @Field val timeZone: String? = null
+    @Field val marketId: String? = null
     @Field val address: RetenoUserAttributesAddress? = null
     @Field val fields: List<RetenoUserAttributesField>? = null
 }
@@ -45,6 +46,7 @@ class RetenoAnonymousUserAttributes: Record {
      @Field val firstName: String = ""
      @Field val lastName: String = ""
      @Field val timeZone: String = ""
+     @Field val marketId: String? = null
      @Field val fields: List<RetenoUserAttributesField>? = null
      @Field val languageCode: String? = null
      @Field val address: RetenoUserAttributesAddress? = null

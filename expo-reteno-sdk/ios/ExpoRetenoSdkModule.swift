@@ -141,13 +141,12 @@ public class ExpoRetenoSdkModule: Module {
 					),
 					isPausedInAppMessages: false,
 					inAppMessagesPauseBehaviour: .postponeInApps,
-					isDebugMode: isDebugMode,
-					deviceTokenHandlingMode: .automatic
+					isDebugMode: isDebugMode
 				)
 				if ExpoRetenoSdkModule.delayedStartCalled {
-					Reteno.delayedSetup(apiKey: apiKey, configuration: configuration)
+					Reteno.delayedSetup(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
 				} else {
-					Reteno.start(apiKey: apiKey, configuration: configuration)
+					Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
 				}
 				setupRetenoCallbacks()
 				ExpoRetenoSdkModule.sdkInitialized = true
@@ -212,14 +211,13 @@ public class ExpoRetenoSdkModule: Module {
 				),
 				isPausedInAppMessages: (payload["pauseInAppMessages"] as? Bool) ?? false,
 				inAppMessagesPauseBehaviour: .postponeInApps,
-				isDebugMode: (payload["isDebugMode"] as? Bool) ?? false,
-				deviceTokenHandlingMode: deviceTokenMode
+				isDebugMode: (payload["isDebugMode"] as? Bool) ?? false
 			)
 
 			if ExpoRetenoSdkModule.delayedStartCalled {
-				Reteno.delayedSetup(apiKey: apiKey, configuration: configuration)
+				Reteno.delayedSetup(apiKey: apiKey, deviceTokenHandlingMode: deviceTokenMode, configuration: configuration)
 			} else {
-				Reteno.start(apiKey: apiKey, configuration: configuration)
+				Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: deviceTokenMode, configuration: configuration)
 			}
 
 			setupRetenoCallbacks()

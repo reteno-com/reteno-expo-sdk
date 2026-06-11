@@ -119,6 +119,7 @@ Reteno.updateUserAttributes({
       phone: '+380501234567',
       firstName: 'John',
       lastName: 'Doe',
+      marketId: 'market-1',
     },
   },
 });
