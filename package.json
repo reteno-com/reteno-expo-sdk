@@ -34,7 +34,7 @@
       "publishPath": "./expo-reteno-sdk"
     },
     "hooks": {
-      "after:bump": "npm version ${version} --prefix ./expo-reteno-sdk --no-git-tag-version"
+      "after:bump": "npm version ${version} --prefix ./expo-reteno-sdk --no-git-tag-version || true"
     },
     "github": {
       "release": true
