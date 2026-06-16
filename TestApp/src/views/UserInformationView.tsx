@@ -1,10 +1,20 @@
 import Reteno from "expo-reteno-sdk";
-import { Platform, ScrollView } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { Block, Button, Input, ScreenContainer } from "src/components";
 import { USER_TOKEN, useUser } from "src/UserContext";
 
 export const UserInformationView = () => {
   const { user, setUser } = useUser();
+  const [clearMarketId, setClearMarketId] = useState(false);
+  const marketId = clearMarketId ? "" : user.marketId || undefined;
 
   const changeField = (key: string, value: string) => {
     setUser((prev) => ({ ...prev, [key]: value }));
@@ -29,6 +39,7 @@ export const UserInformationView = () => {
         email: user.email,
         languageCode: user.languageCode,
         timeZone: user.timeZone,
+        marketId,
         address: user.address,
         fields: disableFields ? [] : user.fields,
       },
@@ -62,6 +73,7 @@ export const UserInformationView = () => {
       lastName: user.lastName,
       languageCode: user.languageCode,
       timeZone: user.timeZone,
+      marketId,
       address: user.address,
       fields: disableFields ? [] : user.fields,
     };
@@ -99,6 +111,7 @@ export const UserInformationView = () => {
               email: user.email,
               languageCode: user.languageCode,
               timeZone: user.timeZone,
+              marketId,
               address: user.address,
               fields: user.fields,
             },
@@ -141,6 +154,16 @@ export const UserInformationView = () => {
             placeholder="Email"
             keyboardType="email-address"
           />
+          <Input
+            value={user.marketId}
+            onChangeText={(s: string) => changeField("marketId", s)}
+            placeholder="Market ID"
+            editable={!clearMarketId}
+          />
+          <View style={styles.checkboxRow}>
+            <Switch value={clearMarketId} onValueChange={setClearMarketId} />
+            <Text>Clear marketId (send empty string)</Text>
+          </View>
           <Input
             value={user.address.region}
             onChangeText={(s: string) => changeAddressField("region", s)}
@@ -195,3 +218,11 @@ export const UserInformationView = () => {
     </ScreenContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  checkboxRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+});

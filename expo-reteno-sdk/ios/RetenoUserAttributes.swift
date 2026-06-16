@@ -46,6 +46,7 @@ struct RetenoUserAttributesStruct: Codable {
     let lastName: String?
     let languageCode: String?
     let timeZone: String?
+    let marketId: String?
     let address: RetenoUserAttributesAddressStruct?
     let fields: [RetenoUserAttributesFieldStruct]?
 }
@@ -80,6 +81,10 @@ public struct RetenoUserAttributes {
     private static func getStringOrNil(input: String?) -> String? {
         return (input ?? "").isEmpty ? nil : input!
     }
+
+    private static func getMarketIdOrNil(input: String?) -> String? {
+        return input
+    }
     
     private static func buildUserAttributes(userStruct: RetenoUserStruct) -> UserAttributes {
         let fields = userStruct.userAttributes?.fields?.map { field in
@@ -93,6 +98,7 @@ public struct RetenoUserAttributes {
             lastName: getStringOrNil(input: userStruct.userAttributes?.lastName),
             languageCode: getStringOrNil(input: userStruct.userAttributes?.languageCode),
             timeZone: getStringOrNil(input: userStruct.userAttributes?.timeZone),
+            marketId: getMarketIdOrNil(input: userStruct.userAttributes?.marketId),
             address: userStruct.userAttributes?.address != nil ? Address(
                 region: getStringOrNil(input: userStruct.userAttributes?.address?.region),
                 town: getStringOrNil(input: userStruct.userAttributes?.address?.town),
@@ -137,7 +143,7 @@ public struct RetenoUserAttributes {
         ) : nil
         
 
-        return AnonymousUserAttributes(firstName: getStringOrNil(input: payload["firstName"] as? String), lastName: getStringOrNil(input: payload["lastName"] as? String), languageCode: getStringOrNil(input: payload["languageCode"] as? String), timeZone: getStringOrNil(input: payload["timeZone"] as? String), address: address, fields: mappedFields ?? [])
+        return AnonymousUserAttributes(firstName: getStringOrNil(input: payload["firstName"] as? String), lastName: getStringOrNil(input: payload["lastName"] as? String), languageCode: getStringOrNil(input: payload["languageCode"] as? String), timeZone: getStringOrNil(input: payload["timeZone"] as? String), marketId: getMarketIdOrNil(input: payload["marketId"] as? String), address: address, fields: mappedFields ?? [])
     }
     
 }

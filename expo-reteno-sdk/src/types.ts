@@ -96,6 +96,7 @@ export type UserAttributes = {
   lastName?: string;
   languageCode?: string;
   timeZone?: string;
+  marketId?: string;
   address?: UserAddress;
   fields?: UserCustomField[];
 };
@@ -138,6 +139,7 @@ export type AnonymousUserAttributes = {
   lastName?: string | null | undefined;
   languageCode?: string | null | undefined;
   timeZone?: string | null | undefined;
+  marketId?: string | null | undefined;
   address?: Address | null | undefined;
   fields?: Fields | null | undefined;
 };

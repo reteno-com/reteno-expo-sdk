@@ -186,6 +186,7 @@ type UserInformationPayload = {
 | `lastName` | `string` | Last name |
 | `languageCode` | `string` | Language code (e.g. `"en"`) |
 | `timeZone` | `string` | Time zone (e.g. `"Europe/Kyiv"`) |
+| `marketId` | `string` | Market identifier |
 | `address` | `UserAddress` | Postal address |
 | `fields` | `UserCustomField[]` | Custom key-value fields |
 
@@ -202,6 +203,7 @@ Reteno.updateUserAttributes({
       lastName: 'Doe',
       languageCode: 'en',
       timeZone: 'Europe/Kyiv',
+      marketId: 'market-1',
       fields: [{ key: 'plan', value: 'premium' }],
     },
     subscriptionKeys: ['newsletter'],
@@ -228,6 +230,7 @@ Reteno.updateAnonymousUserAttributes(payload: AnonymousUserAttributes): Promise<
 | `lastName` | `string` |
 | `languageCode` | `string` |
 | `timeZone` | `string` |
+| `marketId` | `string` |
 | `address` | `UserAddress` |
 | `fields` | `UserCustomField[]` |
 
@@ -236,6 +239,7 @@ Reteno.updateAnonymousUserAttributes(payload: AnonymousUserAttributes): Promise<
 ```ts
 Reteno.updateAnonymousUserAttributes({
   firstName: 'Guest',
+  marketId: 'market-1',
   fields: [{ key: 'source', value: 'organic' }],
 });
 ```
