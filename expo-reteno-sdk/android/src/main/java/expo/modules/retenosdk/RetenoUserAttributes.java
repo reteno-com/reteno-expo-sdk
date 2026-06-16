@@ -114,7 +114,7 @@ public class RetenoUserAttributes {
       RetenoUtil.getStringOrNull(payloadTimeZone),
       address,
       fields,
-      RetenoUtil.getStringOrNull(payloadMarketId)
+      RetenoUtil.getMarketIdOrNull(payloadMarketId)
     );
 
     List<String> subscriptionKeys = buildStringArr(payloadUser, "subscriptionKeys");
@@ -152,6 +152,6 @@ public class RetenoUserAttributes {
       fields = buildUserCustomData(payloadFields);
     }
 
-    return new UserAttributesAnonymous(payloadFirstName, payloadLastName, payloadLanguageCode, payloadTimeZone, address, fields, RetenoUtil.getStringOrNull(payloadMarketId));
+    return new UserAttributesAnonymous(payloadFirstName, payloadLastName, payloadLanguageCode, payloadTimeZone, address, fields, RetenoUtil.getMarketIdOrNull(payloadMarketId));
   };
 }

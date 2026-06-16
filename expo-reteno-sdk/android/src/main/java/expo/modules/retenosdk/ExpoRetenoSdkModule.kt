@@ -68,6 +68,10 @@ private fun getStringOrNull(input: String?): String? {
     return if (input.isNullOrBlank()) null else input
 }
 
+private fun getMarketIdOrNull(input: String?): String? {
+    return input
+}
+
 class ExpoRetenoSdkModule : Module() {
   val permission = Manifest.permission.POST_NOTIFICATIONS
   val PERMISSION_REQUEST_CODE = 1001
@@ -365,7 +369,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(userAttributesPayload?.lastName),
               languageCode = getStringOrNull(userAttributesPayload?.languageCode),
               timeZone = getStringOrNull(userAttributesPayload?.timeZone),
-              marketId = getStringOrNull(userAttributesPayload?.marketId),
+              marketId = getMarketIdOrNull(userAttributesPayload?.marketId),
               address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
@@ -408,7 +412,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(payload.lastName),
               timeZone = getStringOrNull(payload.timeZone),
               languageCode = getStringOrNull(payload.languageCode),
-              marketId = getStringOrNull(payload.marketId),
+              marketId = getMarketIdOrNull(payload.marketId),
               address = payload.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),
@@ -452,7 +456,7 @@ class ExpoRetenoSdkModule : Module() {
               lastName = getStringOrNull(userAttributesPayload?.lastName),
               languageCode = getStringOrNull(userAttributesPayload?.languageCode),
               timeZone = getStringOrNull(userAttributesPayload?.timeZone),
-              marketId = getStringOrNull(userAttributesPayload?.marketId),
+              marketId = getMarketIdOrNull(userAttributesPayload?.marketId),
               address = userAttributesPayload?.address?.let { addr ->
                   Address(
                       region = getStringOrNull(addr.region),

@@ -6,4 +6,8 @@ public class RetenoUtil {
     if (input.isEmpty()) return null;
     return input;
   }
+
+  public static String getMarketIdOrNull(String input) {
+    return input;
+  }
 }
