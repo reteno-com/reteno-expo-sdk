@@ -10,6 +10,7 @@
     "install-all": "yarn install",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "release:current": "release-it --no-increment",
     "release:patch": "release-it patch",
     "release:minor": "release-it minor"
   },
