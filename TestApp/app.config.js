@@ -6,7 +6,7 @@ const {
 const fs = require("fs");
 const path = require("path");
 
-const ANDROID_VERSION = process.env.ANDROID_VERSION || "1.1.3";
+const ANDROID_VERSION = process.env.ANDROID_VERSION || "1.1.5";
 
 function withAndroidVersion(config, version) {
   return withAppBuildGradle(config, (c) => {
