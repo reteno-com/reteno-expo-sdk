@@ -805,6 +805,55 @@ class ExpoRetenoSdkModule : Module() {
         }
       }
 
+      AsyncFunction("setNotificationGroupingRule") { rule: ReadableMap?, promise: Promise ->
+        if (rule == null) {
+          runOnMainThread {
+            RetenoNotificationGroupingRuleProvider.configure(appContext.reactContext, null, null)
+            promise.resolve(true)
+          }
+          return@AsyncFunction
+        }
+
+        val payloadKey = if (
+          rule.hasKey("payloadKey") &&
+          !rule.isNull("payloadKey") &&
+          rule.getType("payloadKey") == ReadableType.String
+        ) {
+          rule.getString("payloadKey")?.trim()
+        } else {
+          null
+        }
+        val groupId = if (
+          rule.hasKey("groupId") &&
+          !rule.isNull("groupId") &&
+          rule.getType("groupId") == ReadableType.String
+        ) {
+          rule.getString("groupId")?.trim()
+        } else {
+          null
+        }
+        val hasPayloadKey = !payloadKey.isNullOrEmpty()
+        val hasGroupId = !groupId.isNullOrEmpty()
+
+        if (hasPayloadKey == hasGroupId) {
+          promise.reject(
+            "InvalidArgument",
+            "Invalid argument: provide exactly one non-empty payloadKey or groupId",
+            null
+          )
+          return@AsyncFunction
+        }
+
+        runOnMainThread {
+          RetenoNotificationGroupingRuleProvider.configure(
+            appContext.reactContext,
+            payloadKey.takeIf { hasPayloadKey },
+            groupId.takeIf { hasGroupId }
+          )
+          promise.resolve(true)
+        }
+      }
+
       // App inbox messages
       AsyncFunction("getAppInboxMessages") { payload: ReadableMap, promise: Promise ->
           try {
