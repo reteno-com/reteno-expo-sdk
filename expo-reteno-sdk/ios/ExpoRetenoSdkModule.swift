@@ -151,8 +151,8 @@ public class ExpoRetenoSdkModule: Module {
 				setupRetenoCallbacks()
 				ExpoRetenoSdkModule.sdkInitialized = true
 			}
-		}
-		
+		}.runOnQueue(.main)
+
 		// OnDestroy {
 			//			print("OnDestroy")
 			//			NotificationCenter.default.removeObserver(
