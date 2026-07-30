@@ -30,8 +30,8 @@ export type InitializeOptions = {
  * restored before JavaScript starts, so it also applies to background pushes.
  */
 export type NotificationGroupingRule =
-  | { payloadKey: string; groupId?: never }
-  | { groupId: string; payloadKey?: never };
+  | { payloadKey: string; groupId?: never; showSummary?: boolean }
+  | { groupId: string; payloadKey?: never; showSummary?: boolean };
 
 export const InAppEvents = {
   BeforeInAppDisplay: "reteno-before-in-app-display",

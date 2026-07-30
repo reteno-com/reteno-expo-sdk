@@ -146,13 +146,19 @@ export const PushNotificationsView = () => {
             <Button
               text="Group by payload key 'chatId'"
               onPress={() =>
-                handleSetNotificationGroupingRule({ payloadKey: "chatId" })
+                handleSetNotificationGroupingRule({
+                  payloadKey: "chatId",
+                  showSummary: true,
+                })
               }
             />
             <Button
               text="Use constant group ID 'messages'"
               onPress={() =>
-                handleSetNotificationGroupingRule({ groupId: "messages" })
+                handleSetNotificationGroupingRule({
+                  groupId: "messages",
+                  showSummary: true,
+                })
               }
             />
             <Button
