@@ -28,6 +28,17 @@ import {
 import path from "path";
 import { iosConfig } from "./support/constants";
 
+// Resolved relative to this compiled file's own location instead of via
+// require.resolve("expo-reteno-sdk/...") — self-resolution by package name
+// can break when the package is symlinked into node_modules (npm/yarn
+// workspaces, `file:` deps, pnpm) and the real package path ends up outside
+// the consumer's node_modules ancestry, so "expo-reteno-sdk" is never found
+// while walking up from there. Both plugin/build (published) and plugin/src
+// (source) sit one directory below plugin/, so ../src/support resolves
+// correctly from either.
+const getExtensionSourceDir = (extension: "nse" | "nce") =>
+  path.resolve(__dirname, "../src/support", extension);
+
 const withDevelopmentTeam: ConfigPlugin<RetenoIOSProps> = (config, props) => {
   return withXcodeProject(config, (config) => {
     const xcodeProject = config.modResults;
@@ -269,8 +280,7 @@ const withNotificationServiceExtension: ConfigPlugin<RetenoExtensionProps> = (
   config,
   props,
 ) => {
-  const pluginDir = require.resolve("expo-reteno-sdk/package.json");
-  const sourceDir = path.join(pluginDir, "../plugin/src/support/nse");
+  const sourceDir = getExtensionSourceDir("nse");
 
   return withDangerousMod(config, [
     "ios",
@@ -330,8 +340,7 @@ const withNotificationContentExtensionPodfileUpdate: ConfigPlugin = (
 const withNotificationContentExtension: ConfigPlugin<RetenoExtensionProps> = (
   config,
 ) => {
-  const pluginDir = require.resolve("expo-reteno-sdk/package.json");
-  const sourceDir = path.join(pluginDir, "../plugin/src/support/nce");
+  const sourceDir = getExtensionSourceDir("nce");
 
   return withDangerousMod(config, [
     "ios",

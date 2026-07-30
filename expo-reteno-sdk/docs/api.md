@@ -11,6 +11,7 @@
 | [setOnRetenoPushReceivedListener](#setonretenopushreceivedlistener) | iOS, Android | Listen for incoming push notifications |
 | [setOnRetenoPushClickedListener](#setonretenopushclickedlistener) | iOS, Android | Listen for push notification clicks |
 | [setOnRetenoPushButtonClickedListener](#setonretenopushbuttonclickedlistener) | iOS | Listen for push notification button clicks |
+| [setNotificationGroupingRule](#setnotificationgroupingrulerule) | Android | Group notifications by payload value or constant ID |
 | [updateUserAttributes](#updateuserattributes) | iOS, Android | Set attributes for an identified user |
 | [updateAnonymousUserAttributes](#updateanonymoususerattributes) | iOS, Android | Set attributes for an anonymous user |
 | [updateMultiAccountUserAttributes](#updatemultiaccountuserattributes) | iOS, Android | Set user attributes for multi-account setup |
@@ -149,6 +150,29 @@ Reteno.setOnRetenoPushButtonClickedListener(
   listener: (event: any) => void
 ): RetenoSubscription
 ```
+
+---
+
+### `setNotificationGroupingRule(rule)`
+
+> **Android only. Requires Reteno Android SDK 2.10.0 or newer.**
+
+Groups notifications either by a value from the push payload or under a
+constant group ID. The rule is persisted natively and restored before
+JavaScript starts, so it also applies to background notifications. Pass `null`
+to disable grouping.
+
+```ts
+type NotificationGroupingRule =
+  | { payloadKey: string }
+  | { groupId: string };
+
+await Reteno.setNotificationGroupingRule({ payloadKey: "chatId" });
+await Reteno.setNotificationGroupingRule({ groupId: "messages" });
+await Reteno.setNotificationGroupingRule(null);
+```
+
+The rule must contain exactly one non-empty `payloadKey` or `groupId`.
 
 ---
 

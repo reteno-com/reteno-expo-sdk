@@ -25,6 +25,14 @@ export type InitializeOptions = {
   iosDeviceTokenHandlingMode?: DeviceTokenHandlingMode;
 };
 
+/**
+ * Android notification grouping rule. The rule is persisted natively and
+ * restored before JavaScript starts, so it also applies to background pushes.
+ */
+export type NotificationGroupingRule =
+  | { payloadKey: string; groupId?: never }
+  | { groupId: string; payloadKey?: never };
+
 export const InAppEvents = {
   BeforeInAppDisplay: "reteno-before-in-app-display",
   OnInAppDisplay: "reteno-on-in-app-display",

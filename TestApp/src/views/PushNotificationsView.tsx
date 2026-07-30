@@ -1,4 +1,5 @@
 import Reteno from "expo-reteno-sdk";
+import type { NotificationGroupingRule } from "expo-reteno-sdk";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
@@ -96,6 +97,20 @@ export const PushNotificationsView = () => {
     }
   };
 
+  const handleSetNotificationGroupingRule = async (
+    rule: NotificationGroupingRule | null,
+  ) => {
+    try {
+      await Reteno.setNotificationGroupingRule(rule);
+      Alert.alert(
+        "Notification Grouping",
+        rule ? JSON.stringify(rule) : "Disabled",
+      );
+    } catch (e: any) {
+      Alert.alert("Error", String(e?.message ?? e));
+    }
+  };
+
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: 8 }}>
@@ -123,6 +138,26 @@ export const PushNotificationsView = () => {
             <Button
               text="Get permission status"
               onPress={handleGetNotificationPermissionStatus}
+            />
+          </Block>
+        )}
+        {Platform.OS === "android" && (
+          <Block title="Notification Grouping (Android)">
+            <Button
+              text="Group by payload key 'chatId'"
+              onPress={() =>
+                handleSetNotificationGroupingRule({ payloadKey: "chatId" })
+              }
+            />
+            <Button
+              text="Use constant group ID 'messages'"
+              onPress={() =>
+                handleSetNotificationGroupingRule({ groupId: "messages" })
+              }
+            />
+            <Button
+              text="Disable notification grouping"
+              onPress={() => handleSetNotificationGroupingRule(null)}
             />
           </Block>
         )}

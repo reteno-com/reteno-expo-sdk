@@ -22,6 +22,7 @@ import {
   InboxMessage,
   LogEventPayload,
   LogScreenViewPayload,
+  NotificationGroupingRule,
   PushNotificationEvents,
   RecommendationEventPayload,
   RecommendationPayload,
@@ -96,6 +97,9 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   // Android only - notification permission (SDK 2.9.0)
   requestNotificationPermission(): Promise<boolean>;
   getNotificationPermissionStatus(): Promise<'ALLOWED' | 'DENIED' | 'PERMANENTLY_DENIED' | null>;
+  setNotificationGroupingRule(
+    rule: NotificationGroupingRule | null,
+  ): Promise<void>;
 
   // In-App Listeners
   beforeInAppDisplayHandler(
@@ -329,6 +333,43 @@ export const Reteno = {
     }
     return Promise.resolve(null);
   },
+  // Android only - notification grouping (SDK 2.10.0)
+  setNotificationGroupingRule(
+    rule: NotificationGroupingRule | null,
+  ): Promise<void> {
+    if (Platform.OS !== "android") {
+      return Promise.resolve();
+    }
+
+    if (rule === null) {
+      return ModuleInstance.setNotificationGroupingRule(null);
+    }
+
+    if (!rule || typeof rule !== "object") {
+      return Promise.reject(
+        new Error(
+          "Invalid argument: expected null or an object with payloadKey or groupId",
+        ),
+      );
+    }
+
+    const payloadKey =
+      typeof rule.payloadKey === "string" ? rule.payloadKey.trim() : "";
+    const groupId =
+      typeof rule.groupId === "string" ? rule.groupId.trim() : "";
+
+    if (!!payloadKey === !!groupId) {
+      return Promise.reject(
+        new Error(
+          "Invalid argument: provide exactly one of payloadKey or groupId",
+        ),
+      );
+    }
+
+    return ModuleInstance.setNotificationGroupingRule(
+      payloadKey ? { payloadKey } : { groupId },
+    );
+  },
   unsubscribeMessagesCountChanged(): void {
     ModuleInstance.unsubscribeMessagesCountChanged();
   },
@@ -451,3 +492,4 @@ export const Reteno = {
 
 // This call loads the native module object from the JSI.
 export default Reteno;
+export type { NotificationGroupingRule } from "./types";

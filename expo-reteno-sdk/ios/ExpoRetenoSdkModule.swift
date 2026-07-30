@@ -133,7 +133,7 @@ public class ExpoRetenoSdkModule: Module {
 					isAutomaticScreenReportingEnabled: false,
 					isAutomaticAppLifecycleReportingEnabled: true,
 					isApplicationForegroundLifecycleReportingEnabled: false,
-					isAutomaticPushSubsriptionReportingEnabled: true,
+					isAutomaticPushSubscriptionReportingEnabled: true,
 					sessionConfiguration: RetenoSessionConfiguration(
 						sessionDuration: RetenoSessionConfiguration.default.sessionDuration,
 						isSessionStartReportingEnabled: true,
@@ -151,8 +151,8 @@ public class ExpoRetenoSdkModule: Module {
 				setupRetenoCallbacks()
 				ExpoRetenoSdkModule.sdkInitialized = true
 			}
-		}
-		
+		}.runOnQueue(.main)
+
 		// OnDestroy {
 			//			print("OnDestroy")
 			//			NotificationCenter.default.removeObserver(
@@ -203,7 +203,7 @@ public class ExpoRetenoSdkModule: Module {
 				isAutomaticScreenReportingEnabled: false,
 				isAutomaticAppLifecycleReportingEnabled: lifecycleOptions?.appLifecycleEnabled ?? true,
 				isApplicationForegroundLifecycleReportingEnabled: lifecycleOptions?.foregroundLifecycleEnabled ?? false,
-				isAutomaticPushSubsriptionReportingEnabled: lifecycleOptions?.pushSubscriptionEnabled ?? true,
+				isAutomaticPushSubscriptionReportingEnabled: lifecycleOptions?.pushSubscriptionEnabled ?? true,
 				sessionConfiguration: RetenoSessionConfiguration(
 					sessionDuration: sessionDurationSeconds,
 					isSessionStartReportingEnabled: lifecycleOptions?.sessionStartEventsEnabled ?? true,
