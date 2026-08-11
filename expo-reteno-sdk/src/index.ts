@@ -365,10 +365,19 @@ export const Reteno = {
         ),
       );
     }
+    if (rule.showSummary !== undefined && typeof rule.showSummary !== "boolean") {
+      return Promise.reject(
+        new Error("Invalid argument: showSummary must be a boolean"),
+      );
+    }
 
-    return ModuleInstance.setNotificationGroupingRule(
-      payloadKey ? { payloadKey } : { groupId },
-    );
+    const normalizedRule: NotificationGroupingRule = payloadKey
+      ? { payloadKey }
+      : { groupId };
+    if (rule.showSummary === true) {
+      normalizedRule.showSummary = true;
+    }
+    return ModuleInstance.setNotificationGroupingRule(normalizedRule);
   },
   unsubscribeMessagesCountChanged(): void {
     ModuleInstance.unsubscribeMessagesCountChanged();

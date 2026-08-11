@@ -808,7 +808,7 @@ class ExpoRetenoSdkModule : Module() {
       AsyncFunction("setNotificationGroupingRule") { rule: ReadableMap?, promise: Promise ->
         if (rule == null) {
           runOnMainThread {
-            RetenoNotificationGroupingRuleProvider.configure(appContext.reactContext, null, null)
+            RetenoNotificationGroupingRuleProvider.configure(appContext.reactContext, null, null, false)
             promise.resolve(true)
           }
           return@AsyncFunction
@@ -844,11 +844,25 @@ class ExpoRetenoSdkModule : Module() {
           return@AsyncFunction
         }
 
+        val showSummaryIsBoolean = rule.hasKey("showSummary") &&
+          !rule.isNull("showSummary") &&
+          rule.getType("showSummary") == ReadableType.Boolean
+        if (rule.hasKey("showSummary") && !rule.isNull("showSummary") && !showSummaryIsBoolean) {
+          promise.reject(
+            "InvalidArgument",
+            "Invalid argument: showSummary must be a boolean",
+            null
+          )
+          return@AsyncFunction
+        }
+        val showSummary = showSummaryIsBoolean && rule.getBoolean("showSummary")
+
         runOnMainThread {
           RetenoNotificationGroupingRuleProvider.configure(
             appContext.reactContext,
             payloadKey.takeIf { hasPayloadKey },
-            groupId.takeIf { hasGroupId }
+            groupId.takeIf { hasGroupId },
+            showSummary
           )
           promise.resolve(true)
         }

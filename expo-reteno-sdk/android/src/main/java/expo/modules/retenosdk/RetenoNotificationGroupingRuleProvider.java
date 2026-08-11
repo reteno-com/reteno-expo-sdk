@@ -21,6 +21,7 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
     "expo.modules.retenosdk.notification-grouping-rule";
   private static final String PAYLOAD_KEY = "payloadKey";
   private static final String GROUP_ID = "groupId";
+  private static final String SHOW_SUMMARY = "showSummary";
 
   @Override
   public boolean onCreate() {
@@ -34,10 +35,11 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
   static void configure(
     @Nullable Context context,
     @Nullable String payloadKey,
-    @Nullable String groupId
+    @Nullable String groupId,
+    boolean showSummary
   ) {
     if (context == null) {
-      install(payloadKey, groupId);
+      install(null, payloadKey, groupId, showSummary);
       return;
     }
 
@@ -47,13 +49,17 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
     } else if (!TextUtils.isEmpty(groupId)) {
       editor.putString(GROUP_ID, groupId);
     }
+    if (showSummary) {
+      editor.putBoolean(SHOW_SUMMARY, true);
+    }
+    // Persist before returning so a process restart cannot lose a just-configured rule.
     editor.commit();
-    install(payloadKey, groupId);
+    install(context, payloadKey, groupId, showSummary);
   }
 
-  /** Resolves the group a received push belongs to under the currently configured rule, or null if none applies. */
+  /** Resolves the group a received push belongs to under the persisted rule. */
   @Nullable
-  public static String resolveGroup(@NonNull Context context, @NonNull Map<String, String> payload) {
+  static String resolveGroup(@NonNull Context context, @NonNull Map<String, String> payload) {
     SharedPreferences preferences = preferences(context);
     String payloadKey = preferences.getString(PAYLOAD_KEY, null);
     if (!TextUtils.isEmpty(payloadKey)) {
@@ -67,8 +73,10 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
   private static void restore(@NonNull Context context) {
     SharedPreferences preferences = preferences(context);
     install(
+      context,
       preferences.getString(PAYLOAD_KEY, null),
-      preferences.getString(GROUP_ID, null)
+      preferences.getString(GROUP_ID, null),
+      preferences.getBoolean(SHOW_SUMMARY, false)
     );
   }
 
@@ -76,7 +84,12 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
     return context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
   }
 
-  private static void install(@Nullable String payloadKey, @Nullable String groupId) {
+  private static void install(
+    @Nullable Context context,
+    @Nullable String payloadKey,
+    @Nullable String groupId,
+    boolean showSummary
+  ) {
     if (!TextUtils.isEmpty(payloadKey)) {
       RetenoNotifications.setGroupingRule((Map<String, String> payload) -> {
         String value = payload.get(payloadKey);
@@ -86,6 +99,14 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
       RetenoNotifications.setGroupingRule((Map<String, String> payload) -> groupId);
     } else {
       RetenoNotifications.setGroupingRule(null);
+    }
+    // The summary manager needs a real Context; skip it if none is available yet.
+    if (context != null) {
+      RetenoNotificationSummaryManager.setEnabled(
+        context,
+        showSummary && (!TextUtils.isEmpty(payloadKey) || !TextUtils.isEmpty(groupId)),
+        !TextUtils.isEmpty(payloadKey) ? "payloadKey:" + payloadKey : "groupId:" + groupId
+      );
     }
   }
 
