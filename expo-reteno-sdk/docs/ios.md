@@ -1,27 +1,32 @@
-# iOS Setup
+# iOS
 
-## Requirements
+### Getting started with Reteno SDK for iOS in Expo
 
-- iOS 15.1+
-- Xcode 14+
-- Apple Developer account with push notifications entitlement
+## Setting up SDK
 
-## Installation
+Follow this guide to integrate Reteno into an Expo app.
 
-### 1. Add the package
+### Step 1: Install package
 
-```bash
+Using `yarn`:
+
+```sh
 yarn add expo-reteno-sdk
-# or
-npm install expo-reteno-sdk
 ```
 
-### 2. Configure the plugin in `app.json`
+or `npm`:
 
-There are two setup paths — choose one:
+```sh
+npm i expo-reteno-sdk
+```
 
-**Path A — zero-config (no JS `initialize()` needed):**
-Set `ios.sdkAccessToken` in the plugin config. The SDK auto-initializes at app startup with default options (no `isDebugMode`, no custom lifecycle/session options).
+### Step 2: Configure plugin in `app.json`
+
+Choose one initialization path.
+
+#### Path A: Automatic initialization
+
+Set `ios.sdkAccessToken` to initialize automatically with default options:
 
 ```json
 {
@@ -35,9 +40,11 @@ Set `ios.sdkAccessToken` in the plugin config. The SDK auto-initializes at app s
             "mode": "production",
             "notificationService": "apns",
             "devTeam": "XXXXXXXXXX",
-            "appGroups": ["group.com.your.bundleid.reteno-local-storage"]
-          },
-          "android": { "sdkAccessToken": "YOUR_SDK_ACCESS_KEY" }
+            "appGroups": ["group.com.your.bundleid.reteno-local-storage"],
+            "config": {
+              "isDebugMode": false
+            }
+          }
         }
       ]
     ]
@@ -45,72 +52,151 @@ Set `ios.sdkAccessToken` in the plugin config. The SDK auto-initializes at app s
 }
 ```
 
-> **Warning:** If `sdkAccessToken` is set, the SDK auto-inits with defaults before JS runs. Any subsequent call to `Reteno.initialize()` is a no-op — runtime options such as `isDebugMode`, `lifecycleTrackingOptions`, or `iosDeviceTokenHandlingMode` **will not be applied**.
+> If `sdkAccessToken` is set, a later `Reteno.initialize()` call is a no-op. Use Path B when you need runtime initialization options.
 
-**Path B — JS-controlled init (full options support):**
-Omit `ios.sdkAccessToken`. Call `Reteno.initialize()` manually from JS.
+#### Path B: JavaScript-controlled initialization
+
+Omit `ios.sdkAccessToken` from the plugin config:
 
 ```json
 {
-  "ios": {
-    "mode": "production",
-    "notificationService": "apns",
-    "devTeam": "XXXXXXXXXX",
-    "appGroups": ["group.com.your.bundleid.reteno-local-storage"]
-  },
-  "android": { "sdkAccessToken": "YOUR_SDK_ACCESS_KEY" }
+  "expo": {
+    "plugins": [
+      [
+        "expo-reteno-sdk",
+        {
+          "ios": {
+            "mode": "production",
+            "notificationService": "apns",
+            "devTeam": "XXXXXXXXXX",
+            "appGroups": ["group.com.your.bundleid.reteno-local-storage"]
+          }
+        }
+      ]
+    ]
+  }
 }
 ```
 
-### 3. Run prebuild
+Then initialize Reteno once at app startup:
 
-```bash
-npx expo prebuild --platform ios
-```
-
-The plugin automatically configures:
-- `AppDelegate.swift` — early Reteno delegate registration (`delayedStart`) for cold-start in-app support
-- `Info.plist` — `RetenoSDKKey` (Path A only) + background modes (`remote-notification`)
-- `Podfile` — Notification Service Extension target
-- Entitlements — `aps-environment` and App Groups
-- Xcode project — `NotificationServiceExtension` target
-
-### 4. Install CocoaPods
-
-```bash
-npx pod-install
-```
-
-### 5. Initialize Reteno in your JS code (Path B only)
-
-Skip this step if you used Path A above.
-
-Call `Reteno.initialize()` once at app startup (e.g. in `App.tsx`). Push callbacks and in-app messages will not function until it is called.
-
-```tsx
+```ts
 import Reteno from 'expo-reteno-sdk';
 
 await Reteno.initialize({
   apiKey: 'YOUR_SDK_ACCESS_KEY',
   isDebugMode: false,
+  lifecycleTrackingOptions: 'ALL',
+  sessionDurationSeconds: 30,
+  pauseInAppMessages: false,
+  iosDeviceTokenHandlingMode: 'automatic',
 });
 ```
 
-### 6. Enable Push Notifications capability in Xcode
+### Step 3: Run Expo prebuild and install pods
 
-Open `ios/<YourApp>.xcworkspace` in Xcode, select your main target → **Signing & Capabilities** → **+ Capability** → **Push Notifications**.
+```sh
+npx expo prebuild --platform ios
+npx pod-install
+```
+
+The plugin configures early Reteno delegate registration, Notification Service Extension target, entitlements, and App Groups. With Path A, it also adds the SDK access key to `Info.plist`.
+
+It also creates **Notification Content Extension** (`NotificationContentExtension`) for rich push UI (carousel/content rendering).
+
+### Step 4: Open Xcode project and verify capabilities
+
+Open `ios/<YourApp>.xcworkspace` in Xcode.
+
+For your main app target:
+
+- Go to `Signing & Capabilities`
+- Add `Push Notifications`
+- Ensure `App Groups` capability is enabled
+
+> Screenshots for this step are available in the hosted guide: https://docs.reteno.com/reference/expo-ios-sdk-setup
+
+### Step 5: Development build required
+
+Run iOS app with native build:
+
+```sh
+npx expo run:ios
+```
+
+`expo-reteno-sdk` is not supported in Expo Go.
+
+## EAS Build (important for iOS extensions)
+
+If you build with **EAS Build** (managed credentials), define iOS app extensions in Expo config.
+Without this block, extension signing/provisioning may fail in cloud build.
+
+Add to `app.json` / `app.config`:
+
+```json
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "NotificationServiceExtension",
+                  "bundleIdentifier": "com.your.bundle.NotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.your.bundle.reteno-local-storage"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "NotificationContentExtension",
+                  "bundleIdentifier": "com.your.bundle.NotificationContentExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.your.bundle.reteno-local-storage"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Replace `com.your.bundle` with your real iOS bundle identifier.
+
+References:
+
+- Expo iOS app extensions: https://docs.expo.dev/build-reference/app-extensions/
+- Expo managed credentials: https://docs.expo.dev/app-signing/managed-credentials/
+
+### Optional: Firebase on iOS
+
+If you use FCM on iOS:
+
+- set `notificationService` to `"firebase"`
+- add `GoogleService-Info.plist` to your iOS project target
+- pass FCM token to Reteno with `Reteno.setDeviceToken(token)`
 
 ## Plugin props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `sdkAccessToken` | `string` | No | SDK access key for **Path A** (zero-config auto-init). If set, the SDK starts automatically with default options — `Reteno.initialize()` is not needed but runtime JS options are ignored. Omit to use **Path B** (JS-controlled init). |
+| `sdkAccessToken` | `string` | No | SDK access key for automatic initialization. Omit it to initialize from JavaScript. |
 | `mode` | `"development"` \| `"production"` | Yes | APS environment. Use `"development"` for debug/simulator builds, `"production"` for App Store/TestFlight |
 | `notificationService` | `"apns"` \| `"firebase"` | Yes | Push delivery provider |
 | `devTeam` | `string` | No | Apple Development Team ID (10-character string from Apple Developer portal) |
 | `appGroups` | `string[]` | Yes | App Group identifiers (e.g. `["group.com.your.bundleid.reteno-local-storage"]`) |
 | `deploymentTarget` | `string` | No | iOS deployment target for Notification Service Extension. Default: `"15.1"` |
 | `nseFilepath` | `string` | No | Path to a custom `NotificationService.swift` file |
+| `config.isDebugMode` | `boolean` | No | Enable SDK debug logging. Only applies when `sdkAccessToken` is set (Path A). Writes `RetenoIsDebugMode` to `Info.plist`. |
 
 ## Firebase integration
 
@@ -148,13 +234,20 @@ The plugin automatically adds Firebase modular headers to your `Podfile` and con
 
 Download `GoogleService-Info.plist` from your [Firebase Console](https://console.firebase.google.com/) and add it to your main app target in Xcode.
 
-### 5. Pass the FCM token to Reteno
+### 5. Initialize Reteno with manual token handling
 
-```tsx
+When using JavaScript-controlled initialization, set `iosDeviceTokenHandlingMode` to `"manual"`. The SDK forwards Firebase token updates automatically when Firebase Messaging is available; you can also pass a token explicitly with `setDeviceToken()`.
+
+```ts
 import { useEffect } from 'react';
 import messaging from '@react-native-firebase/messaging';
 import Reteno from 'expo-reteno-sdk';
 import { Platform } from 'react-native';
+
+await Reteno.initialize({
+  apiKey: 'YOUR_SDK_ACCESS_KEY',
+  iosDeviceTokenHandlingMode: 'manual',
+});
 
 useEffect(() => {
   if (Platform.OS !== 'ios') return;
@@ -171,45 +264,11 @@ useEffect(() => {
 
 ## Auto-open links
 
-Auto-open link behaviour is controlled entirely from JS via `Reteno.setAutoOpenLinks()`. No additional AppDelegate setup is required — the SDK registers its link handler inside `Reteno.initialize()`.
+Auto-open link behavior is controlled from JavaScript with `Reteno.setAutoOpenLinks()`. No additional `AppDelegate.swift` setup is required in v2.0.0.
 
-See [auto-open links API](./api.md#setautoopenlinks) for the JS-side control.
+See the [Push notification](./push-notifications.md) guide for the JS-side `setAutoOpenLinks` / `getAutoOpenLinks` API.
 
-## Usage examples
+### Important
 
-### Register for remote notifications
-
-```tsx
-import { useEffect } from 'react';
-import Reteno from 'expo-reteno-sdk';
-
-export default function App() {
-  useEffect(() => {
-    Reteno.registerForRemoteNotifications();
-  }, []);
-
-  return <YourApp />;
-}
-```
-
-### Set device token manually (Firebase)
-
-```tsx
-import messaging from '@react-native-firebase/messaging';
-import Reteno from 'expo-reteno-sdk';
-
-const token = await messaging().getToken();
-Reteno.setDeviceToken(token);
-```
-
-### Listen for push notifications
-
-```tsx
-useEffect(() => {
-  const subscription = Reteno.setOnRetenoPushReceivedListener((event) => {
-    console.log('Push received:', event.body);
-  });
-
-  return () => subscription.remove();
-}, []);
-```
+- `mode` is required (`development` for debug/simulator, `production` for TestFlight/App Store).
+- `appGroups` is required for proper Reteno storage between app and extension.
