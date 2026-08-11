@@ -11,6 +11,10 @@
 | [setOnRetenoPushReceivedListener](#setonretenopushreceivedlistener) | iOS, Android | Listen for incoming push notifications |
 | [setOnRetenoPushClickedListener](#setonretenopushclickedlistener) | iOS, Android | Listen for push notification clicks |
 | [setOnRetenoPushButtonClickedListener](#setonretenopushbuttonclickedlistener) | iOS | Listen for push notification button clicks |
+| [setOnRetenoPushDismissedListener](#setonretenopushdismissedlistener) | Android | Listen for push notification dismissals |
+| [setOnRetenoCustomPushDataListener](#setonretenocustompushdatalistener) | Android | Listen for custom / silent push payloads |
+| [requestNotificationPermission](#requestnotificationpermission) | Android | Request the runtime notification permission |
+| [getNotificationPermissionStatus](#getnotificationpermissionstatus) | Android | Read the current notification permission status |
 | [setNotificationGroupingRule](#setnotificationgroupingrulerule) | Android | Group notifications by payload value or constant ID |
 | [updateUserAttributes](#updateuserattributes) | iOS, Android | Set attributes for an identified user |
 | [updateAnonymousUserAttributes](#updateanonymoususerattributes) | iOS, Android | Set attributes for an anonymous user |
@@ -30,6 +34,8 @@
 | [pauseInAppMessages](#pauseinappmessages) | iOS, Android | Pause or resume in-app messages |
 | [setInAppLifecycleCallback](#setinapplifecyclecallback) | iOS, Android | Subscribe to in-app message lifecycle events |
 | [setInAppMessagesPauseBehaviour](#setinappmessagespausebehaviour) | iOS, Android | Set behaviour when in-app messages are paused |
+| [pausePushInAppMessages](#pausepushinappmessages) | Android | Pause or resume push-triggered in-app messages |
+| [setPushInAppMessagesPauseBehaviour](#setpushinappmessagespausebehaviour) | Android | Set behaviour for paused push-triggered in-app messages |
 | [removeInAppLifecycleCallback](#setinapplifecyclecallback) | iOS, Android | Remove all in-app lifecycle callbacks |
 | [logEcomEventProductViewed](#ecommerce-events) | iOS, Android | Log product viewed event |
 | [logEcomEventProductCategoryViewed](#ecommerce-events) | iOS, Android | Log product category viewed event |
@@ -151,6 +157,61 @@ Reteno.setOnRetenoPushButtonClickedListener(
 ): RetenoSubscription
 ```
 
+> On Android, action button clicks are delivered through
+> [`setOnRetenoPushClickedListener`](#setonretenopushclickedlistener) with the button data in the
+> payload. See [Action buttons](./action-buttons.md).
+
+---
+
+### `setOnRetenoPushDismissedListener(listener)`
+
+> **Android only.**
+
+Subscribes to push notification dismissal events.
+
+```ts
+Reteno.setOnRetenoPushDismissedListener(
+  listener: (event: any) => void
+): RetenoSubscription
+```
+
+---
+
+### `setOnRetenoCustomPushDataListener(listener)`
+
+> **Android only.**
+
+Subscribes to custom / silent push payloads.
+
+```ts
+Reteno.setOnRetenoCustomPushDataListener(
+  listener: (event: any) => void
+): RetenoSubscription
+```
+
+---
+
+### `requestNotificationPermission()`
+
+> **Android only.** Requests the runtime notification permission (Android 13+).
+
+```ts
+Reteno.requestNotificationPermission(): Promise<boolean>
+```
+
+---
+
+### `getNotificationPermissionStatus()`
+
+> **Android only.**
+
+Returns the current notification permission status.
+
+```ts
+Reteno.getNotificationPermissionStatus():
+  Promise<'ALLOWED' | 'DENIED' | 'PERMANENTLY_DENIED' | null>
+```
+
 ---
 
 ### `setNotificationGroupingRule(rule)`
@@ -164,15 +225,21 @@ to disable grouping.
 
 ```ts
 type NotificationGroupingRule =
-  | { payloadKey: string }
-  | { groupId: string };
+  | { payloadKey: string; showSummary?: boolean }
+  | { groupId: string; showSummary?: boolean };
 
 await Reteno.setNotificationGroupingRule({ payloadKey: "chatId" });
 await Reteno.setNotificationGroupingRule({ groupId: "messages" });
+await Reteno.setNotificationGroupingRule({ groupId: "messages", showSummary: true });
 await Reteno.setNotificationGroupingRule(null);
 ```
 
 The rule must contain exactly one non-empty `payloadKey` or `groupId`.
+
+`showSummary: true` (since `v2.3.0`) additionally shows the collapsed "N new notifications" row
+Android displays when it stacks a group. The SDK creates and maintains it natively; it requires
+Android 6.0 (API 23) or higher and the `POST_NOTIFICATIONS` permission on Android 13+. See
+[Push notifications](./push-notifications.md#summary-notification-showsummary).
 
 ---
 
@@ -290,7 +357,7 @@ Reteno.updateMultiAccountUserAttributes(
 Logs a custom event with optional parameters.
 
 ```ts
-Reteno.logEvent(payload: LogEventPayload): Promise<boolean | string>
+Reteno.logEvent(payload: LogEventPayload): Promise<{ success: boolean }>
 ```
 
 **`LogEventPayload`**
@@ -331,7 +398,7 @@ Reteno.logEvent({
 Logs a screen view event.
 
 ```ts
-Reteno.logScreenView(screenName: string): Promise<boolean | string>
+Reteno.logScreenView(screenName: string): Promise<{ success: boolean }>
 ```
 
 **Example**
@@ -438,7 +505,7 @@ Reteno.markAsOpened(messageIds: string[]): Promise<boolean>
 Reteno.markAllAsOpened(): Promise<boolean>
 ```
 
-> **Note (Android):** The native Android implementation accepts a single `String`, while the JS layer passes `string[]`. Behavior depends on the bridge — may throw or silently fail for arrays with more than one element.
+> **Note (Android):** The native implementation accepts a single message ID value. Passing multiple IDs may fail.
 
 ---
 
@@ -536,10 +603,35 @@ Sets what happens to in-app messages while paused.
 Reteno.setInAppMessagesPauseBehaviour(state: 'skip' | 'postpone'): void
 ```
 
-| Value | iOS | Android |
-|-------|-----|---------|
-| `"skip"` | Discard in-app messages that arrive while paused | Discard |
-| `"postpone"` | Queue in-app messages and show them when resumed | ⚠️ Currently behaves as `"skip"` (Android bug) |
+| Value | Behaviour |
+|-------|-----------|
+| `"skip"` | Discard in-app messages that arrive while paused |
+| `"postpone"` | Queue in-app messages and show them when resumed |
+
+---
+
+### `pausePushInAppMessages(isPaused)`
+
+> **Android only.** Requires Reteno Android SDK 2.9.0 or newer.
+
+Pauses or resumes push-triggered in-app messages independently of
+[`pauseInAppMessages`](#pauseinappmessages).
+
+```ts
+Reteno.pausePushInAppMessages(isPaused: boolean): Promise<boolean>
+```
+
+---
+
+### `setPushInAppMessagesPauseBehaviour(state)`
+
+> **Android only.**
+
+Sets what happens to push-triggered in-app messages while paused.
+
+```ts
+Reteno.setPushInAppMessagesPauseBehaviour(state: 'skip' | 'postpone'): Promise<boolean>
+```
 
 ---
 
@@ -664,7 +756,8 @@ Returns the current auto-open links setting.
 Reteno.getAutoOpenLinks(): Promise<boolean>
 ```
 
-> **Note:** For iOS cold-start support, additional native setup in `AppDelegate` is required. See [iOS setup](./ios.md).
+> **Note:** No additional `AppDelegate.swift` setup is required since v2.0.0 — the SDK registers its
+> link handler itself. See [iOS setup](./ios.md#auto-open-links).
 
 ---
 
@@ -689,6 +782,7 @@ type UserAttributes = {
   lastName?: string;
   languageCode?: string;
   timeZone?: string;
+  marketId?: string;
   address?: UserAddress;
   fields?: UserCustomField[];
 };
@@ -698,6 +792,7 @@ type AnonymousUserAttributes = {
   lastName?: string;
   languageCode?: string;
   timeZone?: string;
+  marketId?: string;
   address?: UserAddress;
   fields?: UserCustomField[];
 };

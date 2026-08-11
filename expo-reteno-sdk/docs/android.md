@@ -1,34 +1,32 @@
-# Android Setup
+# Android
 
-## Requirements
+### Getting started with Reteno SDK for Android in Expo
 
-- `minSdkVersion` 26+
-- `google-services.json` from your Firebase project
+## Setting up SDK
 
-## Installation
+Follow this guide to integrate Reteno into an Expo app.
 
-### 1. Add the package
+### Step 1: Install package
 
-```bash
+Using `yarn`:
+
+```sh
 yarn add expo-reteno-sdk
-# or
-npm install expo-reteno-sdk
 ```
 
-### 2. Add `google-services.json`
+or `npm`:
 
-Download `google-services.json` from your [Firebase Console](https://console.firebase.google.com/) and place it at:
-
-```
-android/app/google-services.json
+```sh
+npm i expo-reteno-sdk
 ```
 
-### 3. Configure the plugin in `app.json`
+### Step 2: Configure plugin in `app.json`
 
-There are two setup paths — choose one:
+Choose one initialization path.
 
-**Path A — zero-config (no JS `initialize()` needed):**
-Set `android.sdkAccessToken` in the plugin config. The key is written to `AndroidManifest.xml` as meta-data; the native module reads it at startup and calls `Reteno.initWithConfig()` automatically with default options.
+#### Path A: Automatic initialization
+
+Set `android.sdkAccessToken` in the plugin config. The plugin writes it to `AndroidManifest.xml`, and the SDK initializes automatically with default options.
 
 ```json
 {
@@ -37,43 +35,49 @@ Set `android.sdkAccessToken` in the plugin config. The key is written to `Androi
       [
         "expo-reteno-sdk",
         {
-          "ios": { },
-          "android": { "sdkAccessToken": "YOUR_SDK_ACCESS_KEY" }
+          "android": {
+            "sdkAccessToken": "YOUR_SDK_ACCESS_KEY",
+            "config": {
+              "isDebugMode": false
+            }
+          }
         }
       ]
-    ]
+    ],
+    "android": {
+      "minSdkVersion": 26
+    }
   }
 }
 ```
 
-> **Warning:** If `sdkAccessToken` is set, the SDK auto-inits with defaults before JS runs. Any subsequent call to `Reteno.initialize()` is a no-op — runtime options such as `isDebugMode` or `lifecycleTrackingOptions` **will not be applied**.
+> If `sdkAccessToken` is set, a later `Reteno.initialize()` call is a no-op. Use Path B when you need runtime initialization options.
 
-**Path B — JS-controlled init (full options support):**
-Omit `android.sdkAccessToken`. Call `Reteno.initialize()` from JS with the API key and any desired options.
+#### Path B: JavaScript-controlled initialization
+
+Omit `android.sdkAccessToken`:
 
 ```json
 {
-  "android": { }
+  "expo": {
+    "plugins": [
+      [
+        "expo-reteno-sdk",
+        {
+          "android": {}
+        }
+      ]
+    ],
+    "android": {
+      "minSdkVersion": 26
+    }
+  }
 }
 ```
 
-### 4. Run prebuild
+Then initialize Reteno once at app startup:
 
-```bash
-npx expo prebuild --platform android
-```
-
-The plugin automatically configures:
-- `android/build.gradle` — Google Services classpath dependency
-- `android/app/build.gradle` — Reteno and Firebase dependencies
-- `gradle.properties` — `android.useAndroidX=true`
-- `AndroidManifest.xml` — `com.reteno.SDK_ACCESS_KEY` meta-data (Path A only), click/push receiver meta-data
-
-### 5. Initialize Reteno in your JS code (Path B only)
-
-Skip this step if you used Path A above.
-
-```tsx
+```ts
 import Reteno from 'expo-reteno-sdk';
 
 await Reteno.initialize({
@@ -83,63 +87,53 @@ await Reteno.initialize({
 });
 ```
 
+### Step 3: Add Firebase config
+
+Download your `google-services.json` from Firebase Console and place it to:
+
+```text
+android/app/google-services.json
+```
+
+> Screenshots for this step are available in the hosted guide: https://docs.reteno.com/reference/expo-android-sdk-setup
+
+### Step 4: Run Expo prebuild
+
+```sh
+npx expo prebuild --platform android
+```
+
+The plugin configures Gradle dependencies, the Reteno FCM service, and Android broadcast receivers automatically. With Path A, it also adds the SDK access key to `AndroidManifest.xml`.
+
+### Step 5: Build and run a development build
+
+```sh
+npx expo run:android
+```
+
+`expo-reteno-sdk` uses native modules and does not work in Expo Go.
+
+### Step 6: Configure Firebase server key in Reteno panel
+
+In Firebase console, open Project Settings -> Cloud Messaging -> Manage Service Accounts.
+Then download Firebase Admin SDK service account JSON and add it in Reteno admin panel.
+
+> Screenshots for this step are available in the hosted guide: https://docs.reteno.com/reference/expo-android-sdk-setup
+
+Follow Reteno manual to complete setup in admin panel:
+https://docs.reteno.com/docs/connect-your-mobile-app
+
+After that you can run your app on a physical Android device and test push notifications.
+
 ## Plugin props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `sdkAccessToken` | `string` | No | SDK access key for **Path A** (zero-config auto-init). If set, auto-inits with defaults — `Reteno.initialize()` not needed but runtime JS options are ignored. Omit for **Path B**. |
+| `sdkAccessToken` | `string` | No | SDK access key for automatic initialization. Omit it to initialize from JavaScript. |
+| `config.isDebugMode` | `boolean` | No | Enable SDK debug logging. Only applies when `sdkAccessToken` is set (Path A). Writes `com.reteno.IS_DEBUG_MODE` to `AndroidManifest.xml`. |
 
-## Usage examples
+## Notes
 
-### Register for remote notifications
-
-```tsx
-import { useEffect } from 'react';
-import Reteno from 'expo-reteno-sdk';
-
-export default function App() {
-  useEffect(() => {
-    Reteno.registerForRemoteNotifications();
-  }, []);
-
-  return <YourApp />;
-}
-```
-
-### Identify a user
-
-```tsx
-import Reteno from 'expo-reteno-sdk';
-
-Reteno.updateUserAttributes({
-  externalUserId: 'user-123',
-  user: {
-    userAttributes: {
-      email: 'user@example.com',
-      phone: '+380501234567',
-      firstName: 'John',
-      lastName: 'Doe',
-      marketId: 'market-1',
-    },
-  },
-});
-```
-
-### Listen for push notification clicks
-
-```tsx
-import { useEffect } from 'react';
-import Reteno from 'expo-reteno-sdk';
-
-export default function App() {
-  useEffect(() => {
-    const subscription = Reteno.setOnRetenoPushClickedListener((event) => {
-      console.log('Push clicked:', event);
-    });
-
-    return () => subscription.remove();
-  }, []);
-
-  return <YourApp />;
-}
-```
+- Required Android `minSdkVersion` is `26`.
+- If you use Kotlin DSL (`build.gradle.kts`), some plugin patches may require manual Gradle setup.
+- After upgrading to v2.0.0, run `npx expo prebuild --clean` to apply the updated manifest and FCM service configuration.

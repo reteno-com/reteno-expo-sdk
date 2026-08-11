@@ -112,46 +112,49 @@ public class ExpoRetenoSdkModule: Module {
 		)
 		
 		OnCreate {
-			// Legacy AppDelegate integration path: some host apps manually post RetenoLinkReceived
-			// via NotificationCenter from their own Reteno.addLinkHandler.
-			NotificationCenter.default.addObserver(
-					self,
-					selector: #selector(handleLinkReceived(_:)),
+			let module = self
+			DispatchQueue.main.async {
+				// Legacy AppDelegate integration path: some host apps manually post RetenoLinkReceived
+				// via NotificationCenter from their own Reteno.addLinkHandler.
+				NotificationCenter.default.addObserver(
+					module,
+					selector: #selector(ExpoRetenoSdkModule.handleLinkReceived(_:)),
 					name: NSNotification.Name("RetenoLinkReceived"),
 					object: nil
-			)
-
-			// Config-plugin auto-init: if the plugin wrote RetenoSDKKey to Info.plist,
-			// initialize the SDK now so JS never needs to call Reteno.initialize() explicitly.
-			// setupRetenoCallbacks() is called here (instance context) so all push/in-app
-			// handlers are registered immediately after SDK start.
-			if let apiKey = Bundle.main.infoDictionary?["RetenoSDKKey"] as? String,
-			   !apiKey.isEmpty,
-			   !ExpoRetenoSdkModule.sdkInitialized {
-				let isDebugMode = Bundle.main.infoDictionary?["RetenoIsDebugMode"] as? Bool ?? false
-				let configuration = RetenoConfiguration(
-					isAutomaticScreenReportingEnabled: false,
-					isAutomaticAppLifecycleReportingEnabled: true,
-					isApplicationForegroundLifecycleReportingEnabled: false,
-					isAutomaticPushSubscriptionReportingEnabled: true,
-					sessionConfiguration: RetenoSessionConfiguration(
-						sessionDuration: RetenoSessionConfiguration.default.sessionDuration,
-						isSessionStartReportingEnabled: true,
-						isSessionEndReportingEnabled: false
-					),
-					isPausedInAppMessages: false,
-					inAppMessagesPauseBehaviour: .postponeInApps,
-					isDebugMode: isDebugMode
 				)
-				if ExpoRetenoSdkModule.delayedStartCalled {
-					Reteno.delayedSetup(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
-				} else {
-					Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
+
+				// Config-plugin auto-init: if the plugin wrote RetenoSDKKey to Info.plist,
+				// initialize the SDK now so JS never needs to call Reteno.initialize() explicitly.
+				// setupRetenoCallbacks() is called here (instance context) so all push/in-app
+				// handlers are registered immediately after SDK start.
+				if let apiKey = Bundle.main.infoDictionary?["RetenoSDKKey"] as? String,
+				   !apiKey.isEmpty,
+				   !ExpoRetenoSdkModule.sdkInitialized {
+					let isDebugMode = Bundle.main.infoDictionary?["RetenoIsDebugMode"] as? Bool ?? false
+					let configuration = RetenoConfiguration(
+						isAutomaticScreenReportingEnabled: false,
+						isAutomaticAppLifecycleReportingEnabled: true,
+						isApplicationForegroundLifecycleReportingEnabled: false,
+						isAutomaticPushSubscriptionReportingEnabled: true,
+						sessionConfiguration: RetenoSessionConfiguration(
+							sessionDuration: RetenoSessionConfiguration.default.sessionDuration,
+							isSessionStartReportingEnabled: true,
+							isSessionEndReportingEnabled: false
+						),
+						isPausedInAppMessages: false,
+						inAppMessagesPauseBehaviour: .postponeInApps,
+						isDebugMode: isDebugMode
+					)
+					if ExpoRetenoSdkModule.delayedStartCalled {
+						Reteno.delayedSetup(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
+					} else {
+						Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: .automatic, configuration: configuration)
+					}
+					module.setupRetenoCallbacks()
+					ExpoRetenoSdkModule.sdkInitialized = true
 				}
-				setupRetenoCallbacks()
-				ExpoRetenoSdkModule.sdkInitialized = true
 			}
-		}.runOnQueue(.main)
+		}
 
 		// OnDestroy {
 			//			print("OnDestroy")
@@ -228,7 +231,7 @@ public class ExpoRetenoSdkModule: Module {
 
 			ExpoRetenoSdkModule.sdkInitialized = true
 			promise.resolve(true)
-		}
+		}.runOnQueue(.main)
 
     // Push notifications
 		AsyncFunction("setDeviceToken") { (deviceToken: String, promise: Promise) -> Void in
