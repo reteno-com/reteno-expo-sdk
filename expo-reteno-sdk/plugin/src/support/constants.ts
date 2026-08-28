@@ -37,8 +37,15 @@ export const iosConfig = {
         ],
         application: [
           "\tpublic override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {",
-          '\t\tlet tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()',
-          "\t\tReteno.userNotificationService.processRemoteNotificationsToken(tokenString)",
+          // Firebase route: forward the raw APNs token to Firebase only, so it can
+          // derive the FCM token - do NOT also forward it to Reteno directly here.
+          // The `extension AppDelegate: MessagingDelegate` block above already
+          // forwards the *FCM* token via `didReceiveRegistrationToken`, which fires
+          // once Firebase has derived it from the APNs token set below. Calling
+          // `processRemoteNotificationsToken` with the raw APNs token here as well
+          // races that FCM callback and unconditionally overwrites Reteno's stored
+          // token with the wrong (APNs, not FCM) value whenever this delegate method
+          // - which Apple can invoke again on token refresh - fires after it.
           "\t\tMessaging.messaging().setAPNSToken(deviceToken, type: .unknown)",
           "\t\tsuper.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)",
           "\t}",
