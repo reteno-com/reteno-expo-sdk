@@ -263,7 +263,7 @@ export function addMessagingDelegate(
 }
 
 export function addRetenoImport(src: string): MergeResults {
-  const newSrc = ["import Reteno", "internal import ExpoRetenoSdk"];
+  const newSrc = ["import Reteno", "import ExpoRetenoSdk"];
 
   return mergeContents({
     tag: RetenoIOSAutogenComments.RETENO_IMPORT,

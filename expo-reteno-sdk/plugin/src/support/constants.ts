@@ -1,4 +1,4 @@
-const SDK_VERSION = "2.7.3";
+const SDK_VERSION = "2.7.4";
 
 export const iosConfig = {
   nse: {
@@ -93,9 +93,9 @@ export const androidConfig = {
     module: {
       anchor: 'implementation("com.facebook.react:react-android")',
       deps: [
-        "implementation 'com.reteno:core:2.10.1'",
-        "implementation 'com.reteno:push:2.10.1'",
-        "implementation 'com.reteno:fcm:2.10.1'",
+        "implementation 'com.reteno:core:2.10.2'",
+        "implementation 'com.reteno:push:2.10.2'",
+        "implementation 'com.reteno:fcm:2.10.2'",
         "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
         "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
       ],
