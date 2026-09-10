@@ -1,6 +1,6 @@
 {
   "name": "expo-reteno-sdk",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Expo wrapper for Reteno SDK",
   "main": "build/index.js",
   "types": "build/index.d.ts",

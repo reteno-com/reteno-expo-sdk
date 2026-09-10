@@ -53,11 +53,10 @@ export const UserBehaviourView = () => {
       eventName,
       date,
       parameters: filledParameters,
-      forcePush: false,
+      forcePush: true,
     };
 
     const res = await Reteno.logEvent(evt);
-    await Reteno.forcePushData();
 
     if (res.success) {
       setLoggedEvents((prev) => [...prev, evt]);
