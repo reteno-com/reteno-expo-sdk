@@ -323,10 +323,13 @@ export async function addDependenciesToPodfile(
     }
   }
 
+  if (updates.length === 0) {
+    return;
+  }
+
   const contents = podfile.replace(
     anchor,
-    `${anchor}\n\t${updates.join("\n\t")}
-  `,
+    `${anchor}\n  ${updates.join("\n  ")}`,
   );
 
   await FileService.write(`${path}/Podfile`, contents);
