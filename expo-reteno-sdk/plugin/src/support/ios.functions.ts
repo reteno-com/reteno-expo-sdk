@@ -281,6 +281,11 @@ export function addRetenoInit(
   _config: RetenoInitConfig,
 ): MergeResults {
   const newSrc = [
+    "\tReteno.userNotificationService.didReceiveNotificationResponseHandler = { response in",
+    "\t\tExpoRetenoSdkModule.storePendingInitialNotification(",
+    "\t\t\tresponse.notification.request.content.userInfo",
+    "\t\t)",
+    "\t}",
     "\tExpoRetenoSdkModule.delayedStart()",
   ];
 
@@ -318,10 +323,13 @@ export async function addDependenciesToPodfile(
     }
   }
 
+  if (updates.length === 0) {
+    return;
+  }
+
   const contents = podfile.replace(
     anchor,
-    `${anchor}\n\t${updates.join("\n\t")}
-  `,
+    `${anchor}\n  ${updates.join("\n  ")}`,
   );
 
   await FileService.write(`${path}/Podfile`, contents);
@@ -335,7 +343,13 @@ export async function addTargetToPodfile(
 ) {
   let podfile = await FileService.read(`${path}/Podfile`);
 
-  if (podfile.includes(`target '${target}' do`)) {
+  const escapedTarget = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const targetDeclaration = new RegExp(
+    `^\\s*target\\s+(['\"])${escapedTarget}\\1\\s+do(?:\\s*#.*)?$`,
+    "m",
+  );
+
+  if (targetDeclaration.test(podfile)) {
     console.log(`Target "${target}" was added before, skipping process...`);
     return;
   }

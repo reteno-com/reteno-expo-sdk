@@ -1,6 +1,6 @@
 {
   "name": "reteno-expo",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "private": true,
   "workspaces": [
     "expo-reteno-sdk",

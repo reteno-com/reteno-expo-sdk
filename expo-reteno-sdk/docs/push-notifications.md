@@ -27,7 +27,9 @@ useEffect(() => {
 
 ## Get initial notification
 
-When your app is opened by clicking a push notification, you can read its payload with `getInitialNotification`.
+When your app is launched by clicking a Reteno push notification, including an iOS cold start from a terminated state, read the launch payload with `getInitialNotification()`.
+
+The method returns the Reteno payload or `null`. On Android, launch intent extras from other integrations, such as Branch links, are ignored and do not appear as an initial Reteno notification. Call the method once during app startup; on iOS the stored cold-start response is consumed by the first call.
 
 ```ts
 import { useEffect } from 'react';
@@ -36,10 +38,14 @@ import Reteno from 'expo-reteno-sdk';
 
 useEffect(() => {
   Reteno.getInitialNotification().then((data) => {
-    Alert.alert('getInitialNotification', data ? JSON.stringify(data) : 'null');
+    if (data) {
+      Alert.alert('getInitialNotification', JSON.stringify(data));
+    }
   });
 }, []);
 ```
+
+Use `setOnRetenoPushClickedListener` below for notification clicks received after the app has started.
 
 ## Listen for new push notifications while app is active
 

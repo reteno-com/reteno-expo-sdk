@@ -313,7 +313,7 @@ const withNotificationServiceExtensionPodfileUpdate: ConfigPlugin = (
     "ios",
     async (config) => {
       const root = path.join(config.modRequest.projectRoot, "ios");
-      await addTargetToPodfile(root, iosConfig.nse.source, "service");
+      await addTargetToPodfile(root, iosConfig.nse.target, "service");
 
       return config;
     },
@@ -327,7 +327,7 @@ const withNotificationContentExtensionPodfileUpdate: ConfigPlugin = (
     "ios",
     async (config) => {
       const root = path.join(config.modRequest.projectRoot, "ios");
-      await addTargetToPodfile(root, iosConfig.nce.source, "content");
+      await addTargetToPodfile(root, iosConfig.nce.target, "content");
 
       return config;
     },

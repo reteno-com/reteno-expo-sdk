@@ -104,6 +104,8 @@ The plugin configures early Reteno delegate registration, Notification Service E
 
 It also creates **Notification Content Extension** (`NotificationContentExtension`) for rich push UI (carousel/content rendering).
 
+The plugin is idempotent: running `expo prebuild` again without `--clean` reuses the existing `NotificationServiceExtension` and `NotificationContentExtension` targets and does not append duplicate target blocks to the `Podfile`. If an older plugin version already created duplicate blocks, remove the extra copies once before running prebuild again.
+
 ### Step 4: Open Xcode project and verify capabilities
 
 Open `ios/<YourApp>.xcworkspace` in Xcode.

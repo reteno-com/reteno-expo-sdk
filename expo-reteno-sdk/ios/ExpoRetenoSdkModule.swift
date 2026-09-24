@@ -68,6 +68,8 @@ public class ExpoRetenoSdkModule: Module {
 	// that describes the module's functionality and behavior.
 	// See https://docs.expo.dev/modules/module-api for more details about available components.
 	private static let autoOpenLinksKey = "RetenoAutoOpenLinks"
+	private static let pendingInitialNotificationLock = NSLock()
+	private static var pendingInitialNotification: [String: Any]?
 	private static var sdkInitialized = false
 	private static var delayedStartCalled = false
 	private static var fcmBridgeInstalled = false
@@ -83,6 +85,33 @@ public class ExpoRetenoSdkModule: Module {
 			set {
 					UserDefaults.standard.set(newValue, forKey: autoOpenLinksKey)
 			}
+	}
+
+	/// Keeps a notification response received during native startup until JavaScript asks for it.
+	/// This is intentionally process-local so an unconsumed notification cannot leak into a later launch.
+	public static func storePendingInitialNotification(_ userInfo: [AnyHashable: Any]) {
+		let normalized = normalizeUserInfo(userInfo)
+		guard !normalized.isEmpty else { return }
+
+		pendingInitialNotificationLock.lock()
+		pendingInitialNotification = normalized
+		pendingInitialNotificationLock.unlock()
+	}
+
+	private static func consumePendingInitialNotification() -> [String: Any]? {
+		pendingInitialNotificationLock.lock()
+		defer { pendingInitialNotificationLock.unlock() }
+
+		let notification = pendingInitialNotification
+		pendingInitialNotification = nil
+		return notification
+	}
+
+	private static func normalizeUserInfo(_ userInfo: [AnyHashable: Any]) -> [String: Any] {
+		Dictionary(uniqueKeysWithValues: userInfo.compactMap { key, value in
+			guard let stringKey = key as? String else { return nil }
+			return (stringKey, value)
+		})
 	}
 
 	@objc public static func delayedStart() {
@@ -246,18 +275,25 @@ public class ExpoRetenoSdkModule: Module {
 		}
 		
 		AsyncFunction("getInitialNotification") { (promise: Promise) -> Void in
-			var initialNotif: Any? = nil;
-			//				let remoteUserInfo = bridge.launchOptions?[UIApplication.LaunchOptionsKey.remoteNotification];
-			//
-			//				if (remoteUserInfo != nil) {
-			//						initialNotif = remoteUserInfo;
-			//				}
-			
-			if (initialNotif != nil) {
-				promise.resolve(initialNotif);
-			} else {
-				promise.resolve(nil);
+			if let pending = ExpoRetenoSdkModule.consumePendingInitialNotification() {
+				// The SDK may expose the same response as its cold-start response. Clear it so
+				// getInitialNotification remains a consume-once API.
+				Reteno.userNotificationService.coldStartNotificationResponse = nil
+				promise.resolve(pending)
+				return
 			}
+
+			if let response = Reteno.userNotificationService.coldStartNotificationResponse {
+				Reteno.userNotificationService.coldStartNotificationResponse = nil
+				promise.resolve(
+					ExpoRetenoSdkModule.normalizeUserInfo(
+						response.notification.request.content.userInfo
+					)
+				)
+				return
+			}
+
+			promise.resolve(nil)
 		}
 		
     // User information
@@ -835,6 +871,13 @@ public class ExpoRetenoSdkModule: Module {
 		}
 
 		Reteno.userNotificationService.didReceiveNotificationResponseHandler = { [weak self] response in
+			// A cold-start callback can arrive after the module is created but before JS has
+			// subscribed. Persist only SDK-classified cold starts; warm clicks use the event.
+			if Reteno.userNotificationService.coldStartNotificationResponse != nil {
+				ExpoRetenoSdkModule.storePendingInitialNotification(
+					response.notification.request.content.userInfo
+				)
+			}
 			guard let self else { return }
 			self.sendEvent(
 				RetenoExpoEvent.onPushNotificationClicked.value,

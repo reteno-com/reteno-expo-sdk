@@ -330,18 +330,13 @@ class ExpoRetenoSdkModule : Module() {
     }
 
     AsyncFunction("getInitialNotification") { promise: Promise -> 
-      val activity = appContext.currentActivity ?: return@AsyncFunction
-      
-      if(activity == null){
-        promise.resolve(null);
-          return@AsyncFunction ;
+      val activity = appContext.currentActivity
+      if (activity == null) {
+        promise.resolve(null)
+        return@AsyncFunction
       }
 
-      promise.resolve(
-        parseIntent(
-          activity.getIntent()
-        )
-      );
+      promise.resolve(parseRetenoIntent(activity.intent))
     } 
 
     // User information
@@ -1389,27 +1384,31 @@ class ExpoRetenoSdkModule : Module() {
         ))
     }
 
-    private fun parseIntent(intent: Intent): WritableMap {
-        val params = Arguments.createMap()
-        val extras = intent.extras
+    private fun parseRetenoIntent(intent: Intent): WritableMap? {
+      val params = Arguments.createMap()
+      val extras = intent.extras
+      // Reteno uses the interaction id as the canonical identifier for push
+      // interactions. App/deep-link SDK extras (for example Branch) must not be
+      // exposed as an initial Reteno notification.
+      if (extras?.containsKey("es_interaction_id") != true) {
+        return null
+      }
 
-        if (extras != null) {
-            try {
-                for (key in extras.keySet()) {
-                    val value = extras[key]
-                    if (value is HashMap<*, *>) {
-                        val map: WritableMap = convertHashMap(value as HashMap<String, Any>)
-                        params.putMap(key, map)
-                    } else {
-                        params.putString(key, value?.toString())
-                    }
-                }
-            } catch (e: java.lang.Exception) {
-                Log.e("parseIntent", "Error converting Bundle to WritableMap: " + e.message, e)
-            }
+      try {
+        for (key in extras.keySet()) {
+          val value = extras[key]
+          if (value is HashMap<*, *>) {
+            val map: WritableMap = convertHashMap(value as HashMap<String, Any>)
+            params.putMap(key, map)
+          } else {
+            params.putString(key, value?.toString())
+          }
         }
+      } catch (e: java.lang.Exception) {
+        Log.e("parseRetenoIntent", "Error converting Bundle to WritableMap: " + e.message, e)
+      }
 
-        return params
+      return params
     }
 
     private fun convertHashMap(map: HashMap<String, Any>): WritableMap {
