@@ -3740,12 +3740,16 @@ color-name@1.1.3:
 
 color-string@^1.9.0:
   version "1.9.1"
+  resolved "https://registry.npmjs.org/color-string/-/color-string-1.9.1.tgz"
+  integrity sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==
   dependencies:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
 
 color@^4.2.3:
   version "4.2.3"
+  resolved "https://registry.npmjs.org/color/-/color-4.2.3.tgz"
+  integrity sha512-1rXeuUUiGGrykh+CeBdu5Ie7OJwinCgQY0bc7GCRxy5xVHy+moaqkpL/jqQq0MtQOeYcrqEz4abc5f0KtU7W4A==
   dependencies:
     color-convert "^2.0.1"
     color-string "^1.9.0"
@@ -5070,6 +5074,11 @@ expect@^29.0.0, expect@^29.7.0:
     jest-message-util "^29.7.0"
     jest-util "^29.7.0"
 
+expo-application@~7.0.8:
+  version "7.0.8"
+  resolved "https://registry.npmjs.org/expo-application/-/expo-application-7.0.8.tgz"
+  integrity sha512-qFGyxk7VJbrNOQWBbE09XUuGuvkOgFS9QfToaK2FdagM2aQ+x3CvGV2DuVgl/l4ZxPgIf3b/MNh9xHpwSwn74Q==
+
 expo-asset@~12.0.12:
   version "12.0.12"
   resolved "https://registry.npmjs.org/expo-asset/-/expo-asset-12.0.12.tgz"
@@ -5146,13 +5155,9 @@ expo-modules-core@3.0.29:
   dependencies:
     invariant "^2.2.4"
 
-"expo-reteno-sdk@file:../expo-reteno-sdk", "expo-reteno-sdk@file:/Users/greenxscare/Documents/Code/expo-reteno-sdk/expo-reteno-sdk":
-  version "2.3.1"
+"expo-reteno-sdk@file:../expo-reteno-sdk", "expo-reteno-sdk@file:/Users/serhiiporaiko/projects/Yalantis/reteno-expo-sdk/expo-reteno-sdk":
+  version "2.3.2"
   resolved "file:expo-reteno-sdk"
-  dependencies:
-    expo "~54.0.33"
-    react "19.1.0"
-    react-native "0.81.5"
 
 expo-server@^1.0.5:
   version "1.0.5"
@@ -5161,6 +5166,8 @@ expo-server@^1.0.5:
 
 expo-status-bar@~3.0.9:
   version "3.0.9"
+  resolved "https://registry.npmjs.org/expo-status-bar/-/expo-status-bar-3.0.9.tgz"
+  integrity sha512-xyYyVg6V1/SSOZWh4Ni3U129XHCnFHBTcUo0dhWtFDrZbNp/duw5AGsQfb2sVeU0gxWHXSY1+5F0jnKYC7WuOw==
   dependencies:
     react-native-is-edge-to-edge "^1.2.1"
 
@@ -5421,6 +5428,11 @@ fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
+
+fsevents@^2.3.2, fsevents@~2.3.2:
+  version "2.3.3"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
+  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 function-bind@^1.1.2:
   version "1.1.2"
@@ -6122,6 +6134,8 @@ is-arrayish@^0.2.1:
 
 is-arrayish@^0.3.1:
   version "0.3.4"
+  resolved "https://registry.npmjs.org/is-arrayish/-/is-arrayish-0.3.4.tgz"
+  integrity sha512-m6UrgzFVUYawGBh1dUsWR5M2Clqic9RVXC/9f8ceNlv2IcO9j9J/z8UoCLPqtsPBFNzEpfR3xftohbfqDx8EQA==
 
 is-async-function@^2.0.0:
   version "2.1.1"
@@ -8812,6 +8826,8 @@ react-devtools-core@^6.1.5:
 
 react-freeze@^1.0.0:
   version "1.0.4"
+  resolved "https://registry.npmjs.org/react-freeze/-/react-freeze-1.0.4.tgz"
+  integrity sha512-r4F0Sec0BLxWicc7HEyo2x3/2icUTrRmDjaaRyzzn+7aDyFZliszMDOgLVwSnQnYENOlL1o569Ze2HZefk8clA==
 
 react-is@^16.13.1:
   version "16.13.1"
@@ -8835,6 +8851,8 @@ react-is@^19.2.4:
 
 react-native-is-edge-to-edge@^1.2.1:
   version "1.3.1"
+  resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.3.1.tgz"
+  integrity sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA==
 
 react-native-safe-area-context@^5.7.0, "react-native-safe-area-context@>= 4.0.0":
   version "5.7.0"
@@ -9519,6 +9537,8 @@ setprototypeof@~1.2.0:
 
 sf-symbols-typescript@^2.1.0:
   version "2.2.0"
+  resolved "https://registry.npmjs.org/sf-symbols-typescript/-/sf-symbols-typescript-2.2.0.tgz"
+  integrity sha512-TPbeg0b7ylrswdGCji8FRGFAKuqbpQlLbL8SOle3j1iHSs5Ob5mhvMAxWN2UItOjgALAB5Zp3fmMfj8mbWvXKw==
 
 shebang-command@^2.0.0:
   version "2.0.0"
@@ -9602,6 +9622,8 @@ simple-plist@^1.1.0:
 
 simple-swizzle@^0.2.2:
   version "0.2.4"
+  resolved "https://registry.npmjs.org/simple-swizzle/-/simple-swizzle-0.2.4.tgz"
+  integrity sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw==
   dependencies:
     is-arrayish "^0.3.1"
 
@@ -10122,13 +10144,14 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-"testapp@file:/Users/greenxscare/Documents/Code/expo-reteno-sdk/testapp":
+"testapp@file:/Users/serhiiporaiko/projects/Yalantis/reteno-expo-sdk/testapp":
   version "1.0.0"
   resolved "file:testapp"
   dependencies:
     "@react-navigation/native" "^7.1.31"
     "@react-navigation/native-stack" "^7.14.2"
     expo "~54.0.33"
+    expo-application "~7.0.8"
     expo-reteno-sdk "file:../expo-reteno-sdk"
     expo-status-bar "~3.0.9"
     react "19.1.0"
@@ -10551,6 +10574,8 @@ url-parse@^1.5.3:
 
 use-latest-callback@^0.2.4:
   version "0.2.6"
+  resolved "https://registry.npmjs.org/use-latest-callback/-/use-latest-callback-0.2.6.tgz"
+  integrity sha512-FvRG9i1HSo0wagmX63Vrm8SnlUU3LMM3WyZkQ76RnslpBrX694AdG4A0zQBx2B3ZifFA0yv/BaEHGBnEax5rZg==
 
 use-sync-external-store@^1.5.0:
   version "1.6.0"
@@ -10626,6 +10651,8 @@ walker@^1.0.7, walker@^1.0.8:
 
 warn-once@^0.1.0, warn-once@^0.1.1:
   version "0.1.1"
+  resolved "https://registry.npmjs.org/warn-once/-/warn-once-0.1.1.tgz"
+  integrity sha512-VkQZJbO8zVImzYFteBXvBOZEl1qL175WH8VmZcxF2fZAoudNhNDvHi+doCaAEdU2l2vtcIwa2zn0QK5+I1HQ3Q==
 
 wcwidth@^1.0.1:
   version "1.0.1"
