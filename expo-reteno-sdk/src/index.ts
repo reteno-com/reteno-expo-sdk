@@ -38,7 +38,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
 
   // Push Notifications
   registerForRemoteNotifications(): string;
-  getInitialNotification: () => Promise<boolean>;
+  getInitialNotification: () => Promise<Record<string, unknown> | null>;
   setDeviceToken(messagingToken: string): Promise<boolean>;
   setOnRetenoPushReceivedListener(
     listener: (event: any) => void,
