@@ -5156,7 +5156,7 @@ expo-modules-core@3.0.29:
     invariant "^2.2.4"
 
 "expo-reteno-sdk@file:../expo-reteno-sdk", "expo-reteno-sdk@file:/Users/serhiiporaiko/projects/Yalantis/reteno-expo-sdk/expo-reteno-sdk":
-  version "2.3.2"
+  version "2.4.0"
   resolved "file:expo-reteno-sdk"
 
 expo-server@^1.0.5:
