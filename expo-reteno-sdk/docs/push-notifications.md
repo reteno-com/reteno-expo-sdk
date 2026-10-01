@@ -47,6 +47,24 @@ useEffect(() => {
 
 Use `setOnRetenoPushClickedListener` below for notification clicks received after the app has started.
 
+## Distinguish Push Links from In-App Links
+
+`onInAppMessageCustomDataHandler` includes the semantic origin of a link interaction in `source`:
+
+```ts
+const linkListener = Reteno.onInAppMessageCustomDataHandler((event) => {
+  if (event.source === 'pushNotification') {
+    console.log('Push link', event.url);
+  } else if (event.source === 'inAppMessage') {
+    console.log('In-app link', event.url);
+  }
+});
+```
+
+The optional values are `pushNotification` and `inAppMessage`. Do not use `inapp_source` for this decision: that Android-only field describes how an in-app message was displayed (`DISPLAY_RULES` or `PUSH_NOTIFICATION`), not where the link interaction originated.
+
+Keep `getInitialNotification()` as the source of the cold-start push payload. If both callbacks can initiate navigation in your app, deduplicate the interaction before navigating.
+
 ## Listen for new push notifications while app is active
 
 To listen to pushes in foreground, use `setOnRetenoPushReceivedListener`:

@@ -113,9 +113,9 @@ type InAppErrorData = {
 };
 ```
 
-## Handling In-App Messages Custom Data
+## Handling Link and In-App Custom Data
 
-To receive custom data from in-app messages:
+Subscribe at app startup to receive link URLs and custom data from in-app messages and push notifications:
 
 ```ts
 import { useEffect } from 'react';
@@ -125,9 +125,37 @@ useEffect(() => {
   Reteno.setInAppLifecycleCallback();
 
   const listener = Reteno.onInAppMessageCustomDataHandler((data) => {
-    console.log('Custom Data Received', data);
+    if (data.source === 'pushNotification') {
+      console.log('Push link received', data.url, data.customData);
+    } else if (data.source === 'inAppMessage') {
+      console.log('In-app link received', data.url, data.customData);
+    }
   });
 
   return () => listener.remove();
 }, []);
 ```
+
+The event has the following shape:
+
+```ts
+type InAppCustomData = {
+  customData?: Record<string, any>;
+  source?: 'inAppMessage' | 'pushNotification';
+  url?: string;
+  inapp_id?: string;
+  inapp_source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION';
+};
+```
+
+`source` identifies where the link interaction itself originated. The Android-only `inapp_source` has different semantics: it identifies the rule that displayed the in-app message. Keep push cold-start handling through `getInitialNotification()` separate and deduplicate navigation if the same interaction is observed in both flows.
+
+On Android, one in-app custom-data interaction produces one callback. If the
+native event arrives before the first JavaScript handler is registered, it is
+queued and delivered when `onInAppMessageCustomDataHandler` starts listening.
+
+> **Android testing note:** this callback is emitted only when the in-app link
+> action contains at least one custom-data field. A URL-only action is opened
+> directly and does not emit `reteno-in-app-custom-data-received`. To verify
+> `source` and `inapp_source`, configure test custom data such as
+> `link_source_test=true` on the link action.

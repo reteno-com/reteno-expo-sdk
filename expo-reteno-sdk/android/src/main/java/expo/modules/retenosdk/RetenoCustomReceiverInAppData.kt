@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.URLUtil
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 
 class RetenoCustomReceiverInAppData : BroadcastReceiver() {
@@ -17,7 +16,7 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         val extras = intent.extras ?: return
         val url = extras.getString("url")
 
-        handleCustomData(extras, context)
+        dispatchCustomData(extras)
 
         // Assuming isAutoOpenLinksEnabled is now a companion object function in RetenoModule
         if (!url.isNullOrEmpty() && URLUtil.isValidUrl(url) && ExpoRetenoSdkModule.isAutoOpenLinksEnabled(context)) {
@@ -30,7 +29,7 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         }
     }
 
-    private fun handleCustomData(extras: Bundle, context: Context) {
+    private fun dispatchCustomData(extras: Bundle) {
         val eventData: WritableMap = Arguments.createMap()
         val customDataMap: WritableMap = Arguments.createMap()
 
@@ -50,20 +49,14 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         }
 
         eventData.putMap("customData", customDataMap)
+        eventData.putString("source", "inAppMessage")
 
-        var ctx: Context? = null
-
-        try {
-            val app = context.applicationContext as? RetenoReactNativeApplication
-            ctx = app?.reactContext
-        } catch (e: Exception) {
-            // Log but continue - event will be queued by your RetenoEventQueue
-        }
-
+        // Keep this receiver as the single Android producer for the JS event. It can
+        // enqueue the event before JavaScript registers its first handler.
         RetenoEventQueue.getInstance().dispatch(
-            "inAppCustomDataReceived",
+            "reteno-in-app-custom-data-received",
             eventData,
-            ctx as ReactContext?
+            ExpoRetenoSdkModule.getSharedReactContext()
         )
     }
 }

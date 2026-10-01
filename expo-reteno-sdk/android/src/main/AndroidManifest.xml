@@ -14,6 +14,15 @@
       </intent-filter>
     </service>
 
+    <receiver
+      android:name="expo.modules.retenosdk.RetenoCustomReceiverInAppData"
+      android:enabled="true"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.reteno.custom-inapp-data" />
+      </intent-filter>
+    </receiver>
+
     <!-- Remove the base-class service so only our subclass handles FCM messages. -->
     <service
       android:name="com.reteno.fcm.RetenoFirebaseMessagingService"

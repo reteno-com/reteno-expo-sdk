@@ -1,12 +1,22 @@
 import Reteno from "expo-reteno-sdk";
-import { useEffect, useState } from "react";
-import { Alert, Platform, ScrollView } from "react-native";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
+import {
+  clearLinkEvents,
+  getLinkEventsSnapshot,
+  subscribeToLinkEvents,
+} from "src/linkEventsStore";
 
 let isInAppMessagesPaused = false;
 
 export const InAppMessagesView = () => {
   const [didStop, setDidStop] = useState(isInAppMessagesPaused);
+  const linkEvents = useSyncExternalStore(
+    subscribeToLinkEvents,
+    getLinkEventsSnapshot,
+    getLinkEventsSnapshot,
+  );
 
   useEffect(() => {
     Reteno.setInAppLifecycleCallback();
@@ -58,20 +68,6 @@ export const InAppMessagesView = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const addInAppMessageCustomDataListener =
-      Reteno.onInAppMessageCustomDataHandler((data) =>
-        Alert.alert(
-          "Custom Data Received",
-          data ? JSON.stringify(data) : "No custom data received",
-        ),
-      );
-
-    return () => {
-      addInAppMessageCustomDataListener.remove();
-    };
-  }, []);
-
   const handleInAppMessagesStatus = async (isPaused: boolean) => {
     try {
       await Reteno.pauseInAppMessages(isPaused);
@@ -100,6 +96,31 @@ export const InAppMessagesView = () => {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: 8 }}>
+        <Block title="Link event source">
+          <Text>
+            Trigger an in-app link or tap a push link. The semantic source is
+            shown as inAppMessage or pushNotification; inapp_source remains the
+            in-app display trigger on Android.
+          </Text>
+          {linkEvents.length ? (
+            linkEvents
+              .slice()
+              .reverse()
+              .map((event, index) => (
+                <Text key={`${event.receivedAt}-${index}`} selectable>
+                  Source: {event.data.source ?? "not provided"}
+                  {"\n"}In-app display source: {event.data.inapp_source ?? "not provided"}
+                  {"\n"}URL: {event.data.url ?? "not provided"}
+                  {"\n"}Received: {event.receivedAt}
+                  {"\n"}Payload: {JSON.stringify(event.data.customData ?? {}, null, 2)}
+                </Text>
+              ))
+          ) : (
+            <Text>No link events received yet</Text>
+          )}
+          <Button text="Clear link events" onPress={clearLinkEvents} />
+        </Block>
+
         <Block title="Available options">
           <Button
             text={didStop ? "Start messages" : "Stop messages"}

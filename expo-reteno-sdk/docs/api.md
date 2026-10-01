@@ -808,5 +808,6 @@ type LogEventPayload = {
 
 type InAppDisplayData = { id?: string; source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION' };
 type InAppErrorData  = { id?: string; source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION'; errorMessage?: string };
-type InAppCustomData = { customData?: Record<string, any>; url?: string; inapp_id?: string; inapp_source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION' };
+type LinkEventSource = 'inAppMessage' | 'pushNotification';
+type InAppCustomData = { customData?: Record<string, any>; source?: LinkEventSource; url?: string; inapp_id?: string; inapp_source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION' };
 ```

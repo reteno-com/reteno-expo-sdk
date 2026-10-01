@@ -193,7 +193,11 @@ public class ExpoRetenoSdkModule: Module {
 			//				object: nil
 			//			)
 		// }
-		
+
+		// Android flushes link events queued before JavaScript subscribes.
+		// iOS delivers them through Reteno.addLinkHandler directly.
+		Function("startListeningForInAppCustomData") {}
+
 		AsyncFunction("initialize") { (payload: [String: Any], promise: Promise) -> Void in
 			if ExpoRetenoSdkModule.sdkInitialized {
 				promise.resolve(true)
@@ -850,12 +854,23 @@ public class ExpoRetenoSdkModule: Module {
 	private func setupRetenoCallbacks() {
 		Reteno.addLinkHandler { [weak self] linkInfo in
 			guard let self else { return }
+			var eventData: [String: Any] = [
+				"customData": linkInfo.customData as Any,
+				"url": linkInfo.url?.absoluteString as Any
+			]
+
+			switch linkInfo.source {
+			case .inAppMessage:
+				eventData["source"] = "inAppMessage"
+			case .pushNotification:
+				eventData["source"] = "pushNotification"
+			@unknown default:
+				break
+			}
+
 			self.sendEvent(
 				RetenoExpoEvent.inAppCustomDataReceived.value,
-				["body": [
-					"customData": linkInfo.customData as Any,
-					"url": linkInfo.url?.absoluteString as Any
-				]]
+				["body": eventData]
 			)
 			if ExpoRetenoSdkModule.autoOpenLinks, let url = linkInfo.url {
 				UIApplication.shared.open(url)

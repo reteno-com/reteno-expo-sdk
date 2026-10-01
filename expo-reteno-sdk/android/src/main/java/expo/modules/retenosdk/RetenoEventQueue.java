@@ -80,11 +80,6 @@ public class RetenoEventQueue {
      */
     public void setInitialized(ReactContext reactContext) {
         synchronized (lock) {
-            if (isInitialized) {
-                Log.w(TAG, "Already initialized, ignoring duplicate call");
-                return;
-            }
-
             isInitialized = true;
             Log.d(TAG, "Initialized, flushing " + eventQueue.size() + " queued events");
 
