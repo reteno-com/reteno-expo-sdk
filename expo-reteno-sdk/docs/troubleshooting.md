@@ -129,6 +129,12 @@ If using `notificationService: "firebase"`, run:
 cd ios && pod install --repo-update
 ```
 
+### Ecommerce events are not tracked on iOS
+
+Before v2.4.0, the iOS module could silently drop ecommerce products, cart items, and orders because JavaScript numbers — both integer-looking values such as `100` and fractional values such as `9.99` — could arrive as boxed `Double` values that failed the module's `as? Int` / `as? Float` casts. Order statuses were also shifted by one, and `status: 2` (`Delivered`) could crash the app. Upgrade `expo-reteno-sdk` to v2.4.0 or newer and rebuild the iOS app.
+
+Pass `status` as the 0-based `OrderStatus` value: `0` Initialized, `1` InProgress, `2` Delivered, `3` Cancelled. See [Ecommerce](./ecommerce.md).
+
 ### `setDeviceToken` on Android
 
 In v2.0.0, `setDeviceToken` is a no-op on Android and resolves successfully. Android token handling is performed by the native Firebase messaging service.
@@ -199,6 +205,19 @@ Reteno Android SDK requires `minSdkVersion` 26.
 1. Verify `google-services.json` is located at `android/app/google-services.json`.
 2. Ensure `Reteno.registerForRemoteNotifications()` is called.
 3. Verify the automatic `sdkAccessToken` or the `apiKey` passed to `Reteno.initialize()`.
+
+### Push notifications show the default Reteno icon
+
+The Reteno SDK renders its own notifications and reads the icon only from the `com.reteno.notification_icon` and `com.reteno.notification_icon_color` meta-data keys. It ignores the icon configured for Firebase or `expo-notifications`. Set `notificationIcon` and `notificationIconColor` in the Android plugin config and run `npx expo prebuild --clean`:
+
+```json
+"android": {
+  "notificationIcon": "@drawable/notification_icon",
+  "notificationIconColor": "@color/notification_icon_color"
+}
+```
+
+See [Android → Notification icon](./android.md#notification-icon).
 
 ### Push events not tracked on Android after upgrading to v2.0.0
 

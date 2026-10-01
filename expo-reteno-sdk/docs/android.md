@@ -131,6 +131,35 @@ After that you can run your app on a physical Android device and test push notif
 |------|------|----------|-------------|
 | `sdkAccessToken` | `string` | No | SDK access key for automatic initialization. Omit it to initialize from JavaScript. |
 | `config.isDebugMode` | `boolean` | No | Enable SDK debug logging. Only applies when `sdkAccessToken` is set (Path A). Writes `com.reteno.IS_DEBUG_MODE` to `AndroidManifest.xml`. |
+| `notificationIcon` | `string` | No | Since v2.4.0. Drawable resource for the small icon of Reteno push notifications, e.g. `@drawable/notification_icon`. Writes `com.reteno.notification_icon` to `AndroidManifest.xml`. When omitted, the SDK shows its bundled default icon. |
+| `notificationIconColor` | `string` | No | Since v2.4.0. Color resource for the notification icon accent, e.g. `@color/notification_icon_color`. Writes `com.reteno.notification_icon_color` to `AndroidManifest.xml`. |
+
+### Notification icon
+
+The Reteno SDK renders its push notifications itself and reads the icon only from its own meta-data keys. It does not use the icon configured for Firebase or `expo-notifications`. If your app already uses the `expo-notifications` plugin with `icon` and `color`, point Reteno at the resources that plugin generates:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["expo-notifications", { "icon": "./assets/notification-icon.png", "color": "#ffffff" }],
+      [
+        "expo-reteno-sdk",
+        {
+          "android": {
+            "notificationIcon": "@drawable/notification_icon",
+            "notificationIconColor": "@color/notification_icon_color"
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+Otherwise, reference any drawable and color resource that exists in your Android project. Run `npx expo prebuild --clean` after changing these props.
+
+Values must be Android resource references (`@drawable/...` or `@mipmap/...` for the icon, `@color/...` for the color), and the resources must exist in the project. The plugin writes the values as-is without validating them, so a missing resource or a plain name such as `notification_icon` makes the Android build fail.
 
 ## Notes
 

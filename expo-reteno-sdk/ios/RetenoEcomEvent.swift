@@ -73,6 +73,12 @@ class RetenoEcomEvent: NSObject {
         )
     }
 
+    // JS numbers can arrive as a boxed Swift `Double` (Expo SDK 56), and a boxed `Double` fails
+    // `as? Int` / `as? Float`. A boxed `Double`, `Int` and an `NSNumber` all bridge to `NSNumber`.
+    private static func float(_ value: Any?) -> Float? { (value as? NSNumber)?.floatValue }
+    private static func double(_ value: Any?) -> Double? { (value as? NSNumber)?.doubleValue }
+    private static func int(_ value: Any?) -> Int? { (value as? NSNumber)?.intValue }
+
     private static func buildAttributesFromPayload(_ payload: [String: Any]?) -> [String: [String]]? {
         guard let payload = payload else { return nil }
         guard let name = payload["name"] as? String else { return nil }
@@ -83,7 +89,7 @@ class RetenoEcomEvent: NSObject {
     private static func buildProductFromPayload(_ payload: [String: Any]?) -> Ecommerce.Product? {
         guard let payload = payload else { return nil }
         guard let productId = payload["productId"] as? String else { return nil }
-        guard let price = payload["price"] as? Float else { return nil }
+        guard let price = float(payload["price"]) else { return nil }
         let isInStock = payload["isInStock"] as? Bool ?? false
         
         var attributes: [String: [String]] = [:]
@@ -125,9 +131,9 @@ class RetenoEcomEvent: NSObject {
     private static func buildCartItemFromPayload(_ payload: [String: Any]?) -> Ecommerce.ProductInCart? {
         guard let payload = payload else { return nil }
         guard let productId = payload["productId"] as? String else { return nil }
-        guard let quantity = payload["quantity"] as? Int else { return nil }
-        guard let price = payload["price"] as? Float else { return nil }
-        let discount = payload["discount"] as? Float
+        guard let quantity = int(payload["quantity"]) else { return nil }
+        guard let price = float(payload["price"]) else { return nil }
+        let discount = float(payload["discount"])
         let name = payload["name"] as? String
         let category = payload["category"] as? String
         
@@ -156,8 +162,8 @@ class RetenoEcomEvent: NSObject {
         guard let externalItemId = payload["externalItemId"] as? String else { return nil }
         guard let name = payload["name"] as? String else { return nil }
         guard let category = payload["category"] as? String else { return nil }
-        guard let quantity = payload["quantity"] as? Double else { return nil }
-        guard let price = payload["price"] as? Float else { return nil }
+        guard let quantity = double(payload["quantity"]) else { return nil }
+        guard let price = float(payload["price"]) else { return nil }
         guard let url = payload["url"] as? String else { return nil }
         
         let imageUrl = payload["imageUrl"] as? String
@@ -180,21 +186,21 @@ class RetenoEcomEvent: NSObject {
     private static func buildOrderFromPayload(_ payload: [String: Any]?) -> Ecommerce.Order? {
 
               enum LocalStatus: Int {
-                case initialized = 1
-                case inprogress = 2
-                case delivered = 3
-                case cancelled = 4
+                case initialized = 0
+                case inprogress = 1
+                case delivered = 2
+                case cancelled = 3
                 
                 var toOrderStatus: Ecommerce.Order.Status {
                     switch self {
                     case .initialized:
-                        return Ecommerce.Order.Status(rawValue: "INITIALIZED")!
+                        return .INITIALIZED
                     case .inprogress:
-                        return Ecommerce.Order.Status(rawValue: "INPROGRESS")!
+                        return .IN_PROGRESS
                     case .delivered:
-                        return Ecommerce.Order.Status(rawValue: "DELIVERED")!
+                        return .DELIVERED
                     case .cancelled:
-                        return Ecommerce.Order.Status(rawValue: "CANCELLED")!
+                        return .CANCELLED
                     }
                 }
             }
@@ -204,11 +210,11 @@ class RetenoEcomEvent: NSObject {
         guard let externalOrderId = payload["externalOrderId"] as? String else { return nil }
         
         let externalCustomerId = payload["externalCustomerId"] as? String
-        guard let totalCost = payload["totalCost"] as? Float else { return nil }
+        guard let totalCost = float(payload["totalCost"]) else { return nil }
         
         // guard let statusRaw = payload["status"] as? String,
         //       let status = StatusStatus(rawValue: statusRaw) else { return nil }
-           guard let statusRaw = payload["status"] as? Int,
+           guard let statusRaw = int(payload["status"]),
                  let localStatus = LocalStatus(rawValue: statusRaw) else { return nil }
     
                  let orderStatus = localStatus.toOrderStatus
@@ -219,9 +225,9 @@ class RetenoEcomEvent: NSObject {
         let phone = payload["phone"] as? String
         let firstName = payload["firstName"] as? String
         let lastName = payload["lastName"] as? String
-        let shipping = payload["shipping"] as? Float ?? 0.0
-        let discount = payload["discount"] as? Float ?? 0.0
-        let taxes = payload["taxes"] as? Float ?? 0.0
+        let shipping = float(payload["shipping"]) ?? 0.0
+        let discount = float(payload["discount"]) ?? 0.0
+        let taxes = float(payload["taxes"]) ?? 0.0
         let restoreId = payload["restoreId"] as? String
         let statusDescription = payload["statusDescription"] as? String
         let storeId = payload["storeId"] as? String

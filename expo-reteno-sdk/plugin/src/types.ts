@@ -39,6 +39,17 @@ export type RetenoAndroidProps = {
    * Omit to use Path B: call `Reteno.initialize({ apiKey })` from JS for full option control.
    */
   sdkAccessToken?: string;
+  /**
+   * Drawable resource for the small icon of notifications rendered by the Reteno SDK,
+   * e.g. `"@drawable/notification_icon"`. Written to the `com.reteno.notification_icon`
+   * meta-data. When omitted, the SDK falls back to its bundled default icon.
+   */
+  notificationIcon?: string;
+  /**
+   * Color resource for the notification icon accent, e.g. `"@color/notification_icon_color"`.
+   * Written to the `com.reteno.notification_icon_color` meta-data.
+   */
+  notificationIconColor?: string;
   config: RetenoInitConfig;
 };
 

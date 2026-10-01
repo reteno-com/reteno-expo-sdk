@@ -21,6 +21,8 @@ const CLICK_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoClickReceiver";
 const PUSH_RECEIVER_NAME = "expo.modules.retenosdk.ExpoRetenoPushReceiver";
 const SDK_ACCESS_KEY_METADATA = "com.reteno.SDK_ACCESS_KEY";
 const IS_DEBUG_MODE_METADATA = "com.reteno.IS_DEBUG_MODE";
+const NOTIFICATION_ICON_METADATA = "com.reteno.notification_icon";
+const NOTIFICATION_ICON_COLOR_METADATA = "com.reteno.notification_icon_color";
 
 const addRetenoMetaData = (
   mainApplication: AndroidConfig.Manifest.ManifestApplication,
@@ -166,12 +168,34 @@ const withRetenoAndroidSDKKey: ConfigPlugin<RetenoAndroidProps> = (
   });
 };
 
+// The Reteno SDK builds its notifications itself and reads the small icon and its color only
+// from these two meta-data keys. It ignores the Firebase / expo-notifications icon keys.
+const withRetenoAndroidNotificationIcon: ConfigPlugin<RetenoAndroidProps> = (
+  config,
+  props,
+) => {
+  return withAndroidManifest(config, (cfg) => {
+    const mainApp = AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
+    // Always remove both keys so removing the props and re-running prebuild restores the default icon.
+    AndroidConfig.Manifest.removeMetaDataItemFromMainApplication(mainApp, NOTIFICATION_ICON_METADATA);
+    AndroidConfig.Manifest.removeMetaDataItemFromMainApplication(mainApp, NOTIFICATION_ICON_COLOR_METADATA);
+    if (props.notificationIcon) {
+      AndroidConfig.Manifest.addMetaDataItemToMainApplication(mainApp, NOTIFICATION_ICON_METADATA, props.notificationIcon, "resource");
+    }
+    if (props.notificationIconColor) {
+      AndroidConfig.Manifest.addMetaDataItemToMainApplication(mainApp, NOTIFICATION_ICON_COLOR_METADATA, props.notificationIconColor, "resource");
+    }
+    return cfg;
+  });
+};
+
 export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
   config = withRetenoAndroidManifest(config);
   config = withRetenoAndroidSDKKey(config, props);
+  config = withRetenoAndroidNotificationIcon(config, props);
   config = withProjectGradleDependencies(config);
   config = withModuleGradleDependencies(config);
   config = withAppGradleProperties(config);
