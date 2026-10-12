@@ -203,10 +203,14 @@ export type InAppErrorData = {
   errorMessage?: string;
 };
 
+/** Identifies where a link interaction itself originated. */
+export type LinkEventSource = "inAppMessage" | "pushNotification";
+
 export type InAppCustomData = {
   customData?: Record<string, any>;
   inapp_id?: string;
   inapp_source?: InAppSource;
+  source?: LinkEventSource;
   url?: string;
 };
 

@@ -80,6 +80,10 @@ class ExpoRetenoSdkModule : Module() {
   private var messagesCountChangedCallback: RetenoResultCallback<Int>? = null
   private var pushDismissedListener: Procedure<Bundle>? = null
   private var customPushListener: Procedure<Bundle>? = null
+  // Emits through the Expo module so JS listeners on the module EventEmitter receive it.
+  private val inAppCustomDataSink = RetenoEventQueue.EventSink { eventName, eventData ->
+    sendEvent(eventName, eventData.toHashMap())
+  }
 
   init {
     currentInstance = WeakReference(this)
@@ -92,11 +96,9 @@ class ExpoRetenoSdkModule : Module() {
     private const val AUTO_OPEN_LINKS_KEY = "auto_open_links"
     private var sdkInitialized = false
 
-    // Helper function (if you don't already have it defined elsewhere)
     fun isAutoOpenLinksEnabled(context: Context): Boolean {
       val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-      // Assuming default is false if not set
-      return prefs.getBoolean(AUTO_OPEN_LINKS_KEY, false)
+      return prefs.getBoolean(AUTO_OPEN_LINKS_KEY, true)
     }
 
     fun onReceiveNotification(payload: Map<String, Any?>) {
@@ -164,6 +166,7 @@ class ExpoRetenoSdkModule : Module() {
         try { RetenoNotifications.custom.removeListener(it) } catch (_: Exception) {}
       }
       customPushListener = null
+      RetenoEventQueue.getInstance().clearSink(inAppCustomDataSink)
     }
 
     OnCreate {
@@ -226,6 +229,11 @@ class ExpoRetenoSdkModule : Module() {
           customPushListener = null
         }
       }
+
+    }
+
+    Function("startListeningForInAppCustomData") {
+      RetenoEventQueue.getInstance().setSink(inAppCustomDataSink)
     }
 
     AsyncFunction("initialize") { payload: ReadableMap, promise: Promise ->

@@ -3,16 +3,14 @@ package expo.modules.retenosdk;
 import android.util.Log;
 import androidx.annotation.Nullable;
 
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Singleton event queue for Reteno SDK.
- * Queues events until JavaScript signals initialization is complete.
+ * Queues events until JavaScript starts listening and a sink is attached.
  */
 public class RetenoEventQueue {
     private static final String TAG = "RetenoEventQueue";
@@ -21,8 +19,15 @@ public class RetenoEventQueue {
     private static RetenoEventQueue instance;
 
     private final List<QueuedEvent> eventQueue = new ArrayList<>();
-    private boolean isInitialized = false;
+    @Nullable private EventSink sink;
     private final Object lock = new Object();
+
+    /**
+     * Delivers an event to JavaScript, e.g. through the Expo module's sendEvent.
+     */
+    public interface EventSink {
+        void emit(String eventName, WritableMap eventData);
+    }
 
     private static class QueuedEvent {
         final String eventName;
@@ -44,12 +49,12 @@ public class RetenoEventQueue {
     }
 
     /**
-     * Dispatch an event. If not initialized, queue it. If initialized, send immediately.
+     * Dispatch an event. If no sink is attached, queue it. Otherwise send immediately.
      */
-    public void dispatch(String eventName, WritableMap eventData, @Nullable ReactContext reactContext) {
+    public void dispatch(String eventName, WritableMap eventData) {
         synchronized (lock) {
-            if (isInitialized && reactContext != null && reactContext.hasActiveReactInstance()) {
-                sendEvent(eventName, eventData, reactContext);
+            if (sink != null) {
+                sendEvent(sink, eventName, eventData);
             } else {
                 queueEvent(eventName, eventData);
             }
@@ -65,46 +70,46 @@ public class RetenoEventQueue {
         Log.d(TAG, "Queued event: " + eventName + ", queue size: " + eventQueue.size());
     }
 
-    private void sendEvent(String eventName, WritableMap eventData, ReactContext reactContext) {
+    private void sendEvent(EventSink sink, String eventName, WritableMap eventData) {
         try {
-            reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, eventData);
+            sink.emit(eventName, eventData);
         } catch (Exception e) {
             Log.e(TAG, "Failed to send event: " + eventName, e);
         }
     }
 
     /**
-     * Called from JavaScript to signal initialization is complete.
-     * Flushes all queued events.
+     * Called when JavaScript starts listening. Attaches the sink and flushes queued events.
      */
-    public void setInitialized(ReactContext reactContext) {
+    public void setSink(EventSink sink) {
         synchronized (lock) {
-            if (isInitialized) {
-                Log.w(TAG, "Already initialized, ignoring duplicate call");
-                return;
-            }
+            this.sink = sink;
+            Log.d(TAG, "Sink attached, flushing " + eventQueue.size() + " queued events");
 
-            isInitialized = true;
-            Log.d(TAG, "Initialized, flushing " + eventQueue.size() + " queued events");
-
-            if (reactContext != null && reactContext.hasActiveReactInstance()) {
-                for (QueuedEvent event : eventQueue) {
-                    sendEvent(event.eventName, event.eventData, reactContext);
-                }
-            } else {
-                Log.w(TAG, "ReactContext not available during flush, events will be lost");
+            for (QueuedEvent event : eventQueue) {
+                sendEvent(sink, event.eventName, event.eventData);
             }
             eventQueue.clear();
         }
     }
 
     /**
-     * Check if initialized (for debugging/testing)
+     * Detaches the sink so new events are queued until JavaScript listens again.
+     */
+    public void clearSink(EventSink sink) {
+        synchronized (lock) {
+            if (this.sink == sink) {
+                this.sink = null;
+            }
+        }
+    }
+
+    /**
+     * Check if a sink is attached (for debugging/testing)
      */
     public boolean isInitialized() {
         synchronized (lock) {
-            return isInitialized;
+            return sink != null;
         }
     }
 

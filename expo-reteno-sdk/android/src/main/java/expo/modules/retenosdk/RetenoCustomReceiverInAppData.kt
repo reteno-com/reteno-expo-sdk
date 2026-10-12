@@ -1,14 +1,14 @@
 package expo.modules.retenosdk
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.webkit.URLUtil
+import android.util.Log
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 
 class RetenoCustomReceiverInAppData : BroadcastReceiver() {
@@ -17,20 +17,28 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         val extras = intent.extras ?: return
         val url = extras.getString("url")
 
-        handleCustomData(extras, context)
+        dispatchCustomData(extras)
 
-        // Assuming isAutoOpenLinksEnabled is now a companion object function in RetenoModule
-        if (!url.isNullOrEmpty() && URLUtil.isValidUrl(url) && ExpoRetenoSdkModule.isAutoOpenLinksEnabled(context)) {
+        // The Reteno SDK skips its own URL handling once this receiver takes the
+        // custom data, so open the link here when auto-open is enabled.
+        if (
+            !url.isNullOrBlank() &&
+            ExpoRetenoSdkModule.isAutoOpenLinksEnabled(context)
+        ) {
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
             if (context !is Activity) {
                 browserIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
-            context.startActivity(browserIntent)
+            try {
+                context.startActivity(browserIntent)
+            } catch (e: ActivityNotFoundException) {
+                Log.w("RetenoInAppData", "No activity found to open in-app link", e)
+            }
         }
     }
 
-    private fun handleCustomData(extras: Bundle, context: Context) {
+    private fun dispatchCustomData(extras: Bundle) {
         val eventData: WritableMap = Arguments.createMap()
         val customDataMap: WritableMap = Arguments.createMap()
 
@@ -50,20 +58,13 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         }
 
         eventData.putMap("customData", customDataMap)
+        eventData.putString("source", "inAppMessage")
 
-        var ctx: Context? = null
-
-        try {
-            val app = context.applicationContext as? RetenoReactNativeApplication
-            ctx = app?.reactContext
-        } catch (e: Exception) {
-            // Log but continue - event will be queued by your RetenoEventQueue
-        }
-
+        // Keep this receiver as the single Android producer for the JS event. It can
+        // enqueue the event before JavaScript registers its first handler.
         RetenoEventQueue.getInstance().dispatch(
-            "inAppCustomDataReceived",
-            eventData,
-            ctx as ReactContext?
+            "reteno-in-app-custom-data-received",
+            eventData
         )
     }
 }

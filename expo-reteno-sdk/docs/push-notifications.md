@@ -47,6 +47,26 @@ useEffect(() => {
 
 Use `setOnRetenoPushClickedListener` below for notification clicks received after the app has started.
 
+## Distinguish Push Links from In-App Links
+
+> Available since `expo-reteno-sdk` `v2.5.0`.
+
+`onInAppMessageCustomDataHandler` includes the semantic origin of a link interaction in `source`:
+
+```ts
+const linkListener = Reteno.onInAppMessageCustomDataHandler((event) => {
+  if (event.source === 'pushNotification') {
+    console.log('Push link', event.url);
+  } else if (event.source === 'inAppMessage') {
+    console.log('In-app link', event.url);
+  }
+});
+```
+
+The optional values are `pushNotification` and `inAppMessage`. `pushNotification` is emitted on iOS only: on Android, push links are opened by the native Reteno SDK and are not delivered to this handler. Do not use `inapp_source` for this decision: that Android-only field describes how an in-app message was displayed (`DISPLAY_RULES` or `PUSH_NOTIFICATION`), not where the link interaction originated.
+
+Keep `getInitialNotification()` as the source of the cold-start push payload. If both callbacks can initiate navigation in your app, deduplicate the interaction before navigating.
+
 ## Listen for new push notifications while app is active
 
 To listen to pushes in foreground, use `setOnRetenoPushReceivedListener`:
@@ -233,7 +253,11 @@ console.log('Auto-open links:', isEnabled);
 Default value:
 
 - iOS: `true`
-- Android: `false`
+- Android: `true` (before `expo-reteno-sdk` `v2.5.0` the Android default was `false`)
+
+On Android, this setting controls in-app links with custom data handled by the
+Expo receiver. Push links and URL-only in-app actions are handled directly by
+the native Reteno SDK and are not affected by this setting.
 
 ## Important for Expo
 

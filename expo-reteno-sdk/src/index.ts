@@ -120,6 +120,7 @@ declare class ExpoRetenoSdkModule extends NativeModule {
   onInAppMessageCustomDataHandler(
     callback: (data: InAppCustomData) => void,
   ): RetenoSubscription;
+  startListeningForInAppCustomData: () => void;
   onUnreadMessagesCountChanged(
     callback?: (data: UnreadMessagesCountData) => void,
   ): RetenoSubscription;
@@ -435,11 +436,21 @@ export const Reteno = {
   onInAppMessageCustomDataHandler(
     callback: (data: InAppCustomData) => void,
   ): RetenoSubscription {
-    return emitter.addListener(InAppEvents.OnInAppMessageCustomData, (data) => {
-      if (callback && typeof callback === "function") {
-        callback(data);
-      }
-    });
+    const subscription = emitter.addListener(
+      InAppEvents.OnInAppMessageCustomData,
+      (data) => {
+        const event = data as InAppCustomData & { body?: InAppCustomData };
+        const payload = event.body ?? event;
+
+        if (callback && typeof callback === "function") {
+          callback(payload);
+        }
+      },
+    );
+
+    ModuleInstance.startListeningForInAppCustomData();
+
+    return subscription;
   },
   onUnreadMessagesCountChanged(
     callback: (data: UnreadMessagesCountData) => void,
@@ -501,4 +512,8 @@ export const Reteno = {
 
 // This call loads the native module object from the JSI.
 export default Reteno;
-export type { NotificationGroupingRule } from "./types";
+export type {
+  InAppCustomData,
+  LinkEventSource,
+  NotificationGroupingRule,
+} from "./types";

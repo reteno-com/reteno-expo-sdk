@@ -1,5 +1,3 @@
-const SDK_VERSION = "2.7.4";
-
 export const iosConfig = {
   nse: {
     files: [
@@ -60,12 +58,14 @@ export const iosConfig = {
         "\t}",
       ],
     },
+    // ExpoRetenoSdk.podspec is the single source of truth for the Reteno version.
+    // Pinning it again in extension targets can make CocoaPods require two versions.
     nse: `
 target 'NotificationServiceExtension' do
 use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
-  pod 'Reteno', '${SDK_VERSION}'
+  pod 'Reteno'
 end
       `,
 
@@ -74,7 +74,7 @@ target 'NotificationContentExtension' do
 use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
-  pod 'Reteno', '${SDK_VERSION}'
+  pod 'Reteno'
   end
   `,
   },

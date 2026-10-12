@@ -6,6 +6,7 @@ import Reteno from "expo-reteno-sdk";
 import { useEffect } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { addPushClickEvent } from "src/pushClickEventsStore";
+import { addLinkEvent } from "src/linkEventsStore";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -166,6 +167,12 @@ export default function App() {
       pushClickListener?.remove();
       pushButtonClickListener?.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    const linkListener = Reteno.onInAppMessageCustomDataHandler(addLinkEvent);
+
+    return () => linkListener.remove();
   }, []);
 
   return (
