@@ -16,7 +16,6 @@ import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.firebase.FirebaseApp
@@ -81,6 +80,10 @@ class ExpoRetenoSdkModule : Module() {
   private var messagesCountChangedCallback: RetenoResultCallback<Int>? = null
   private var pushDismissedListener: Procedure<Bundle>? = null
   private var customPushListener: Procedure<Bundle>? = null
+  // Emits through the Expo module so JS listeners on the module EventEmitter receive it.
+  private val inAppCustomDataSink = RetenoEventQueue.EventSink { eventName, eventData ->
+    sendEvent(eventName, eventData.toHashMap())
+  }
 
   init {
     currentInstance = WeakReference(this)
@@ -89,18 +92,13 @@ class ExpoRetenoSdkModule : Module() {
   // This `companion object` is for static access from BroadcastReceiver
   companion object {
     private var currentInstance: WeakReference<ExpoRetenoSdkModule>? = null
-    private var sharedReactContext: WeakReference<ReactContext>? = null
     private const val PREFS_NAME = "RetenoPreferences"
     private const val AUTO_OPEN_LINKS_KEY = "auto_open_links"
     private var sdkInitialized = false
 
-    fun getSharedReactContext(): ReactContext? = sharedReactContext?.get()
-
-    // Helper function (if you don't already have it defined elsewhere)
     fun isAutoOpenLinksEnabled(context: Context): Boolean {
       val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-      // Assuming default is false if not set
-      return prefs.getBoolean(AUTO_OPEN_LINKS_KEY, false)
+      return prefs.getBoolean(AUTO_OPEN_LINKS_KEY, true)
     }
 
     fun onReceiveNotification(payload: Map<String, Any?>) {
@@ -168,16 +166,12 @@ class ExpoRetenoSdkModule : Module() {
         try { RetenoNotifications.custom.removeListener(it) } catch (_: Exception) {}
       }
       customPushListener = null
-      sharedReactContext?.clear()
-      sharedReactContext = null
+      RetenoEventQueue.getInstance().clearSink(inAppCustomDataSink)
     }
 
     OnCreate {
       val ctx = appContext.reactContext
       if (ctx != null) {
-          (ctx as? ReactContext)?.let { reactContext ->
-            sharedReactContext = WeakReference(reactContext)
-          }
           try {
               if (FirebaseApp.getApps(ctx).isEmpty()) {
                   FirebaseApp.initializeApp(ctx)
@@ -239,10 +233,7 @@ class ExpoRetenoSdkModule : Module() {
     }
 
     Function("startListeningForInAppCustomData") {
-      (appContext.reactContext as? ReactContext)?.let { context ->
-        sharedReactContext = WeakReference(context)
-        RetenoEventQueue.getInstance().setInitialized(context)
-      }
+      RetenoEventQueue.getInstance().setSink(inAppCustomDataSink)
     }
 
     AsyncFunction("initialize") { payload: ReadableMap, promise: Promise ->

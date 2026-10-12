@@ -251,7 +251,11 @@ console.log('Auto-open links:', isEnabled);
 Default value:
 
 - iOS: `true`
-- Android: `false`
+- Android: `true`
+
+On Android, this setting controls in-app links with custom data handled by the
+Expo receiver. Push links and URL-only in-app actions are handled directly by
+the native Reteno SDK and are not affected by this setting.
 
 ## Important for Expo
 

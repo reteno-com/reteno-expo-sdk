@@ -46,7 +46,7 @@
 | [logEcomEventOrderDelivered](#ecommerce-events) | iOS, Android | Log order delivered event |
 | [logEcomEventOrderCancelled](#ecommerce-events) | iOS, Android | Log order cancelled event |
 | [logEcomEventSearchRequest](#ecommerce-events) | iOS, Android | Log search request event |
-| [setAutoOpenLinks](#setautoopenlinks) | iOS, Android | Enable or disable automatic URL opening. Default: `true` (iOS), `false` (Android) |
+| [setAutoOpenLinks](#setautoopenlinks) | iOS, Android | Enable or disable automatic URL opening. Default: `true` |
 | [getAutoOpenLinks](#getautoopenlinks) | iOS, Android | Get current auto-open links setting |
 
 ---
@@ -744,11 +744,15 @@ Reteno.logEcomEventSearchRequest(payload: { searchQuery: string; isFound: boolea
 
 Enables or disables automatic URL opening when a user taps a push notification or in-app message with a link.
 
-Default: `true` on iOS, `false` on Android.
+Default: `true` on iOS and Android.
 
 ```ts
 Reteno.setAutoOpenLinks(state: boolean): Promise<boolean>
 ```
+
+On Android, this setting controls in-app links with custom data handled by the
+Expo receiver. Push links and URL-only in-app actions are handled directly by
+the native Reteno SDK and are not affected by this setting.
 
 ### `getAutoOpenLinks()`
 

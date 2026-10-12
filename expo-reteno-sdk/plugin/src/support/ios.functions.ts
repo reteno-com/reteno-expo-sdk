@@ -349,8 +349,34 @@ export async function addTargetToPodfile(
     "m",
   );
 
-  if (targetDeclaration.test(podfile)) {
-    console.log(`Target "${target}" was added before, skipping process...`);
+  const targetMatch = targetDeclaration.exec(podfile);
+
+  if (targetMatch) {
+    const blockStart = targetMatch.index + targetMatch[0].length;
+    const targetEnd = /^\s*end\s*(?:#.*)?$/m.exec(podfile.slice(blockStart));
+
+    if (!targetEnd) {
+      throw new Error(`Could not find the end of target "${target}" in Podfile`);
+    }
+
+    const blockEnd = blockStart + targetEnd.index;
+    const targetBody = podfile.slice(blockStart, blockEnd);
+    const retenoPod = /^[ \t]*pod\s+(['"])Reteno\1/m;
+    // Drops only the version argument and keeps other pod options and comments.
+    const pinnedRetenoPod =
+      /^([ \t]*pod\s+(['"])Reteno\2)\s*,\s*(['"])[^'"\n]*\3([^\n]*)$/m;
+    const updatedTargetBody = retenoPod.test(targetBody)
+      ? targetBody.replace(pinnedRetenoPod, "$1$4")
+      : targetBody.replace(/\s*$/, "\n  pod 'Reteno'\n");
+
+    if (updatedTargetBody !== targetBody) {
+      podfile =
+        podfile.slice(0, blockStart) +
+        updatedTargetBody +
+        podfile.slice(blockEnd);
+      await FileService.write(`${path}/Podfile`, podfile);
+    }
+
     return;
   }
 

@@ -1,12 +1,13 @@
 package expo.modules.retenosdk
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.webkit.URLUtil
+import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 
@@ -18,14 +19,22 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
 
         dispatchCustomData(extras)
 
-        // Assuming isAutoOpenLinksEnabled is now a companion object function in RetenoModule
-        if (!url.isNullOrEmpty() && URLUtil.isValidUrl(url) && ExpoRetenoSdkModule.isAutoOpenLinksEnabled(context)) {
+        // The Reteno SDK skips its own URL handling once this receiver takes the
+        // custom data, so open the link here when auto-open is enabled.
+        if (
+            !url.isNullOrBlank() &&
+            ExpoRetenoSdkModule.isAutoOpenLinksEnabled(context)
+        ) {
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
             if (context !is Activity) {
                 browserIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
-            context.startActivity(browserIntent)
+            try {
+                context.startActivity(browserIntent)
+            } catch (e: ActivityNotFoundException) {
+                Log.w("RetenoInAppData", "No activity found to open in-app link", e)
+            }
         }
     }
 
@@ -55,8 +64,7 @@ class RetenoCustomReceiverInAppData : BroadcastReceiver() {
         // enqueue the event before JavaScript registers its first handler.
         RetenoEventQueue.getInstance().dispatch(
             "reteno-in-app-custom-data-received",
-            eventData,
-            ExpoRetenoSdkModule.getSharedReactContext()
+            eventData
         )
     }
 }
