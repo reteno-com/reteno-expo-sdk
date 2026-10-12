@@ -115,7 +115,9 @@ type InAppErrorData = {
 
 ## Handling Link and In-App Custom Data
 
-Subscribe at app startup to receive link URLs and custom data from in-app messages and push notifications:
+> Link source identification is available since `expo-reteno-sdk` `v2.5.0`.
+
+Subscribe at app startup to receive link URLs and custom data from in-app messages and, on iOS, from push notifications:
 
 ```ts
 import { useEffect } from 'react';
@@ -149,6 +151,8 @@ type InAppCustomData = {
 ```
 
 `source` identifies where the link interaction itself originated. The Android-only `inapp_source` has different semantics: it identifies the rule that displayed the in-app message. Keep push cold-start handling through `getInitialNotification()` separate and deduplicate navigation if the same interaction is observed in both flows.
+
+`pushNotification` is emitted on iOS only. On Android, push links are opened by the native Reteno SDK and are not delivered to this handler, so `source` is always `inAppMessage` there. Use `setOnRetenoPushClickedListener` for push clicks on Android.
 
 On Android, one in-app custom-data interaction produces one callback. If the
 native event arrives before the first JavaScript handler is registered, it is

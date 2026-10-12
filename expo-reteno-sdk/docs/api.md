@@ -744,7 +744,7 @@ Reteno.logEcomEventSearchRequest(payload: { searchQuery: string; isFound: boolea
 
 Enables or disables automatic URL opening when a user taps a push notification or in-app message with a link.
 
-Default: `true` on iOS and Android.
+Default: `true` on iOS and Android. Before `expo-reteno-sdk` `v2.5.0` the Android default was `false`.
 
 ```ts
 Reteno.setAutoOpenLinks(state: boolean): Promise<boolean>
@@ -815,3 +815,5 @@ type InAppErrorData  = { id?: string; source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICAT
 type LinkEventSource = 'inAppMessage' | 'pushNotification';
 type InAppCustomData = { customData?: Record<string, any>; source?: LinkEventSource; url?: string; inapp_id?: string; inapp_source?: 'DISPLAY_RULES' | 'PUSH_NOTIFICATION' };
 ```
+
+`LinkEventSource` and `InAppCustomData.source` are available since `expo-reteno-sdk` `v2.5.0`.
