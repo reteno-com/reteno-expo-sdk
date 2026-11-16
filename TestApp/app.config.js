@@ -8,6 +8,31 @@ const path = require("path");
 
 const ANDROID_VERSION = process.env.ANDROID_VERSION || "1.1.14";
 
+function withRetenoIOSAPNs(config) {
+  config.ios = config.ios || {};
+  delete config.ios.googleServicesFile;
+
+  config.plugins = (config.plugins || []).map((plugin) => {
+    if (!Array.isArray(plugin) || plugin[0] !== "expo-reteno-sdk") {
+      return plugin;
+    }
+
+    const options = plugin[1] || {};
+    return [
+      plugin[0],
+      {
+        ...options,
+        ios: {
+          ...(options.ios || {}),
+          notificationService: "apns",
+        },
+      },
+    ];
+  });
+
+  return config;
+}
+
 function withAndroidVersion(config, version) {
   return withAppBuildGradle(config, (c) => {
     c.modResults.contents = c.modResults.contents.replace(
@@ -66,6 +91,7 @@ function withNetworkSecurityConfig(config) {
 }
 
 module.exports = ({ config }) => {
+  config = withRetenoIOSAPNs(config);
   config = withAndroidVersion(config, ANDROID_VERSION);
   config = withReleaseBuildDebuggable(config);
   config = withNetworkSecurityConfig(config);
