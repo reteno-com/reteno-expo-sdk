@@ -27,9 +27,9 @@ useEffect(() => {
 
 ## Get initial notification
 
-When your app is launched by clicking a Reteno push notification, including an iOS cold start from a terminated state, read the launch payload with `getInitialNotification()`.
+When your app is launched by clicking a Reteno push notification, read the launch payload with `getInitialNotification()`. On iOS, this also covers a notification click received during native startup before JavaScript subscribed to click events.
 
-The method returns the Reteno payload or `null`. On Android, launch intent extras from other integrations, such as Branch links, are ignored and do not appear as an initial Reteno notification. Call the method once during app startup; on iOS the stored cold-start response is consumed by the first call.
+The method returns the Reteno payload or `null`. On Android, launch intent extras from other integrations, such as Branch links, are ignored and do not appear as an initial Reteno notification. Call the method once during app startup; on iOS the stored response is consumed by the first call.
 
 ```ts
 import { useEffect } from 'react';
@@ -45,7 +45,7 @@ useEffect(() => {
 }, []);
 ```
 
-Use `setOnRetenoPushClickedListener` below for notification clicks received after the app has started.
+Use `setOnRetenoPushClickedListener` below for notification clicks received after the listener is registered. If both callbacks can initiate navigation, deduplicate the interaction before navigating.
 
 ## Distinguish Push Links from In-App Links
 
@@ -65,7 +65,7 @@ const linkListener = Reteno.onInAppMessageCustomDataHandler((event) => {
 
 The optional values are `pushNotification` and `inAppMessage`. `pushNotification` is emitted on iOS only: on Android, push links are opened by the native Reteno SDK and are not delivered to this handler. Do not use `inapp_source` for this decision: that Android-only field describes how an in-app message was displayed (`DISPLAY_RULES` or `PUSH_NOTIFICATION`), not where the link interaction originated.
 
-Keep `getInitialNotification()` as the source of the cold-start push payload. If both callbacks can initiate navigation in your app, deduplicate the interaction before navigating.
+Keep `getInitialNotification()` as the source of the startup push payload, including iOS clicks received before the JavaScript click listener is registered. If both callbacks can initiate navigation in your app, deduplicate the interaction before navigating.
 
 ## Listen for new push notifications while app is active
 

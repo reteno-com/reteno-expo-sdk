@@ -90,9 +90,9 @@ Reteno.registerForRemoteNotifications(): Promise<void>
 
 ### `getInitialNotification()`
 
-Returns the Reteno push notification payload that triggered the app launch, including an iOS launch from a terminated state.
+Returns the Reteno push notification payload that triggered the app launch. On iOS, it also returns a notification click received during native startup before JavaScript subscribed to click events.
 
-Returns `null` when the app was opened normally or by a non-Reteno Android intent. Call it once during app startup; on iOS the stored cold-start response is consumed by the first call. Use `setOnRetenoPushClickedListener()` for clicks received after startup.
+Returns `null` when the app was opened normally or by a non-Reteno Android intent. Call it once during app startup; on iOS the stored response is consumed by the first call. Use `setOnRetenoPushClickedListener()` for clicks received after the listener is registered, and deduplicate navigation if both paths are handled.
 
 ```ts
 Reteno.getInitialNotification(): Promise<Record<string, unknown> | null>

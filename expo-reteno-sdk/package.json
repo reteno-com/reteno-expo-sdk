@@ -1,6 +1,6 @@
 {
   "name": "expo-reteno-sdk",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Expo wrapper for Reteno SDK",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -56,7 +56,7 @@
   ],
   "plugins": "./app.plugin.js",
   "peerDependencies": {
-    "expo": "*",
+    "expo": ">=51.0.0",
     "react": "*",
     "react-native": "*"
   }
