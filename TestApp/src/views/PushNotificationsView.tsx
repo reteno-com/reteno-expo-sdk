@@ -4,7 +4,6 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Alert, Platform, ScrollView, Text } from "react-native";
 import { Block, Button, ScreenContainer } from "src/components";
 import {
-  addPushClickEvent,
   getPushClickEventsSnapshot,
   subscribeToPushClickEvents,
 } from "src/pushClickEventsStore";
@@ -34,24 +33,6 @@ export const PushNotificationsView = () => {
 
     Reteno.registerForRemoteNotifications();
   };
-
-  useEffect(() => {
-    async function start() {
-      const data = await Reteno.getInitialNotification();
-
-      if (!data) {
-        Alert.alert("getInitialNotification", "No data");
-      } else {
-        addPushClickEvent(data);
-        Alert.alert(
-          "getInitialNotification",
-          data ? JSON.stringify(data) : data,
-        );
-      }
-    }
-
-    start();
-  }, []);
 
   useEffect(() => {
     const pushListener =

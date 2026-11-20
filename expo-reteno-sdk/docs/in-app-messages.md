@@ -150,7 +150,7 @@ type InAppCustomData = {
 };
 ```
 
-`source` identifies where the link interaction itself originated. The Android-only `inapp_source` has different semantics: it identifies the rule that displayed the in-app message. Keep push cold-start handling through `getInitialNotification()` separate and deduplicate navigation if the same interaction is observed in both flows.
+`source` identifies where the link interaction itself originated. The Android-only `inapp_source` has different semantics: it identifies the rule that displayed the in-app message. Keep startup push handling through `getInitialNotification()` separate and deduplicate navigation if the same interaction is observed in both flows.
 
 `pushNotification` is emitted on iOS only. On Android, push links are opened by the native Reteno SDK and are not delivered to this handler, so `source` is always `inAppMessage` there. Use `setOnRetenoPushClickedListener` for push clicks on Android.
 
