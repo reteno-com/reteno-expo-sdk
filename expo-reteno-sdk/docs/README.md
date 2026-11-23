@@ -12,7 +12,7 @@
 - iOS 15.1 or later
 - Android 8.0 or later (`minSdkVersion = 26`)
 
-##### Native SDK versions in `expo-reteno-sdk` `v2.5.2`:
+##### Native SDK versions in `expo-reteno-sdk` `v2.5.3`:
 
 - Reteno Android SDK 2.11.0
 - Reteno iOS SDK 2.7.7

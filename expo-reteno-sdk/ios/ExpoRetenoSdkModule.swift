@@ -74,6 +74,21 @@ public class ExpoRetenoSdkModule: Module {
 	private static var delayedStartCalled = false
 	private static var fcmBridgeInstalled = false
 	private static var fcmTokenObserver: NSObjectProtocol?
+	private let pushClickListenerLock = NSLock()
+	private var _hasPushClickListener = false
+
+	private var hasPushClickListener: Bool {
+		get {
+			pushClickListenerLock.lock()
+			defer { pushClickListenerLock.unlock() }
+			return _hasPushClickListener
+		}
+		set {
+			pushClickListenerLock.lock()
+			_hasPushClickListener = newValue
+			pushClickListenerLock.unlock()
+		}
+	}
 	
 	private static var autoOpenLinks: Bool {
 			get {
@@ -139,6 +154,14 @@ public class ExpoRetenoSdkModule: Module {
 			RetenoExpoEvent.onInAppError.value,
 			RetenoExpoEvent.unreadMessagesCount.value
 		)
+
+		OnStartObserving(RetenoExpoEvent.onPushNotificationClicked.value) {
+			self.hasPushClickListener = true
+		}
+
+		OnStopObserving(RetenoExpoEvent.onPushNotificationClicked.value) {
+			self.hasPushClickListener = false
+		}
 		
 		OnCreate {
 			let module = self
@@ -152,13 +175,14 @@ public class ExpoRetenoSdkModule: Module {
 					object: nil
 				)
 
-				// Config-plugin auto-init: if the plugin wrote RetenoSDKKey to Info.plist,
-				// initialize the SDK now so JS never needs to call Reteno.initialize() explicitly.
-				// setupRetenoCallbacks() is called here (instance context) so all push/in-app
-				// handlers are registered immediately after SDK start.
-				if let apiKey = Bundle.main.infoDictionary?["RetenoSDKKey"] as? String,
-				   !apiKey.isEmpty,
-				   !ExpoRetenoSdkModule.sdkInitialized {
+				// Reteno keeps callback closures on static services. Rebind them whenever Expo
+				// creates a new module instance, such as after a JavaScript reload.
+				if ExpoRetenoSdkModule.sdkInitialized {
+					module.setupRetenoCallbacks()
+				} else if let apiKey = Bundle.main.infoDictionary?["RetenoSDKKey"] as? String,
+				          !apiKey.isEmpty {
+					// Config-plugin auto-init: initialize the SDK now so JavaScript never needs
+					// to call Reteno.initialize() explicitly.
 					let isDebugMode = Bundle.main.infoDictionary?["RetenoIsDebugMode"] as? Bool ?? false
 					let configuration = RetenoConfiguration(
 						isAutomaticScreenReportingEnabled: false,
@@ -200,6 +224,7 @@ public class ExpoRetenoSdkModule: Module {
 
 		AsyncFunction("initialize") { (payload: [String: Any], promise: Promise) -> Void in
 			if ExpoRetenoSdkModule.sdkInitialized {
+				setupRetenoCallbacks()
 				promise.resolve(true)
 				return
 			}
@@ -886,17 +911,20 @@ public class ExpoRetenoSdkModule: Module {
 		}
 
 		Reteno.userNotificationService.didReceiveNotificationResponseHandler = { [weak self] response in
-			// A cold-start callback can arrive after the module is created but before JS has
-			// subscribed. Persist only SDK-classified cold starts; warm clicks use the event.
-			if Reteno.userNotificationService.coldStartNotificationResponse != nil {
-				ExpoRetenoSdkModule.storePendingInitialNotification(
-					response.notification.request.content.userInfo
-				)
+			let userInfo = response.notification.request.content.userInfo
+			guard let self else {
+				ExpoRetenoSdkModule.storePendingInitialNotification(userInfo)
+				return
 			}
-			guard let self else { return }
+
+			// Native SDK initialization does not guarantee that JavaScript has subscribed yet.
+			// Buffer the click only when the event cannot currently be delivered to JavaScript.
+			if !self.hasPushClickListener {
+				ExpoRetenoSdkModule.storePendingInitialNotification(userInfo)
+			}
 			self.sendEvent(
 				RetenoExpoEvent.onPushNotificationClicked.value,
-				response.notification.request.content.userInfo as! [String: Any?]
+				userInfo as! [String: Any?]
 			)
 		}
 
