@@ -169,9 +169,9 @@ plugins {
 }
 
 dependencies {
-    implementation("com.reteno:core:2.9.6")
-    implementation("com.reteno:push:2.9.6")
-    implementation("com.reteno:fcm:2.9.6")
+    implementation("com.reteno:core:2.12.0")
+    implementation("com.reteno:push:2.12.0")
+    implementation("com.reteno:fcm:2.12.0")
     implementation("com.google.firebase:firebase-messaging:23.1.0")
     implementation("com.google.firebase:firebase-messaging-ktx:23.1.0")
 }
