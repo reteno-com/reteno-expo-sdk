@@ -1,20 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
   <application>
-    <!-- TEMPORARY WORKAROUND: initialize WorkManager before Application.onCreate() in every process
-         (including cold starts for WorkManager jobs). com.reteno:core removes the default
-         initializer and initializes WorkManager asynchronously since 2.11.0. Remove once fixed in
-         the Reteno Android SDK. -->
-    <provider
-      android:name="androidx.startup.InitializationProvider"
-      android:authorities="${applicationId}.androidx-startup"
-      android:exported="false"
-      tools:node="merge">
-      <meta-data
-        android:name="expo.modules.retenosdk.ExpoRetenoWorkManagerInitializer"
-        android:value="androidx.startup" />
-    </provider>
-
     <provider
       android:name="expo.modules.retenosdk.RetenoNotificationGroupingRuleProvider"
       android:authorities="${applicationId}.reteno.notification-grouping-rule"

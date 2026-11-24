@@ -14,7 +14,7 @@
 
 ##### Native SDK versions in `expo-reteno-sdk` `v2.5.4`:
 
-- Reteno Android SDK 2.12.0
+- Reteno Android SDK 2.12.1
 - Reteno iOS SDK 2.7.7
 
 ## Getting started with Reteno SDK / Setup guide
