@@ -25,10 +25,12 @@ import androidx.work.WorkManager
 class ExpoRetenoWorkManagerInitializer : Initializer<WorkManager> {
   override fun create(context: Context): WorkManager {
     try {
-      WorkManager.initialize(
-        context,
-        Configuration.Builder().setMinimumLoggingLevel(Log.INFO).build()
-      )
+      // Respect the host app's own WorkManager configuration (custom WorkerFactory, executors, ...)
+      // when its Application implements Configuration.Provider; otherwise use a default one.
+      val configuration = (context.applicationContext as? Configuration.Provider)
+        ?.workManagerConfiguration
+        ?: Configuration.Builder().setMinimumLoggingLevel(Log.INFO).build()
+      WorkManager.initialize(context, configuration)
     } catch (_: IllegalStateException) {
       // Already initialized by the host app or another initializer.
     }
