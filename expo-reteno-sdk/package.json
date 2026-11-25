@@ -1,6 +1,6 @@
 {
   "name": "expo-reteno-sdk",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "description": "Expo wrapper for Reteno SDK",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -45,7 +45,8 @@
   },
   "files": [
     "build",
-    "android",
+    "android/build.gradle",
+    "android/src",
     "ios",
     "plugin/build",
     "plugin/src/support/nse",
