@@ -112,15 +112,19 @@ function addLines(
 ) {
   const lines = content.split("\n");
 
-  let lineIndex = lines.findIndex((line) => line.match(find));
-  if (lineIndex < 0) {
+  const matches = lines.filter((line) => line.match(find)).length;
+  if (matches !== 1) {
     const error = new Error(
-      `Failed to match "${find}" in contents:\n${content}`,
+      `[expo-reteno-sdk] Expected exactly one match for ${find}, found ${matches}. ` +
+        "The native template has an unexpected shape; the Reteno config plugin cannot " +
+        "apply its changes safely. Run `npx expo prebuild --clean` or report the issue " +
+        "with your Expo SDK version.",
     );
     // @ts-ignore
     error.code = "ERR_NO_MATCH";
     throw error;
   }
+  let lineIndex = lines.findIndex((line) => line.match(find));
   for (const newLine of toAdd) {
     lines.splice(lineIndex + offset, 0, newLine);
     lineIndex++;
@@ -179,6 +183,28 @@ export function removeContents({
 }
 
 /**
+ * AppDelegate anchors. Each must match exactly one line in every supported
+ * template (Expo SDK 54–58, incl. 57 with scene support) — see plugin/__fixtures__/ANCHORS.md.
+ */
+export const APP_DELEGATE_ANCHORS = {
+  /** `@main` (55+) or `@UIApplicationMain` (54). */
+  main: /^\s*@(main|UIApplicationMain)\s*$/,
+  /** `import Expo` (54) or `internal import Expo` (55+); never `import ExpoRetenoSdk`. */
+  importExpo: /^\s*(?:(?:internal|public|package)\s+)?import\s+Expo\s*$/,
+  /** AppDelegate class declaration; new methods are inserted right after it. */
+  classDeclaration: /^\s*(?:public\s+)?class\s+AppDelegate\s*:\s*ExpoAppDelegate\b/,
+  /**
+   * Present in classic (54–57) and scene-based (57 + enableSceneSupport, 58) templates.
+   * Code inserted after it runs before `factory.startReactNative` (classic) and before
+   * the scene connects / React Native starts (scene-based).
+   */
+  reactNativeFactoryAssignment: /^\s*reactNativeFactory\s*=\s*factory\s*$/,
+  /** `return super.application(application, didFinishLaunchingWithOptions: launchOptions)`. */
+  didFinishLaunchingReturn:
+    /\breturn\s+super\.application\(\w+,\s*didFinishLaunchingWithOptions:\s*\w+\)/,
+} as const;
+
+/**
  * @see https://github.com/expo/expo/blob/60aeb1eac8693841c7932e037afce6c96a5e8841/packages/%40expo/config-plugins/src/ios/Maps.ts#L50
  */
 export function addFirebaseAppDelegateImport(src: string): MergeResults {
@@ -188,7 +214,7 @@ export function addFirebaseAppDelegateImport(src: string): MergeResults {
     tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
     src,
     newSrc: newSrc.join("\n"),
-    anchor: /(@main|@UIApplicationMain)/,
+    anchor: APP_DELEGATE_ANCHORS.main,
     offset: 0,
     comment: "//",
   });
@@ -219,8 +245,7 @@ export function addFirebaseAppDelegateInit(src: string): MergeResults {
     tag: RetenoIOSAutogenComments.FIREBASE_INIT,
     src,
     newSrc: newSrc.join("\n"),
-    anchor:
-      /\bsuper\.application\(\w+?, didFinishLaunchingWithOptions: \w+?\)/g,
+    anchor: APP_DELEGATE_ANCHORS.didFinishLaunchingReturn,
     offset: 0,
     comment: "//",
   });
@@ -236,7 +261,7 @@ export function addMessagingDelegate(
       tag: RetenoIOSAutogenComments.FIREBASE_MESSAGING_DELEGATE,
       src,
       newSrc: iosConfig.snippets.messaging.firebase.extension.join("\n"),
-      anchor: /(@main|@UIApplicationMain)/,
+      anchor: APP_DELEGATE_ANCHORS.main,
       offset: 0,
       comment: "//",
     });
@@ -246,8 +271,8 @@ export function addMessagingDelegate(
       tag: RetenoIOSAutogenComments.RETENO_APNS,
       src: contents,
       newSrc: iosConfig.snippets.messaging.firebase.application.join("\n"),
-      anchor: /public override func application/,
-      offset: 0,
+      anchor: APP_DELEGATE_ANCHORS.classDeclaration,
+      offset: 1,
       comment: "//",
     });
   } else {
@@ -255,21 +280,29 @@ export function addMessagingDelegate(
       tag: RetenoIOSAutogenComments.RETENO_APNS,
       src,
       newSrc: iosConfig.snippets.messaging.apns.join("\n"),
-      anchor: /public override func application/,
-      offset: 0,
+      anchor: APP_DELEGATE_ANCHORS.classDeclaration,
+      offset: 1,
       comment: "//",
     });
   }
 }
 
 export function addRetenoImport(src: string): MergeResults {
-  const newSrc = ["import Reteno", "import ExpoRetenoSdk"];
+  // Mirror the access level of the template's `import Expo` line. Expo SDK 55+ templates use
+  // `internal import Expo`, and expo-modules-autolinking generates `internal import <Module>`
+  // (incl. `internal import ExpoRetenoSdk`) in ExpoModulesProvider.swift. Swift rejects importing
+  // the same module with an implicit access level elsewhere in the target
+  // ("ambiguous implicit access level for import of 'ExpoRetenoSdk'").
+  const accessLevel =
+    src.match(/^\s*(internal|public|package)\s+import\s+Expo\s*$/m)?.[1] ?? "";
+  const prefix = accessLevel ? `${accessLevel} ` : "";
+  const newSrc = [`${prefix}import Reteno`, `${prefix}import ExpoRetenoSdk`];
 
   return mergeContents({
     tag: RetenoIOSAutogenComments.RETENO_IMPORT,
     src,
     newSrc: newSrc.join("\n"),
-    anchor: /import Expo/,
+    anchor: APP_DELEGATE_ANCHORS.importExpo,
     offset: 0,
     comment: "//",
   });
@@ -293,46 +326,107 @@ export function addRetenoInit(
     tag: RetenoIOSAutogenComments.RETENO_INIT,
     src,
     newSrc: newSrc.join("\n"),
-    anchor: /\bfactory\.startReactNative\(/g,
-    offset: 0,
+    anchor: APP_DELEGATE_ANCHORS.reactNativeFactoryAssignment,
+    offset: 1,
     comment: "//",
   });
 }
 
-// Function installs pods through iteration
-export async function addDependenciesToPodfile(
-  path: string,
-  pods: Record<"name" | "addon", string>[],
-  anchor: string,
-) {
-  const podfile = await FileService.read(`${path}/Podfile`);
+/**
+ * Firebase pods required by the AppDelegate Firebase integration
+ * (`import Firebase`, `FirebaseApp.configure()`, `Messaging`).
+ */
+export const FIREBASE_PODS = [
+  "Firebase",
+  "FirebaseCore",
+  "FirebaseCoreExtension",
+  "FirebaseCoreInternal",
+  "FirebaseInstallations",
+  "FirebaseMessaging",
+  "GoogleDataTransport",
+  "GoogleUtilities",
+] as const;
 
-  if (!podfile.includes(anchor)) {
-    throw new Error("Anchor was not found");
+const firebasePodLine = (name: string) =>
+  `pod '${name}', :modular_headers => true`;
+
+const PODFILE_ANCHOR = /^\s*use_expo_modules!/;
+
+/**
+ * Plugin versions < 3.0.0 inserted the Firebase pods as plain lines directly after
+ * `use_expo_modules!`, without generated-block markers. Remove only those exact lines,
+ * and only while they are contiguous right after the anchor, so user-added pods elsewhere
+ * are never touched.
+ */
+function removeLegacyFirebasePods(podfile: string): string {
+  const lines = podfile.split("\n");
+  const anchorIndex = lines.findIndex((line) => PODFILE_ANCHOR.test(line));
+  if (anchorIndex < 0) return podfile;
+
+  const legacyLines = new Set(FIREBASE_PODS.map(firebasePodLine));
+  let end = anchorIndex + 1;
+  while (end < lines.length && legacyLines.has((lines[end] ?? "").trim())) {
+    end++;
+  }
+  if (end === anchorIndex + 1) return podfile;
+
+  lines.splice(anchorIndex + 1, end - anchorIndex - 1);
+  return lines.join("\n");
+}
+
+/**
+ * Makes the Firebase pods in the Podfile match the selected notification service.
+ * - always removes the Reteno-generated block (and legacy unmarked lines);
+ * - re-adds the block only when `enabled` (Firebase mode).
+ * Idempotent and reversible (Firebase → APNs removes the pods with `--no-clean`).
+ * Throws if the Podfile has no `use_expo_modules!` anchor.
+ */
+export function syncFirebasePods(podfile: string, enabled: boolean): string {
+  const anchorMatches = podfile
+    .split("\n")
+    .filter((line) => PODFILE_ANCHOR.test(line)).length;
+  if (anchorMatches !== 1) {
+    const error = new Error(
+      `[expo-reteno-sdk] Expected exactly one \`use_expo_modules!\` line in ios/Podfile, found ${anchorMatches}. ` +
+        "Cannot configure Firebase pods.",
+    );
+    // @ts-ignore
+    error.code = "ERR_NO_MATCH";
+    throw error;
   }
 
-  const updates = [];
+  let src = removeLegacyFirebasePods(podfile);
+  src = removeContents({ src, tag: RetenoIOSAutogenComments.FIREBASE_PODS })
+    .contents;
 
-  for (const p of pods) {
-    // TODO: Check if commented
-    if (podfile.includes(`pod '${p.name}'`)) {
-      console.log(`Pod ${p} already exists, skipping...`);
-      continue;
-    } else {
-      updates.push(`pod '${p.name}'${p.addon !== "" ? ", " + p.addon : ""}`);
-    }
-  }
+  if (!enabled) return src;
 
-  if (updates.length === 0) {
-    return;
-  }
-
-  const contents = podfile.replace(
-    anchor,
-    `${anchor}\n  ${updates.join("\n  ")}`,
+  // Respect pods the user declared themselves outside the generated block.
+  const pods = FIREBASE_PODS.filter(
+    (name) => !new RegExp(`^\\s*pod\\s+['"]${name}['"]`, "m").test(src),
   );
+  if (pods.length === 0) return src;
 
-  await FileService.write(`${path}/Podfile`, contents);
+  return mergeContents({
+    src,
+    newSrc: pods.map((name) => `  ${firebasePodLine(name)}`).join("\n"),
+    tag: RetenoIOSAutogenComments.FIREBASE_PODS,
+    anchor: PODFILE_ANCHOR,
+    offset: 1,
+    comment: "#",
+  }).contents;
+}
+
+export async function updatePodfileFirebasePods(
+  iosRoot: string,
+  enabled: boolean,
+) {
+  const podfilePath = `${iosRoot}/Podfile`;
+  const podfile = await FileService.read(podfilePath);
+  const updated = syncFirebasePods(podfile, enabled);
+  if (updated !== podfile) {
+    await FileService.write(podfilePath, updated);
+  }
 }
 
 // Function adds target to Podfile
@@ -468,6 +562,44 @@ export async function copyExtensionFiles(
   return config;
 }
 
+/**
+ * node-xcode stores targets created via `addTarget` with a quoted name/comment
+ * (`"NotificationServiceExtension"`), so `pbxTargetByName(name)` misses them and the
+ * extension targets were duplicated on every `prebuild --no-clean`. Check both forms.
+ */
+function hasNativeTarget(xcodeProject: any, name: string): boolean {
+  return (
+    !!xcodeProject.pbxTargetByName(name) ||
+    !!xcodeProject.pbxTargetByName(`"${name}"`)
+  );
+}
+
+/**
+ * Highest IPHONEOS_DEPLOYMENT_TARGET already present in the project (the app target,
+ * e.g. 15.1 on Expo 54/55 and 16.4 on Expo 56+). Extension targets default to it so they
+ * never end up below the app / pods minimum.
+ */
+function getAppDeploymentTarget(xcodeProject: any): string | undefined {
+  const configurations = xcodeProject.pbxXCBuildConfigurationSection();
+  let best: string | undefined;
+  const toNumbers = (v: string) => v.split(".").map((n) => parseInt(n, 10) || 0);
+  const greater = (a: string, b: string) => {
+    const [x, y] = [toNumbers(a), toNumbers(b)];
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
+    }
+    return false;
+  };
+  for (const key in configurations) {
+    const value = configurations[key]?.buildSettings?.IPHONEOS_DEPLOYMENT_TARGET;
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    const target = String(value).replace(/"/g, "");
+    if (!/^\d+(\.\d+)*$/.test(target)) continue;
+    if (!best || greater(target, best)) best = target;
+  }
+  return best;
+}
+
 export function addNotificationServiceExtensionTarget(
   config: any,
   newConfig: ExportedConfigWithProps,
@@ -475,9 +607,10 @@ export function addNotificationServiceExtensionTarget(
 ) {
   const xcodeProject = newConfig.modResults;
   const { targetedDeviceFamily, deploymentTarget } = iosConfig;
+  const appDeploymentTarget = getAppDeploymentTarget(xcodeProject);
   const { target, files, source, infoPlist } = iosConfig.nse;
 
-  if (!!xcodeProject.pbxTargetByName(target)) {
+  if (hasNativeTarget(xcodeProject, target)) {
     console.warn(`${target} already exists in project. Skipping...`);
     return newConfig;
   }
@@ -549,9 +682,11 @@ export function addNotificationServiceExtensionTarget(
       const { buildSettings } = configurations[key];
 
       buildSettings.INFOPLIST_FILE = `"${target}/${infoPlist}"`;
-      buildSettings.DEVELOPMENT_TEAM = props?.devTeam;
+      if (props?.devTeam) {
+        buildSettings.DEVELOPMENT_TEAM = props.devTeam;
+      }
       buildSettings.IPHONEOS_DEPLOYMENT_TARGET =
-        props?.deploymentTarget ?? deploymentTarget;
+        props?.deploymentTarget ?? appDeploymentTarget ?? deploymentTarget;
       buildSettings.TARGETED_DEVICE_FAMILY = targetedDeviceFamily;
       buildSettings.CODE_SIGN_ENTITLEMENTS = `${target}/${target}.entitlements`;
       buildSettings.CODE_SIGN_STYLE = "Automatic";
@@ -577,8 +712,10 @@ export function addNotificationServiceExtensionTarget(
   }
 
   // Add development teams to both your target and the original project
-  xcodeProject.addTargetAttribute("DevelopmentTeam", props?.devTeam, nseTarget);
-  xcodeProject.addTargetAttribute("DevelopmentTeam", props?.devTeam);
+  if (props?.devTeam) {
+    xcodeProject.addTargetAttribute("DevelopmentTeam", props.devTeam, nseTarget);
+    xcodeProject.addTargetAttribute("DevelopmentTeam", props.devTeam);
+  }
 
   return newConfig;
 }
@@ -591,10 +728,11 @@ export function addNotificationContentExtensionTarget(
   const xcodeProject = newConfig.modResults;
 
   const { targetedDeviceFamily, deploymentTarget } = iosConfig;
+  const appDeploymentTarget = getAppDeploymentTarget(xcodeProject);
   const { target, files, source, infoPlist, entitlements } = iosConfig.nce;
 
   // Idempotency check
-  if (!!xcodeProject.pbxTargetByName(target)) {
+  if (hasNativeTarget(xcodeProject, target)) {
     console.warn(`${target} already exists in project. Skipping...`);
     return newConfig;
   }
@@ -671,9 +809,11 @@ export function addNotificationContentExtensionTarget(
       const { buildSettings } = configurations[key];
 
       buildSettings.INFOPLIST_FILE = `"${target}/${infoPlist}"`;
-      buildSettings.DEVELOPMENT_TEAM = props?.devTeam;
+      if (props?.devTeam) {
+        buildSettings.DEVELOPMENT_TEAM = props.devTeam;
+      }
       buildSettings.IPHONEOS_DEPLOYMENT_TARGET =
-        props?.deploymentTarget ?? deploymentTarget;
+        props?.deploymentTarget ?? appDeploymentTarget ?? deploymentTarget;
       buildSettings.TARGETED_DEVICE_FAMILY = targetedDeviceFamily;
       buildSettings.CODE_SIGN_ENTITLEMENTS = `"${target}/${entitlements}"`;
       buildSettings.CODE_SIGN_STYLE = "Automatic";
@@ -696,8 +836,10 @@ export function addNotificationContentExtensionTarget(
   }
 
   // Add development teams to both your target and the original project
-  xcodeProject.addTargetAttribute("DevelopmentTeam", props?.devTeam, nceTarget);
-  xcodeProject.addTargetAttribute("DevelopmentTeam", props?.devTeam);
+  if (props?.devTeam) {
+    xcodeProject.addTargetAttribute("DevelopmentTeam", props.devTeam, nceTarget);
+    xcodeProject.addTargetAttribute("DevelopmentTeam", props.devTeam);
+  }
 
   return newConfig;
 }

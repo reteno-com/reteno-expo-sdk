@@ -83,30 +83,3 @@ use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if po
     version: "1",
   },
 };
-
-export const androidConfig = {
-  sdk: {
-    project: {
-      anchor: "dependencies {",
-      deps: ["classpath 'com.google.gms:google-services:4.4.4'"],
-    },
-    module: {
-      anchor: 'implementation("com.facebook.react:react-android")',
-      deps: [
-        "implementation 'com.reteno:core:2.12.1'",
-        "implementation 'com.reteno:push:2.12.1'",
-        "implementation 'com.reteno:fcm:2.12.1'",
-        "implementation 'com.google.firebase:firebase-messaging:23.1.0'",
-        "implementation 'com.google.firebase:firebase-messaging-ktx:23.1.0'",
-      ],
-    },
-    properties: {
-      "android.useAndroidX": true,
-      // "android.enableJetifier": true,
-    },
-    gradleSourceAndTarget: [
-      "sourceCompatibility JavaVersion.VERSION_1_8",
-      "targetCompatibility JavaVersion.VERSION_1_8",
-    ],
-  },
-};

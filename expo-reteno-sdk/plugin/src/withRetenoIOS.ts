@@ -17,7 +17,7 @@ import {
   addFirebaseAppDelegateImport,
   addFirebaseAppDelegateInit,
   addMessagingDelegate,
-  addDependenciesToPodfile,
+  updatePodfileFirebasePods,
   removeContents,
   addRetenoInit,
   addTargetToPodfile,
@@ -159,29 +159,28 @@ const withAppDelegateConfiguration: ConfigPlugin<RetenoIOSProps> = (
       tag: RetenoIOSAutogenComments.RETENO_APNS,
     }).contents;
 
+    // Always remove previously generated Firebase blocks, so switching
+    // Firebase → APNs with `prebuild --no-clean` leaves no Firebase code behind.
+    config.modResults.contents = removeContents({
+      src: config.modResults.contents,
+      tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
+    }).contents;
+
+    config.modResults.contents = removeContents({
+      src: config.modResults.contents,
+      tag: RetenoIOSAutogenComments.FIREBASE_INIT,
+    }).contents;
+
+    config.modResults.contents = removeContents({
+      src: config.modResults.contents,
+      tag: RetenoIOSAutogenComments.FIREBASE_MESSAGING_DELEGATE,
+    }).contents;
+
     if (props.notificationService === "firebase") {
-      // Firebase flow
-      // NOTE: delete Firebase imports first
-      config.modResults.contents = removeContents({
-        src: config.modResults.contents,
-        tag: RetenoIOSAutogenComments.FIREBASE_IMPORT,
-      }).contents;
-
-      config.modResults.contents = removeContents({
-        src: config.modResults.contents,
-        tag: RetenoIOSAutogenComments.FIREBASE_INIT,
-      }).contents;
-
-      config.modResults.contents = removeContents({
-        src: config.modResults.contents,
-        tag: RetenoIOSAutogenComments.FIREBASE_MESSAGING_DELEGATE,
-      }).contents;
-
-      // NOTE: then re-install them
+      // Firebase flow: re-install the blocks
       config.modResults.contents = addFirebaseAppDelegateImport(
         config.modResults.contents,
       ).contents;
-      addFirebaseAppDelegateInit;
 
       config.modResults.contents = addFirebaseAppDelegateInit(
         config.modResults.contents,
@@ -203,29 +202,17 @@ const withAppDelegateConfiguration: ConfigPlugin<RetenoIOSProps> = (
   });
 };
 
-const withFirebasePodfileUpdate: ConfigPlugin = (config) => {
+// Runs in both modes so switching Firebase → APNs removes the pods again.
+// Errors are not swallowed: a Podfile that cannot be updated fails prebuild.
+const withFirebasePodfileUpdate: ConfigPlugin<{ enabled: boolean }> = (
+  config,
+  { enabled },
+) => {
   return withDangerousMod(config, [
     "ios",
     async (config) => {
       const root = path.join(config.modRequest.projectRoot, "ios");
-
-      await addDependenciesToPodfile(
-        root,
-        [
-          { name: "Firebase", addon: ":modular_headers => true" },
-          { name: "FirebaseCore", addon: ":modular_headers => true" },
-          { name: "FirebaseCoreExtension", addon: ":modular_headers => true" },
-          { name: "FirebaseCoreInternal", addon: ":modular_headers => true" },
-          { name: "FirebaseInstallations", addon: ":modular_headers => true" },
-          { name: "FirebaseMessaging", addon: ":modular_headers => true" },
-          { name: "GoogleDataTransport", addon: ":modular_headers => true" },
-          { name: "GoogleUtilities", addon: ":modular_headers => true" },
-        ],
-        `use_expo_modules!`,
-      ).catch((err) => {
-        console.error(err);
-      });
-
+      await updatePodfileFirebasePods(root, enabled);
       return config;
     },
   ]);
@@ -392,9 +379,9 @@ export const withRetenoIOS: ConfigPlugin<RetenoIOSProps> = (config, props) => {
 
   config = withNotificationContentExtensionPodfileUpdate(config);
 
-  if (props.notificationService === "firebase") {
-    config = withFirebasePodfileUpdate(config);
-  }
+  config = withFirebasePodfileUpdate(config, {
+    enabled: props.notificationService === "firebase",
+  });
 
   config = withAppDelegateConfiguration(config, props);
 

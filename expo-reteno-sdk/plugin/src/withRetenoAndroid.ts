@@ -1,18 +1,8 @@
 import {
   AndroidConfig,
   ConfigPlugin,
-  withAppBuildGradle,
   withAndroidManifest,
-  withGradleProperties,
-  withProjectBuildGradle,
 } from "expo/config-plugins";
-import {
-  addCompileOptions,
-  addGoogleServicesPlugin,
-  addModuleGradleDependencies,
-  addGradleProperties,
-  addProjectGradleDependencies,
-} from "./support/android.functions";
 import { RetenoAndroidProps } from "./types";
 
 const CLICKED_METADATA_NAME = "com.reteno.Receiver.NotificationClicked";
@@ -97,57 +87,6 @@ const withRetenoAndroidManifest: ConfigPlugin = (config) => {
   });
 };
 
-const withProjectGradleDependencies: ConfigPlugin = (config) => {
-  return withProjectBuildGradle(config, (cfg: any) => {
-    if (cfg.modResults.language === "groovy") {
-      cfg.modResults.contents = addProjectGradleDependencies(
-        cfg.modResults.contents,
-      );
-    } else {
-      console.warn(
-        "[android.googleServicesFile] Cannot automatically configure project build.gradle if it's not groovy",
-      );
-    }
-
-    return cfg;
-  });
-};
-
-const withModuleGradleDependencies: ConfigPlugin = (config) => {
-  return withAppBuildGradle(config, (cfg: any) => {
-    if (cfg.modResults.language === "groovy") {
-      cfg.modResults.contents = addModuleGradleDependencies(
-        cfg.modResults.contents,
-      );
-      cfg.modResults.contents = addGoogleServicesPlugin(cfg.modResults.contents);
-    } else {
-      console.warn(
-        "[android.googleServicesFile] Cannot automatically configure app build.gradle if it's not groovy",
-      );
-    }
-
-    return cfg;
-  });
-};
-
-const withAppGradleProperties: ConfigPlugin = (config) => {
-  return withGradleProperties(config, (cfg: any) => {
-    let properties = cfg.modResults;
-
-    properties = addGradleProperties(properties);
-
-    return cfg;
-  });
-};
-
-const withAppCompileOptions: ConfigPlugin = (config) => {
-  return withAppBuildGradle(config, (cfg: any) => {
-    cfg.modResults.contents = addCompileOptions(cfg.modResults.contents);
-
-    return cfg;
-  });
-};
-
 const withRetenoAndroidSDKKey: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
@@ -189,17 +128,34 @@ const withRetenoAndroidNotificationIcon: ConfigPlugin<RetenoAndroidProps> = (
   });
 };
 
+/**
+ * Google Services (classpath, `com.google.gms.google-services` plugin and copying
+ * `google-services.json`) is configured by Expo itself when `android.googleServicesFile`
+ * is set in the app config. The Reteno plugin intentionally does not modify Gradle files.
+ *
+ * Only a warning is printed when the option is missing, so apps that configure
+ * Google Services manually in their native project keep working.
+ */
+const warnIfGoogleServicesFileMissing: ConfigPlugin = (config) => {
+  if (!config.android?.googleServicesFile) {
+    console.warn(
+      "[expo-reteno-sdk] `android.googleServicesFile` is not set in the app config. " +
+        "Firebase Cloud Messaging requires Google Services: set `android.googleServicesFile` " +
+        "(e.g. \"./google-services.json\") so Expo configures it during prebuild, " +
+        "or configure Google Services manually in your native Android project.",
+    );
+  }
+  return config;
+};
+
 export const withRetenoAndroid: ConfigPlugin<RetenoAndroidProps> = (
   config,
   props,
 ) => {
+  config = warnIfGoogleServicesFileMissing(config);
   config = withRetenoAndroidManifest(config);
   config = withRetenoAndroidSDKKey(config, props);
   config = withRetenoAndroidNotificationIcon(config, props);
-  config = withProjectGradleDependencies(config);
-  config = withModuleGradleDependencies(config);
-  config = withAppGradleProperties(config);
-  config = withAppCompileOptions(config);
 
   return config;
 };

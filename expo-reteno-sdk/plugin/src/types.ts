@@ -66,6 +66,7 @@ export const RetenoIOSAutogenComments = {
   FIREBASE_INIT: "@react-native-firebase/app - init",
   FIREBASE_IMPORT: "@react-native-firebase/app - import",
   RETENO_APNS: "expo-reteno-sdk - APNs",
+  FIREBASE_PODS: "expo-reteno-sdk - firebase pods",
 } as const;
 
 export type RetenoInitConfigKeys =
