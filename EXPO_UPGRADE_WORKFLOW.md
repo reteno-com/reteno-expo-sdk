@@ -30,7 +30,7 @@ Adoption data for 54 among Reteno customers should be checked internally before 
 
 **Expo 54 support scope.** Expo 54 is outside or at the end of its upstream maintenance window; Reteno support is compatibility-only and does not imply upstream Expo maintenance. Support applies to the toolchain recommended for Expo 54 (Xcode/iOS SDK and JDK recorded in §5.6). Building Expo 54 apps with Xcode 27 / iOS 27 SDK is not promised unless explicitly tested.
 
-**Architecture on 54.** Either test Legacy and New Architecture on 54 (default plan, see §5.5), or state explicitly that 3.0.0 on Expo 54 supports New Architecture only.
+**Architecture on 54.** Decision: test both. Result: plugin and Android build work on Legacy; iOS Legacy fails on Xcode 26.6 inside the third-party `fmt` pod (`consteval`), identically with 2.5.4 on a clean project, so it is documented in the README and not treated as an SDK regression.
 
 **Target range is provisional.** It is confirmed only after the demo app passes testing on every Expo SDK 54–58 without regressions (Step 6). If a regression cannot be avoided, the range is narrowed after a team discussion and the remaining SDKs are delivered in separate releases.
 
@@ -280,7 +280,7 @@ Remove:
 
 | SDK | Architecture | Debug build | Release build | Runtime smoke | Full push run |
 |---|---|---|---|---|---|
-| 54 | Legacy | ✓ | ✓ (iOS + Android R8) | ✓ | — |
+| 54 | Legacy | Android ✓; iOS blocked by `fmt` + Xcode 26.6 (also fails on 2.5.4; not an SDK issue, documented in README) | Android R8 only | — | — |
 | 54 | New | ✓ | ✓ (iOS + Android R8) | ✓ | ✓ |
 | 55 | New | ✓ | — | ✓ + Swift diagnostics | — |
 | 56 | New | ✓ | — | ✓ + #18 regression, deployment targets | — |
@@ -317,7 +317,7 @@ For every run record: exact `expo`, React Native, React; Node; npm/yarn; Xcode/S
 
 **6b. Packaging — before the demo-app matrix.** All SDKs must be tested with one and the same SDK artifact (`file:` symlinks can hide autolinking, package-contents and relative-path issues):
 
-1. [ ] Build the SDK and explicitly compile the config plugin in `expo-reteno-sdk`: `npm run prepare` (runs `expo-module prepare`), or explicitly `npx expo-module build` followed by `npx expo-module build plugin`. Confirm `build/` and `plugin/build/` are freshly generated from the current commit before packing.
+1. [ ] Build the SDK and explicitly compile the config plugin in `expo-reteno-sdk`: `npm run build:all` (`expo-module build` + `expo-module build plugin`, non-watch). Note: since `expo-module-scripts` 56, `npm run prepare` is a no-op and `expo-module prepublishOnly` builds only `build/`; the package's `prepublishOnly` script therefore also cleans and builds `plugin/`. Confirm `build/` and `plugin/build/` are freshly generated from the current commit before packing.
 2. [ ] Set a unique prerelease version for the test artifact, e.g. `3.0.0-test.<short-commit>`, so npm/build caches and Expo fingerprinting cannot reuse a previous tarball with the same version.
 3. [ ] `npm pack` in `expo-reteno-sdk`.
 4. [ ] Inspect the tarball. Must contain:
@@ -393,3 +393,26 @@ Regression policy:
 - Internal adoption data for Expo 54 among Reteno customers.
 - End-of-support date for the `v2.x` line.
 - Any SDK in 54–58 where a regression proves unavoidable during Step 6 (triggers a team discussion and a possible separate release).
+
+## 8. Execution log (Step 6)
+
+Android debug builds in the matrix use `-PreactNativeArchitectures=arm64-v8a` (disk space); Release builds on 54 and 58 should build all ABIs.
+
+Environment: Xcode 26.6, macOS (Darwin 25.5). Test projects are clean `create-expo-app` blank templates; placeholder SDK key and a dummy `google-services.json` (no real credentials).
+
+**Release-candidate tarball (test):** `expo-reteno-sdk-3.0.0-test.805d632.tgz`, 73 files, SHA-256 `15a51ffbe413db92862eece60f9be82ff91419f662c058815ee7bcd7730494d0`. Contains no fixtures, tests, tsbuildinfo or credentials. Built with `npm run build:all`. Must be rebuilt and re-hashed for the final RC (Step 7), since the tree has uncommitted changes.
+
+| SDK | Arch | expo-doctor | Prebuild | iOS Debug | Android Debug | Notes |
+|---|---|---|---|---|---|---|
+| 54.0.36 / RN 0.81.5 | New | 18/18 | ✓ | ✓ | ✓ | plain `import Reteno` |
+| 54.0.36 | Legacy | — | ✓ | ✗ (`fmt` pod, Xcode 26.6) | ✓ | iOS failure is identical with published 2.5.4 on a clean project; not an SDK regression; documented in README |
+| 55.0.32 / RN 0.83.10 | New | 20/20 | ✓ | ✓ | ✓ | `internal import Reteno` / `ExpoRetenoSdk` |
+| 56.0.24 / RN 0.85.3 | New | 21/22 | ✓ | ✓ | ✓ (arm64-v8a) | doctor failure is Expo's Hermes V1 memory regression (fixed in 57.0.9+), not the SDK |
+| 57.0.34 / RN 0.86.3 (default) | New | 21/21 | ✓ | ✓ | ✓ (arm64-v8a) | `internal import`; classic AppDelegate |
+| 57.0.34 `enableSceneSupport` | New | 21/21 | ✓ | ✓ | ✓ (arm64-v8a) | `UIApplicationSceneManifest` → `EXExpoAppSceneDelegate`; init inserted after `reactNativeFactory = factory` |
+| 58.0.26 / RN 0.88.1 | New | 20/20 | ✓ | ✓ | ✓ (arm64-v8a) | scene template: `SceneDelegate.swift` generated; `internal import`; also passed earlier in TestApp (Firebase mode) |
+
+Debug matrix 54–58 (clean projects, test tarball) is complete: all green except 54 Legacy iOS (third-party `fmt`, see above).
+
+Not done yet: runtime smoke (§5.4), Release builds on 54 and 58 (all ABIs), on-device push runs, docs (`docs/android.md`, troubleshooting, CHANGELOG), final matrix on the final RC tarball.
+
