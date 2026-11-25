@@ -4,8 +4,12 @@ import {
   requireNativeModule,
 } from "expo-modules-core";
 import {
-  AnonymousUserAttributes,
   AppInboxEvents,
+  InAppEvents,
+  PushNotificationEvents,
+} from "./types";
+import type {
+  AnonymousUserAttributes,
   AppInboxPayload,
   EcomEventCartUpdatedPayload,
   EcomEventOrderActionPayload,
@@ -17,13 +21,11 @@ import {
   InAppCloseData,
   InAppDisplayData,
   InAppErrorData,
-  InAppEvents,
   InitializeOptions,
   InboxMessage,
   LogEventPayload,
   LogScreenViewPayload,
   NotificationGroupingRule,
-  PushNotificationEvents,
   RecommendationEventPayload,
   RecommendationPayload,
   RetenoSubscription,

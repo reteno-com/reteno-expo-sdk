@@ -10,12 +10,14 @@
     "lint": "expo-module lint",
     "test": "expo-module test",
     "prepare": "expo-module prepare",
-    "prepublishOnly": "expo-module prepublishOnly",
+    "prepublishOnly": "expo-module prepublishOnly && expo-module clean plugin && EXPO_NONINTERACTIVE=1 expo-module build plugin",
     "expo-module": "expo-module",
     "open:ios": "xed example/ios",
     "open:android": "open -a \"Android Studio\" example/android",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "test:plugin": "EXPO_NONINTERACTIVE=1 expo-module build plugin && node --test plugin/__tests__/*.test.js",
+    "build:all": "EXPO_NONINTERACTIVE=1 expo-module build && EXPO_NONINTERACTIVE=1 expo-module build plugin"
   },
   "keywords": [
     "react-native",
@@ -37,11 +39,13 @@
   },
   "homepage": "https://github.com/reteno-com/reteno-expo-sdk#readme",
   "devDependencies": {
-    "@types/react": "~19.1.0",
-    "expo-module-scripts": "^5.0.8",
-    "expo": "^54.0.27",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "expo": "~58.0.26",
+    "expo-module-scripts": "^56.0.3",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "@types/node": "^22.14.0",
+    "@types/react": "~19.3.0",
+    "typescript": "~5.9.3"
   },
   "files": [
     "build",
@@ -57,7 +61,7 @@
   ],
   "plugins": "./app.plugin.js",
   "peerDependencies": {
-    "expo": ">=51.0.0",
+    "expo": ">=54.0.0 <59.0.0",
     "react": "*",
     "react-native": "*"
   }
