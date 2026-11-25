@@ -141,50 +141,21 @@ In v2.0.0, `setDeviceToken` is a no-op on Android and resolves successfully. And
 
 ## Android
 
-### Plugin skips `build.gradle` configuration (Kotlin DSL warning)
+### Warning: `android.googleServicesFile` is not set
 
-Kotlin DSL (`.gradle.kts`) is **not fully supported**. The plugin prints a console warning and skips dependency and Google Services plugin injection. However, `compileOptions` injection still runs unconditionally — it checks for existing `sourceCompatibility`/`targetCompatibility` in the `android {}` block, but if they are absent it injects Groovy-syntax lines into `.gradle.kts`, which will break the build.
+Since v3.0.0 the plugin no longer edits Gradle files. Expo applies the Google Services plugin when `android.googleServicesFile` is configured, which FCM requires:
 
-The following are **still configured automatically** even with Kotlin DSL:
-- `AndroidManifest.xml` — `ExpoRetenoClickReceiver`, `ExpoRetenoPushReceiver`, and `RetenoMessagingService` (FCM)
-- `gradle.properties` — `android.useAndroidX`
-
-The following require **manual setup**:
-
-**1. Google Services classpath** — project-level `build.gradle.kts`:
-
-```kotlin
-buildscript {
-    dependencies {
-        classpath("com.google.gms:google-services:4.4.4")
+```json
+{
+  "expo": {
+    "android": {
+      "googleServicesFile": "./google-services.json"
     }
+  }
 }
 ```
 
-**2. Reteno dependencies** — app-level `build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("com.google.gms.google-services")
-}
-
-dependencies {
-    implementation("com.reteno:core:2.12.1")
-    implementation("com.reteno:push:2.12.1")
-    implementation("com.reteno:fcm:2.12.1")
-    implementation("com.google.firebase:firebase-messaging:23.1.0")
-    implementation("com.google.firebase:firebase-messaging-ktx:23.1.0")
-}
-```
-
-**3. Compile options** — inside the `android {}` block in app-level `build.gradle.kts`. Verify these are present; add them if missing:
-
-```kotlin
-compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-```
+Then run `npx expo prebuild --clean`. If you previously added the Google Services classpath, the `com.google.gms.google-services` plugin or `com.reteno:*` dependencies to Gradle manually (including Kotlin DSL), remove them: Expo and the module provide them now, and duplicates can break the build.
 
 ### Build fails: `minSdkVersion` too low
 
@@ -202,7 +173,7 @@ Reteno Android SDK requires `minSdkVersion` 26.
 
 ### Push notifications not received on Android
 
-1. Verify `google-services.json` is located at `android/app/google-services.json`.
+1. Verify `android.googleServicesFile` points to your `google-services.json` and that you ran `npx expo prebuild --clean` after setting it.
 2. Ensure `Reteno.registerForRemoteNotifications()` is called.
 3. Verify the automatic `sdkAccessToken` or the `apiKey` passed to `Reteno.initialize()`.
 

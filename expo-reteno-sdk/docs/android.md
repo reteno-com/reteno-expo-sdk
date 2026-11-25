@@ -89,11 +89,22 @@ await Reteno.initialize({
 
 ### Step 3: Add Firebase config
 
-Download your `google-services.json` from Firebase Console and place it to:
+Download your `google-services.json` from Firebase Console, put it in the project root (next to `app.json`) and reference it in your Expo config:
 
-```text
-android/app/google-services.json
+```json
+{
+  "expo": {
+    "android": {
+      "package": "com.example.app",
+      "googleServicesFile": "./google-services.json"
+    }
+  }
+}
 ```
+
+Expo applies the Google Services Gradle plugin and copies the file into the native project during prebuild. `expo-reteno-sdk` no longer edits Gradle files; if `android.googleServicesFile` is not set, the plugin prints a warning and push notifications through FCM will not work.
+
+Do not commit `google-services.json` if your repository is public. Use your CI secret storage or EAS file environment variables to provide it at build time.
 
 > Screenshots for this step are available in the hosted guide: https://docs.reteno.com/reference/expo-android-sdk-setup
 
@@ -103,7 +114,7 @@ android/app/google-services.json
 npx expo prebuild --platform android
 ```
 
-The plugin configures Gradle dependencies, the Reteno FCM service, and Android broadcast receivers automatically. With Path A, it also adds the SDK access key to `AndroidManifest.xml`.
+The plugin configures the Reteno FCM service, Android broadcast receivers and notification meta-data in `AndroidManifest.xml` automatically. The Reteno Android dependencies are provided by the `expo-reteno-sdk` native module itself. With Path A, it also adds the SDK access key to `AndroidManifest.xml`.
 
 ### Step 5: Build and run a development build
 
@@ -164,5 +175,6 @@ Values must be Android resource references (`@drawable/...` or `@mipmap/...` for
 ## Notes
 
 - Required Android `minSdkVersion` is `26`.
-- If you use Kotlin DSL (`build.gradle.kts`), some plugin patches may require manual Gradle setup.
+- Android Gradle files are not modified by the plugin, so Groovy and Kotlin DSL projects are handled the same way.
 - After upgrading to v2.0.0, run `npx expo prebuild --clean` to apply the updated manifest and FCM service configuration.
+- After upgrading to v3.0.0 (Expo SDK 54–58), set `android.googleServicesFile` in your Expo config and run `npx expo prebuild --clean` once. Remove any manual Reteno or Google Services Gradle edits you added earlier to avoid duplicates.
