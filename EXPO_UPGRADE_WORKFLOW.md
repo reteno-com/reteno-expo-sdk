@@ -307,6 +307,21 @@ Acceptance evidence per scenario:
 - logs without the access key;
 - cold-start timing.
 
+#### 5.6a Minimum toolchain per Expo SDK (Xcode)
+
+| Expo SDK | Minimum iOS | Minimum Xcode | Source |
+|---|---|---|---|
+| 54 | — | not re-checked | — |
+| 55 | 15.1 | 26.2 | §3 table |
+| 56 | 16.4 | 26.4 | [Expo SDK reference](https://docs.expo.dev/versions/latest/) |
+| 57 | 16.4 | **26.4** | [Expo SDK reference](https://docs.expo.dev/versions/latest/); `expo-doctor` reports "SDK 57 is not compatible with Xcode 26.2, required >=26.4.0" ([Recipedia #634](https://github.com/AntoC-dev/Recipedia/issues/634)) |
+| 58 | 16.4 | **26.4** | [Expo SDK reference](https://docs.expo.dev/versions/latest/); [SDK 58 changelog](https://expo.dev/changelog/sdk-58) |
+
+Notes:
+- SDK 58 is built for iOS 27 and uses the scene-based lifecycle, which apps built with the iOS 27 SDK get automatically ([changelog](https://expo.dev/changelog/sdk-58)). Xcode 27 is required only for specific features (e.g. `expo-app-intents` on-screen identification) and, per third-party reports, for the EAS `sdk-58` build image; it is not stated as a hard minimum for building SDK 58.
+- The figures for 57/58 were taken from the official docs table as quoted by search results; the docs page itself was not opened directly. Re-verify against the live table before publishing the README compatibility table.
+- Our matrix was built with Xcode 26.6 (≥ all minimums above). Xcode 27 has not been tested.
+
 #### 5.6 Reproducibility
 
 For every run record: exact `expo`, React Native, React; Node; npm/yarn; Xcode/Swift; CocoaPods; JDK; Gradle/AGP/Kotlin; OS/device. The compatibility table states "tested on exact versions", not "every patch from .0.0".
